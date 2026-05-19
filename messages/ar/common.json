@@ -1,0 +1,6 @@
+{
+  "__notice": "Tier B locale — strings to be machine-translated in session 8; currently English fallback.",
+  "__reviewed": false,
+  "app": { "name": "منصة ACH HIM", "tagline": "مقياس الأثر الشامل" },
+  "banner": { "translationPending": "الترجمة قيد الإعداد — يُرجى استخدام الإنجليزية مؤقتاً أو التواصل مع المسؤول عن حالتك." }
+}

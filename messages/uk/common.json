@@ -1,0 +1,6 @@
+{
+  "__notice": "Tier B locale — strings to be machine-translated in session 8; currently English fallback.",
+  "__reviewed": false,
+  "app": { "name": "Платформа ACH HIM", "tagline": "Цілісний показник впливу" },
+  "banner": { "translationPending": "Переклад очікується — будь ласка, користуйтеся англійською або зверніться до свого соціального працівника." }
+}

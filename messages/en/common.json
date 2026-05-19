@@ -1,0 +1,44 @@
+{
+  "app": {
+    "name": "ACH HIM Platform",
+    "tagline": "Holistic Impact Metric"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "partners": "Partners",
+    "candidates": "Candidates",
+    "cohorts": "Cohorts",
+    "projects": "Projects",
+    "pricing": "Pricing",
+    "developmentFund": "Development Fund",
+    "verifiedNetwork": "Verified Network",
+    "reports": "Reports",
+    "evidencePack": "Evidence Pack",
+    "translations": "Translations",
+    "delphi": "Delphi panel",
+    "drAnalysis": "Discrimination Ratio",
+    "equivalence": "Equivalence Library",
+    "signOut": "Sign out"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "delete": "Delete",
+    "create": "Create",
+    "loading": "Loading",
+    "empty": "Nothing here yet",
+    "search": "Search",
+    "language": "Language",
+    "actions": "Actions"
+  },
+  "candidate": {
+    "welcome": "Welcome",
+    "myAssessment": "My assessment",
+    "myDevelopmentFund": "My Development Fund",
+    "myConsent": "Consent and privacy"
+  },
+  "banner": {
+    "translationPending": "Translation pending — please use English for now or contact your caseworker."
+  }
+}

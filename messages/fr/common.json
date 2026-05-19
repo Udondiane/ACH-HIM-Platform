@@ -1,0 +1,6 @@
+{
+  "__notice": "Tier B locale — strings to be machine-translated in session 8; currently English fallback.",
+  "__reviewed": false,
+  "app": { "name": "Plateforme ACH HIM", "tagline": "Mesure d'impact holistique" },
+  "banner": { "translationPending": "Traduction en cours — veuillez utiliser l'anglais pour le moment ou contacter votre intervenant." }
+}

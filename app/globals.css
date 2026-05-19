@@ -1,0 +1,281 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Fraunces:ital,opsz,wght@1,9..144,400;1,9..144,500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-serif: 'Fraunces', Georgia, serif;
+
+  /* mirror Tailwind tokens for direct CSS-var access where useful */
+  --ach-navy:        #0A1F3D;
+  --ach-cream:       #FBF8F2;
+  --ach-page:        #F7F4ED;
+  --ach-card:        #FFFFFF;
+  --ach-border:      #EEEAE0;
+
+  --ach-terracotta:  #E89968;
+  --ach-lavender:    #B5A4D8;
+  --ach-slate-blue:  #7DA8C9;
+  --ach-honey:       #E8C25E;
+  --ach-sage:        #95B670;
+  --ach-rose:        #D67890;
+  --ach-forest:      #3C6B47;
+
+  --ach-text:        #0A1F3D;
+  --ach-text-muted:  #6B7280;
+  --ach-text-meta:   #888780;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    color: var(--ach-text);
+    background: var(--ach-page);
+    font-size: 13px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-feature-settings: 'cv11', 'ss01';
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Numeric displays everywhere should be tabular */
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  /* Disable browser bold for h-elements; design system uses weight 500 */
+  h1, h2, h3, h4, h5, h6 { font-weight: 500; }
+
+  /* Hairline borders */
+  .border-hair { border-width: 0.5px; border-color: var(--ach-border); }
+}
+
+@layer components {
+  .mini-label {
+    font-size: 10.5px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--ach-text-muted);
+    font-weight: 500;
+  }
+
+  .stat-value {
+    font-size: 26px;
+    line-height: 1.1;
+    letter-spacing: -0.5px;
+    font-weight: 500;
+    color: var(--ach-navy);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .card {
+    background: var(--ach-card);
+    border: 0.5px solid var(--ach-border);
+    border-radius: 14px;
+    padding: 24px 28px;
+  }
+
+  .card-cream {
+    background: var(--ach-cream);
+    border: 0.5px solid var(--ach-border);
+    border-radius: 12px;
+    padding: 24px 28px;
+  }
+
+  /* Stat card variants — cream with 3px left accent in domain color */
+  .stat-card {
+    background: var(--ach-cream);
+    border: 0.5px solid var(--ach-border);
+    border-left: 3px solid var(--ach-terracotta);
+    border-radius: 12px;
+    padding: 20px 24px;
+  }
+  .stat-card--employment { border-left-color: var(--ach-terracotta); }
+  .stat-card--housing { border-left-color: var(--ach-honey); }
+  .stat-card--education { border-left-color: var(--ach-lavender); }
+  .stat-card--health { border-left-color: var(--ach-sage); }
+  .stat-card--belonging { border-left-color: var(--ach-rose); }
+  .stat-card--social { border-left-color: var(--ach-slate-blue); }
+  .stat-card--rights { border-left-color: var(--ach-forest); }
+  .stat-card--verified { border-left-color: var(--ach-forest); }
+
+  /* Pills */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 11px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .pill--terracotta { background: #FBF1E5; color: #8C5A28; }
+  .pill--lavender   { background: #F2EEF8; color: #5A4988; }
+  .pill--slate      { background: #EBF2F7; color: #37607D; }
+  .pill--honey      { background: #FAF1D6; color: #876B1C; }
+  .pill--sage       { background: #EEF3E6; color: #4A6B30; }
+  .pill--rose       { background: #F8E8ED; color: #8C3A4F; }
+  .pill--forest     { background: #E4EDE6; color: #1F3F2A; }
+  .pill--neutral    { background: var(--ach-cream); color: var(--ach-text-muted); }
+
+  /* Progress bars — pill-shaped, 6px high, filled with domain color */
+  .progress-track {
+    width: 100%;
+    height: 6px;
+    background: var(--ach-border);
+    border-radius: 100px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--ach-terracotta);
+    border-radius: 100px;
+    transition: width 0.4s ease;
+  }
+  .progress-fill--employment { background: var(--ach-terracotta); }
+  .progress-fill--housing    { background: var(--ach-honey); }
+  .progress-fill--education  { background: var(--ach-lavender); }
+  .progress-fill--health     { background: var(--ach-sage); }
+  .progress-fill--belonging  { background: var(--ach-rose); }
+  .progress-fill--social     { background: var(--ach-slate-blue); }
+  .progress-fill--rights     { background: var(--ach-forest); }
+  .progress-fill--forest     { background: var(--ach-forest); }
+
+  /* Quote blocks */
+  .quote-block {
+    background: var(--ach-cream);
+    border-radius: 12px;
+    padding: 28px 32px;
+    position: relative;
+  }
+  .quote-block::before {
+    content: '"';
+    position: absolute;
+    top: 4px;
+    left: 18px;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 56px;
+    line-height: 1;
+    color: var(--ach-terracotta);
+  }
+  .quote-block .quote-text {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 16px;
+    line-height: 1.55;
+    color: var(--ach-text);
+    padding-left: 24px;
+  }
+  .quote-block .quote-attrib {
+    margin-top: 14px;
+    padding-left: 24px;
+    font-family: var(--font-sans);
+    font-style: normal;
+    font-size: 11px;
+    color: var(--ach-text-meta);
+    letter-spacing: 0.3px;
+  }
+
+  /* Avatar — the one place a subtle gradient is permitted */
+  .avatar-nav {
+    width: 30px;
+    height: 30px;
+    border-radius: 100px;
+    background: linear-gradient(135deg, #E89968 0%, #D67890 100%);
+    color: white;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Buttons — minimal, navy primary */
+  .btn-primary {
+    background: var(--ach-navy);
+    color: white;
+    border: 0.5px solid var(--ach-navy);
+    border-radius: 100px;
+    padding: 7px 16px;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.3;
+    transition: opacity 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--ach-navy);
+    border: 0.5px solid var(--ach-navy);
+    border-radius: 100px;
+    padding: 7px 16px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .btn-secondary:hover { background: var(--ach-cream); }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--ach-text-muted);
+    border-radius: 100px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .btn-ghost:hover { background: var(--ach-cream); color: var(--ach-navy); }
+}
+
+/* RTL support — applied via <html dir="rtl"> for Arabic */
+[dir="rtl"] .stat-card { border-left: 0.5px solid var(--ach-border); border-right: 3px solid var(--ach-terracotta); }
+[dir="rtl"] .quote-block::before { left: auto; right: 18px; }
+[dir="rtl"] .quote-block .quote-text,
+[dir="rtl"] .quote-block .quote-attrib { padding-left: 0; padding-right: 24px; }
+
+/* Form elements */
+input[type=text], input[type=email], input[type=number], input[type=date], select, textarea {
+  background: white;
+  border: 0.5px solid var(--ach-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: var(--font-sans);
+  color: var(--ach-text);
+  width: 100%;
+  transition: border-color 0.15s;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--ach-navy);
+}
+
+/* Tables — editorial style */
+table.data-table { width: 100%; border-collapse: collapse; }
+table.data-table th {
+  text-align: left;
+  font-size: 10.5px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--ach-text-muted);
+  font-weight: 500;
+  padding: 12px 16px;
+  border-bottom: 0.5px solid var(--ach-border);
+}
+table.data-table td {
+  padding: 14px 16px;
+  border-bottom: 0.5px solid var(--ach-border);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+table.data-table tr:last-child td { border-bottom: 0; }
+table.data-table tr.clickable { cursor: pointer; transition: background 0.1s; }
+table.data-table tr.clickable:hover td { background: var(--ach-cream); }
