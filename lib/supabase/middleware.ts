@@ -1,9 +1,13 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import type { Database } from './types';
+import { AUTH_DISABLED } from '@/lib/auth/dev-bypass';
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
+
+  // Build-time bypass: skip auth gate entirely. See lib/auth/dev-bypass.ts.
+  if (AUTH_DISABLED) return response;
 
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -40,9 +44,4 @@ export async function updateSession(request: NextRequest) {
     path.includes('.');
 
   if (!user && !isPublic) {
-    url.pathname = '/sign-in';
-    return NextResponse.redirect(url);
-  }
-
-  return response;
-}
+    url.pathname =
