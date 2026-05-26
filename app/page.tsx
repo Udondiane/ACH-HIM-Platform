@@ -1,8 +1,11 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { AUTH_DISABLED } from '@/lib/auth/dev-bypass';
 
 export default async function HomePage() {
+  if (AUTH_DISABLED) redirect('/dashboard');
+
   // Best-effort role-based redirect for signed-in users.
   // If Supabase env is missing (e.g. local first-boot) we just render the landing page.
   try {
