@@ -1,37 +1,30 @@
-import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
-import { AchSidebar } from '@/components/ach/sidebar';
-import { AchTopbar } from '@/components/ach/topbar';
-import { AUTH_DISABLED } from '@/lib/auth/dev-bypass';
+import type { Metadata } from 'next';
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
+import { localeMeta, type Locale } from '@/lib/i18n/config';
+import './globals.css';
 
-export default async function AchLayout({ children }: { children: React.ReactNode }) {
-  // Auth-gate: must be ACH staff to enter this segment. Skipped when AUTH_DISABLED.
-  if (!AUTH_DISABLED) {
-    const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) redirect('/sign-in');
+export const metadata: Metadata = {
+  title: 'ACH HIM Platform',
+  description: 'Holistic Impact Metric — Ashley Community & Housing',
+};
 
-    const { data: roleRow } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    const role = roleRow as { role: string } | null;
-    if (!role || role.role !== 'ach_staff') {
-      if (role?.role === 'partner') redirect('/partner-dashboard');
-      if (role?.role === 'candidate') redirect('/candidate-dashboard');
-      redirect('/sign-in');
-    }
-  }
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const locale = (await getLocale()) as Locale;
+  const messages = await getMessages();
+  const dir = localeMeta[locale]?.dir ?? 'ltr';
 
   return (
-    <div className="min-h-screen flex bg-ach-page">
-      <AchSidebar />
-      <div className="flex-1 flex flex-col min-w-0">
-        <AchTopbar />
-        <main className="flex-1 p-8 overflow-x-auto">{children}</main>
-      </div>
-    </div>
+    <html lang={locale} dir={dir}>
+      <body>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          {children}
+        </NextIntlClientProvider>
+      </body>
+    </html>
   );
 }
