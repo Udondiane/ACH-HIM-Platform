@@ -51,45 +51,39 @@ values
 on conflict do nothing;
 
 -- ── CANDIDATES (11) ───────────────────────────────────────
--- Memo §3: anonymised. We give each a candidate_ref + first name + country.
-do $$
-declare
-  v_candidates record;
-begin
-  for v_candidates in
-    select * from (values
-      ('33333333-3333-3333-3333-000000000001', 'C-2026-001', 'Amal',    'Naser',     'ar',  'Syria',       2023, 'B1', '11111111-1111-1111-1111-000000000005'),  -- IKEA-sponsored
-      ('33333333-3333-3333-3333-000000000002', 'C-2026-002', 'Bashir',  'Karimi',    'fa',  'Afghanistan', 2024, 'A2', '11111111-1111-1111-1111-000000000005'),
-      ('33333333-3333-3333-3333-000000000003', 'C-2026-003', 'Chiamaka','Eze',       'en',  'Nigeria',     2023, 'C1', '11111111-1111-1111-1111-000000000005'),
-      ('33333333-3333-3333-3333-000000000004', 'C-2026-004', 'Dinara',  'Ismailova', 'uk',  'Ukraine',     2024, 'B2', '11111111-1111-1111-1111-000000000005'),
-      ('33333333-3333-3333-3333-000000000005', 'C-2026-005', 'Eyob',    'Tesfaye',   'ti',  'Eritrea',     2022, 'B1', '11111111-1111-1111-1111-000000000005'),
-      ('33333333-3333-3333-3333-000000000006', 'C-2026-006', 'Farah',   'Mahmoud',   'ar',  'Sudan',       2024, 'A2', '11111111-1111-1111-1111-000000000002'),  -- Pret-sponsored
-      ('33333333-3333-3333-3333-000000000007', 'C-2026-007', 'Ghadir',  'Al-Saadi',  'ar',  'Iraq',        2023, 'B1', '11111111-1111-1111-1111-000000000002'),
-      ('33333333-3333-3333-3333-000000000008', 'C-2026-008', 'Hadi',    'Rahimi',    'fa',  'Iran',        2023, 'B1', '11111111-1111-1111-1111-000000000002'),
-      ('33333333-3333-3333-3333-000000000009', 'C-2026-009', 'Iman',    'Younis',    'ar',  'Yemen',       2024, 'A2', '11111111-1111-1111-1111-000000000002'),
-      ('33333333-3333-3333-3333-00000000000a', 'C-2026-010', 'Jelena',  'Hoxha',     'sq',  'Albania',     2023, 'B2', '11111111-1111-1111-1111-000000000003'),  -- Doyle-sponsored
-      ('33333333-3333-3333-3333-00000000000b', 'C-2026-011', 'Khaled',  'Mansour',   'ar',  'Palestine',   2024, 'B1', '11111111-1111-1111-1111-000000000003')
-    ) as t(id, ref, given, family, locale, country, year, en, partner_id)
-  loop
-    insert into public.candidates (id, candidate_ref, given_name, family_name, preferred_locale, country_of_origin, arrival_year, english_level, status, career_goal_summary)
-    values (
-      v_candidates.column1::uuid, v_candidates.column2, v_candidates.column3, v_candidates.column4,
-      v_candidates.column5, v_candidates.column6, v_candidates.column7::int, v_candidates.column8,
-      'in_programme'::public.candidate_status,
-      case v_candidates.column3
-        when 'Amal'     then 'Aspires to logistics management — IKEA is a stepping stone.'
-        when 'Chiamaka' then 'Long-term goal: chartered accountancy. Retail role bridges the gap.'
-        when 'Dinara'   then 'Background in design; UK retail role provides English and UK work experience.'
-        else 'Sector-progression intent recorded in development plan.'
-      end
-    )
-    on conflict (id) do nothing;
+-- Memo §3: anonymised. Each has a candidate_ref + first name + country.
 
-    insert into public.cohort_candidates (cohort_id, candidate_id, sponsoring_partner_id)
-    values ('22222222-2222-2222-2222-000000000001', v_candidates.column1::uuid, v_candidates.column9::uuid)
-    on conflict do nothing;
-  end loop;
-end $$;
+insert into public.candidates
+  (id, candidate_ref, given_name, family_name, preferred_locale, country_of_origin, arrival_year, english_level, status, career_goal_summary)
+values
+  ('33333333-3333-3333-3333-000000000001', 'C-2026-001', 'Amal',     'Naser',     'ar', 'Syria',       2023, 'B1', 'in_programme', 'Aspires to logistics management — IKEA is a stepping stone.'),
+  ('33333333-3333-3333-3333-000000000002', 'C-2026-002', 'Bashir',   'Karimi',    'fa', 'Afghanistan', 2024, 'A2', 'in_programme', 'Sector-progression intent recorded in development plan.'),
+  ('33333333-3333-3333-3333-000000000003', 'C-2026-003', 'Chiamaka', 'Eze',       'en', 'Nigeria',     2023, 'C1', 'in_programme', 'Long-term goal: chartered accountancy. Retail role bridges the gap.'),
+  ('33333333-3333-3333-3333-000000000004', 'C-2026-004', 'Dinara',   'Ismailova', 'uk', 'Ukraine',     2024, 'B2', 'in_programme', 'Background in design; UK retail role provides English and UK work experience.'),
+  ('33333333-3333-3333-3333-000000000005', 'C-2026-005', 'Eyob',     'Tesfaye',   'ti', 'Eritrea',     2022, 'B1', 'in_programme', 'Sector-progression intent recorded in development plan.'),
+  ('33333333-3333-3333-3333-000000000006', 'C-2026-006', 'Farah',    'Mahmoud',   'ar', 'Sudan',       2024, 'A2', 'in_programme', 'Sector-progression intent recorded in development plan.'),
+  ('33333333-3333-3333-3333-000000000007', 'C-2026-007', 'Ghadir',   'Al-Saadi',  'ar', 'Iraq',        2023, 'B1', 'in_programme', 'Sector-progression intent recorded in development plan.'),
+  ('33333333-3333-3333-3333-000000000008', 'C-2026-008', 'Hadi',     'Rahimi',    'fa', 'Iran',        2023, 'B1', 'in_programme', 'Sector-progression intent recorded in development plan.'),
+  ('33333333-3333-3333-3333-000000000009', 'C-2026-009', 'Iman',     'Younis',    'ar', 'Yemen',       2024, 'A2', 'in_programme', 'Sector-progression intent recorded in development plan.'),
+  ('33333333-3333-3333-3333-00000000000a', 'C-2026-010', 'Jelena',   'Hoxha',     'sq', 'Albania',     2023, 'B2', 'in_programme', 'Sector-progression intent recorded in development plan.'),
+  ('33333333-3333-3333-3333-00000000000b', 'C-2026-011', 'Khaled',   'Mansour',   'ar', 'Palestine',   2024, 'B1', 'in_programme', 'Sector-progression intent recorded in development plan.')
+on conflict (id) do nothing;
+
+-- Link each candidate to the cohort with their sponsoring partner
+insert into public.cohort_candidates (cohort_id, candidate_id, sponsoring_partner_id)
+values
+  ('22222222-2222-2222-2222-000000000001', '33333333-3333-3333-3333-000000000001', '11111111-1111-1111-1111-000000000005'),  -- Amal     → IKEA
+  ('22222222-2222-2222-2222-000000000001', '33333333-3333-3333-3333-000000000002', '11111111-1111-1111-1111-000000000005'),  -- Bashir   → IKEA
+  ('22222222-2222-2222-2222-000000000001', '33333333-3333-3333-3333-000000000003', '11111111-1111-1111-1111-000000000005'),  -- Chiamaka → IKEA
+  ('22222222-2222-2222-2222-000000000001', '33333333-3333-3333-3333-000000000004', '11111111-1111-1111-1111-000000000005'),  -- Dinara   → IKEA
+  ('22222222-2222-2222-2222-000000000001', '33333333-3333-3333-3333-000000000005', '11111111-1111-1111-1111-000000000005'),  -- Eyob     → IKEA
+  ('22222222-2222-2222-2222-000000000001', '33333333-3333-3333-3333-000000000006', '11111111-1111-1111-1111-000000000002'),  -- Farah    → Pret
+  ('22222222-2222-2222-2222-000000000001', '33333333-3333-3333-3333-000000000007', '11111111-1111-1111-1111-000000000002'),  -- Ghadir   → Pret
+  ('22222222-2222-2222-2222-000000000001', '33333333-3333-3333-3333-000000000008', '11111111-1111-1111-1111-000000000002'),  -- Hadi     → Pret
+  ('22222222-2222-2222-2222-000000000001', '33333333-3333-3333-3333-000000000009', '11111111-1111-1111-1111-000000000002'),  -- Iman     → Pret
+  ('22222222-2222-2222-2222-000000000001', '33333333-3333-3333-3333-00000000000a', '11111111-1111-1111-1111-000000000003'),  -- Jelena   → Doyle
+  ('22222222-2222-2222-2222-000000000001', '33333333-3333-3333-3333-00000000000b', '11111111-1111-1111-1111-000000000003')   -- Khaled   → Doyle
+on conflict do nothing;
 
 -- Consent records (most candidates consented to anonymised quoting; named/case-study less common)
 insert into public.candidate_consent (candidate_id, may_be_quoted, may_appear_in_case_study, may_be_named)
