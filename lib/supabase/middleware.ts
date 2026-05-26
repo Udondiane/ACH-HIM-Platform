@@ -38,10 +38,15 @@ export async function updateSession(request: NextRequest) {
   const isPublic =
     path === '/' ||
     path.startsWith('/sign-in') ||
-    path.startsWith('/verified-partners') || // public listing
+    path.startsWith('/verified-partners') ||
     path.startsWith('/api/public') ||
     path.startsWith('/_next') ||
     path.includes('.');
 
   if (!user && !isPublic) {
-    url.pathname =
+    url.pathname = '/sign-in';
+    return NextResponse.redirect(url);
+  }
+
+  return response;
+}
