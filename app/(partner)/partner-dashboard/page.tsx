@@ -5,8 +5,11 @@ import { WorkforcePartnerDashboard } from '@/components/partner-portal/workforce
 import { TrainingPartnerDashboard } from '@/components/partner-portal/training-partner-dashboard';
 import { Card, CardContent } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
+import { AUTH_DISABLED } from '@/lib/auth/dev-bypass';
 
 export default async function PartnerDashboardPage() {
+  if (AUTH_DISABLED) redirect('/dashboard');
+
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/sign-in');
