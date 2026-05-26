@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import type { UserRole } from '@/lib/supabase/types';
+import { AUTH_DISABLED, DEV_BYPASS_USER } from '@/lib/auth/dev-bypass';
 
 export type SessionUser = {
   id: string;
@@ -17,6 +18,9 @@ export type SessionUser = {
  * to that role's home.
  */
 export async function requireUser(allowedRoles?: UserRole[]): Promise<SessionUser> {
+  // Build-time bypass: return synthetic ACH-staff user without touching Supabase.
+  if (AUTH_DISABLED) return { ...DEV_BYPASS_USER };
+
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/sign-in');
