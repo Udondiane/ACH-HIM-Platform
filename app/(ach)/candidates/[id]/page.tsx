@@ -35,9 +35,16 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
         title={c.given_name}
         description={[c.country_of_origin, c.english_level && `English ${c.english_level}`].filter(Boolean).join(' · ') || undefined}
         actions={
-          <Link href={`/candidates/${c.id}/edit`}>
-            <Button variant="secondary"><Pencil className="h-3.5 w-3.5" />Edit</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            {c.is_ach_tenant && (
+              <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10.5px] uppercase tracking-[1.2px] font-medium border-[0.5px] bg-ach-slate-tint text-ach-slate-deep border-ach-slate-blue/30">
+                ACH tenant
+              </span>
+            )}
+            <Link href={`/candidates/${c.id}/edit`}>
+              <Button variant="secondary"><Pencil className="h-3.5 w-3.5" />Edit</Button>
+            </Link>
+          </div>
         }
       />
 
@@ -54,6 +61,7 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
               <DT label="Arrival year">{c.arrival_year ?? '—'}</DT>
               <DT label="Preferred language">{LOCALE_NAMES[c.preferred_locale as keyof typeof LOCALE_NAMES] ?? c.preferred_locale}</DT>
               <DT label="English level">{c.english_level ?? '—'}</DT>
+              <DT label="ACH tenant">{c.is_ach_tenant ? 'Yes' : 'No'}</DT>
             </dl>
 
             {(c.career_goal_summary || c.development_plan) && (
