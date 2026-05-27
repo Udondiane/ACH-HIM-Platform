@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Building2, Users, Layers, FolderKanban,
+  LayoutDashboard, Building2, Users, FolderKanban,
   CircleDollarSign, BookOpen, BadgeCheck, Lightbulb, FileText,
   Languages, BarChart3, ScrollText, Calculator,
 } from 'lucide-react';
@@ -15,7 +15,6 @@ const NAV = [
   { href: '/partners',           label: 'Partners',         icon: Building2 },
   { href: '/candidates',         label: 'Candidates',       icon: Users },
   { href: '/projects',           label: 'Projects',         icon: FolderKanban },
-  { href: '/cohorts',            label: 'Cohorts',          icon: Layers },
   { section: 'Operations' },
   { href: '/pricing',            label: 'Pricing tool',     icon: Calculator },
   { href: '/development-fund',   label: 'Development fund', icon: CircleDollarSign },
