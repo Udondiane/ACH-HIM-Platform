@@ -35,10 +35,12 @@ function normalisePayload(input: ReturnType<typeof projectSchema.parse>) {
   }
   const capabilityQuestionnaire = {
     employment: input.cap_employment || null,
+    housing:    input.cap_housing    || null,
     education:  input.cap_education  || null,
+    health:     input.cap_health     || null,
     belonging:  input.cap_belonging  || null,
     social:     input.cap_social     || null,
-    health:     input.cap_health     || null,
+    rights:     input.cap_rights     || null,
   };
   return {
     project_ref: input.project_ref,
@@ -98,10 +100,12 @@ export async function createProjectAction(_prev: ActionResult | null, fd: FormDa
   const row = data as { id: string } | null;
   await syncCapabilitiesFromAnswers(supabase, row!.id, {
     cap_employment: parsed.data.cap_employment,
+    cap_housing:    parsed.data.cap_housing,
     cap_education:  parsed.data.cap_education,
+    cap_health:     parsed.data.cap_health,
     cap_belonging:  parsed.data.cap_belonging,
     cap_social:     parsed.data.cap_social,
-    cap_health:     parsed.data.cap_health,
+    cap_rights:     parsed.data.cap_rights,
   });
   revalidatePath('/projects');
   revalidatePath('/dashboard');

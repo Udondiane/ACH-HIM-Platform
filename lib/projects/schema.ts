@@ -43,26 +43,30 @@ export const FUNDING_MODEL_LABELS: Record<FundingModel, string> = {
   commercial: 'Commercial',
 };
 export const FUNDING_MODEL_HINTS: Record<FundingModel, string> = {
-  funded:     'Restricted funding (trust, foundation, statutory) covers the full delivery cost. Project depends on the grant continuing.',
-  hybrid:     'Combines grant subsidy with buyer fees. Transitional model toward full sustainability. Common during the move off restricted funding.',
+  funded:     'Restricted funding from a trust, foundation, or statutory body covers delivery.',
+  hybrid:     'Combines grant funding with buyer fees.',
   commercial: 'Buyer pays at or near full cost recovery. Project sustains itself and may generate surplus that supports other work.',
 };
 
-export const CAP_DOMAINS = ['employment', 'education', 'belonging', 'social', 'health'] as const;
+export const CAP_DOMAINS = ['employment', 'housing', 'education', 'health', 'belonging', 'social', 'rights'] as const;
 export type CapDomain = typeof CAP_DOMAINS[number];
 export const CAP_DOMAIN_LABELS: Record<CapDomain, string> = {
   employment: 'Employment',
-  education:  'Education',
-  belonging:  'Belonging',
-  social:     'Social',
-  health:     'Health',
+  housing:    'Housing',
+  education:  'Education & skills',
+  health:     'Health & wellbeing',
+  belonging:  'Belonging & identity',
+  social:     'Social participation',
+  rights:     'Rights & citizenship',
 };
 export const CAP_DOMAIN_HINTS: Record<CapDomain, string> = {
-  employment: 'Securing or sustaining paid work, salary progression, employment-readiness.',
-  education:  'Learning, skills, qualifications, English language, vocational training.',
-  belonging:  'Settlement, cultural connection, sense of identity and place in the community.',
-  social:     'Peer networks, mentoring, friendships, community participation.',
-  health:     'Mental wellbeing, physical health, resilience, access to care.',
+  employment: 'Access to and progression in paid work.',
+  housing:    'Securing and maintaining stable housing.',
+  education:  'Skills, qualifications, English language, vocational training.',
+  health:     'Mental and physical health, resilience, access to care.',
+  belonging:  'Settlement, cultural connection, dignity in the community.',
+  social:     'Networks, friendships, civic and community participation.',
+  rights:     'Knowledge and exercise of rights, citizenship pathway.',
 };
 
 export const CAP_ANSWERS = ['not_addressed', 'supporting', 'primary'] as const;
@@ -93,10 +97,12 @@ export const projectSchema = z.object({
   classification_q3: z.enum(['A','B','C']).optional().or(z.literal('')),
   classification_q4: z.enum(['A','B','C']).optional().or(z.literal('')),
   cap_employment: capAnswerSchema,
+  cap_housing:    capAnswerSchema,
   cap_education:  capAnswerSchema,
+  cap_health:     capAnswerSchema,
   cap_belonging:  capAnswerSchema,
   cap_social:     capAnswerSchema,
-  cap_health:     capAnswerSchema,
+  cap_rights:     capAnswerSchema,
   start_date: dateOrEmpty,
   end_date: dateOrEmpty,
   status: z.string().default('active'),

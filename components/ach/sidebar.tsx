@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Building2, Users, FolderKanban,
   CircleDollarSign, BookOpen, BadgeCheck, Lightbulb, FileText,
-  Languages, BarChart3, ScrollText, Calculator,
+  Languages, BarChart3, ScrollText, Calculator, Settings2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -27,6 +27,7 @@ const NAV = [
   { href: '/evidence-pack',      label: 'Evidence packs',   icon: FileText },
   { href: '/reports',            label: 'Other reports',    icon: ScrollText },
   { section: 'Admin' },
+  { href: '/admin/projects',     label: 'Project admin',    icon: Settings2 },
   { href: '/translations',       label: 'Translations',     icon: Languages },
 ] as const;
 
