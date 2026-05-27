@@ -1,24 +1,3 @@
--- ============================================================
--- seed_v2.sql · session 6/7/8 demo data
--- ============================================================
--- Run AFTER seed.sql. Augments the existing memo sec 8 worked examples
--- with realistic data for pricing quotes, dev fund credits/requests,
--- equivalence applications, delphi panel, evidence pack, translations,
--- and Career Progression / Engagement Reports - derived from the
--- ACH Bridge to Employment Master Model spreadsheet (Mar 2024-Apr 2026
--- programme data) and the Comic Relief grant transition plan.
---
--- Idempotent - every insert uses ON CONFLICT DO NOTHING.
--- ============================================================
-
--- -- PRICING QUOTES -------------------------------------------
--- Each existing partner gets:
---   1. an "Accepted" historical quote reflecting what they actually paid
---      (per the spreadsheet - these flag RED because they're below cost-recovery)
---   2. a "Draft" recommended quote at the proper tier
--- The traffic_light values were pre-computed using lib/pricing/calculator.ts
--- defaults (cost GBP 1,670, sustainability margin GBP 500, etc.).
-
 insert into public.pricing_quotes (
   id, quote_ref, partner_id, cohort_id, track,
   candidate_count, expected_hires_volume, expected_hires_standard, expected_hires_premium,
@@ -27,7 +6,6 @@ insert into public.pricing_quotes (
   suggested_price, margin_amount, margin_pct, traffic_light,
   status, notes
 ) values
-  -- IKEA - Dec'25 cohort, what they actually paid
   ('66666666-6666-6666-6666-000000000001', 'QT-2025-001',
    '11111111-1111-1111-1111-000000000005', null, 'workforce_partner',
    10, 5, 3, 0,
@@ -35,7 +13,6 @@ insert into public.pricing_quotes (
    16700.00, 18370.00, 21710.00,
    8000.00, -8700.00, -52.10, 'red',
    'accepted', 'Historical IKEA quote (Dec 2025 cohort). Covers ~19% of true delivery cost. Flagged RED - below cost-recovery floor. Renegotiate per transition plan.'),
-  -- IKEA - recommended large-corporate tier
   ('66666666-6666-6666-6666-000000000002', 'QT-2026-001',
    '11111111-1111-1111-1111-000000000005', '22222222-2222-2222-2222-000000000001', 'workforce_partner',
    10, 5, 3, 0,
@@ -43,8 +20,6 @@ insert into public.pricing_quotes (
    16700.00, 18370.00, 21710.00,
    43410.00, 26710.00, 159.94, 'green',
    'draft', 'Recommended IKEA pricing - large corporate tier. GBP 43,410 = full programme cost + ACH expertise loading. Frame as L&D/recruitment investment, not CSR donation.'),
-
-  -- Pret - current state (GBP 0 - fully grant-funded)
   ('66666666-6666-6666-6666-000000000003', 'QT-2025-002',
    '11111111-1111-1111-1111-000000000002', null, 'workforce_partner',
    12, 0, 5, 0,
@@ -52,7 +27,6 @@ insert into public.pricing_quotes (
    20040.00, 22044.00, 26052.00,
    0.00, -20040.00, -100.00, 'red',
    'accepted', 'Historical Pret arrangement - no cash fee. Comic Relief grant covers full delivery. Q1 2026 fee introduction planned.'),
-  -- Pret - recommended
   ('66666666-6666-6666-6666-000000000004', 'QT-2026-002',
    '11111111-1111-1111-1111-000000000002', null, 'workforce_partner',
    12, 0, 5, 0,
@@ -60,8 +34,6 @@ insert into public.pricing_quotes (
    20040.00, 22044.00, 26052.00,
    30000.00, 9960.00, 49.70, 'green',
    'sent', 'Recommended Pret cohort - anchored to L&D budget. Start with in-kind valuation (venue, staff time ~ GBP 5k) then move to cash fee.'),
-
-  -- Doyle Collection (Visit West proxy) - current state
   ('66666666-6666-6666-6666-000000000005', 'QT-2025-003',
    '11111111-1111-1111-1111-000000000003', null, 'workforce_partner',
    10, 2, 0, 0,
@@ -69,8 +41,6 @@ insert into public.pricing_quotes (
    16700.00, 18370.00, 21710.00,
    0.00, -16700.00, -100.00, 'red',
    'declined', 'Doyle Collection / Visit West historical - no cash fee. Vacancy timing misalignment per programme learning log. Under review.'),
-
-  -- Burges Salmon - Capability Investor (memo sec 8)
   ('66666666-6666-6666-6666-000000000006', 'QT-2026-003',
    '11111111-1111-1111-1111-000000000001', '22222222-2222-2222-2222-000000000001', 'capability_investor',
    3, 0, 0, 0,
@@ -78,8 +48,6 @@ insert into public.pricing_quotes (
    5010.00, 5511.00, 6513.00,
    6510.00, 1500.00, 29.94, 'green',
    'accepted', '3 sponsorships @ GBP 2,170 - Capability Investor (ED&I/CSR-led). Family 2 per Annex H. Already paid for separate cultural awareness training.'),
-
-  -- Bowmer & Kirkland - CI + Tender Pack
   ('66666666-6666-6666-6666-000000000007', 'QT-2026-004',
    '11111111-1111-1111-1111-000000000004', '22222222-2222-2222-2222-000000000001', 'capability_investor',
    5, 0, 0, 0,
@@ -87,16 +55,10 @@ insert into public.pricing_quotes (
    8350.00, 9185.00, 10855.00,
    11350.00, 3000.00, 35.93, 'green',
    'sent', 'B&K 5 sponsorships + Tender Support Pack (GBP 500) for upcoming public-sector framework bid. Construction sector.')
-
 on conflict (id) do nothing;
-
--- Quote line items
 insert into public.pricing_quote_lines (quote_id, sort_order, kind, band, quantity, unit_amount, line_total, label)
 values
-  -- IKEA accepted (the GBP 8k flat)
   ('66666666-6666-6666-6666-000000000001', 0, 'sponsorship', null, 10, 800.00, 8000.00, 'Flat sponsorship deal x 10 candidates (historical pricing)'),
-
-  -- IKEA recommended
   ('66666666-6666-6666-6666-000000000002', 0, 'sponsorship',   null,       10, 2170.00, 21700.00, 'Sponsorship x 10 candidates'),
   ('66666666-6666-6666-6666-000000000002', 1, 'placement',     'volume',    5,  750.00,  3750.00, 'Placement fee - Volume GBP 20-23k'),
   ('66666666-6666-6666-6666-000000000002', 2, 'placement',     'standard',  3, 1500.00,  4500.00, 'Placement fee - Standard GBP 23-28k'),
@@ -105,65 +67,39 @@ values
   ('66666666-6666-6666-6666-000000000002', 5, 'retention_6mo', 'standard',  2,  250.00,   500.00, 'Retention 6mo - Standard'),
   ('66666666-6666-6666-6666-000000000002', 6, 'retention_12mo','volume',    3,  300.00,   900.00, 'Retention 12mo - Volume (expected 55%)'),
   ('66666666-6666-6666-6666-000000000002', 7, 'retention_12mo','standard',  2,  325.00,   650.00, 'Retention 12mo - Standard'),
-
-  -- Pret accepted (just sponsorship at GBP 0)
   ('66666666-6666-6666-6666-000000000003', 0, 'sponsorship', null, 12, 0.00, 0.00, 'Grant-funded - no employer fee'),
-
-  -- Pret recommended
   ('66666666-6666-6666-6666-000000000004', 0, 'sponsorship',    null,       12, 2170.00, 26040.00, 'Sponsorship x 12 candidates'),
   ('66666666-6666-6666-6666-000000000004', 1, 'placement',      'standard',  5, 1500.00,  7500.00, 'Placement fee - Standard GBP 23-28k'),
   ('66666666-6666-6666-6666-000000000004', 2, 'discount',       null,        1, -1500.00,-1500.00, 'Volume discount (20% on placement, 5+ hires)'),
   ('66666666-6666-6666-6666-000000000004', 3, 'retention_6mo',  'standard',  4,  250.00,  1000.00, 'Retention 6mo - Standard (expected 70%)'),
   ('66666666-6666-6666-6666-000000000004', 4, 'retention_12mo', 'standard',  3,  325.00,   975.00, 'Retention 12mo - Standard (expected 55%)'),
-
-  -- Doyle declined
   ('66666666-6666-6666-6666-000000000005', 0, 'sponsorship', null, 10, 0.00, 0.00, 'Visit West / Doyle - no fee under previous arrangement'),
-
-  -- Burges Salmon
   ('66666666-6666-6666-6666-000000000006', 0, 'sponsorship', null, 3, 2170.00, 6510.00, 'Sponsorship x 3 candidates - Family 2'),
-
-  -- Bowmer & Kirkland
   ('66666666-6666-6666-6666-000000000007', 0, 'sponsorship', null, 5, 2170.00, 10850.00, 'Sponsorship x 5 candidates'),
   ('66666666-6666-6666-6666-000000000007', 1, 'tender_pack', null, 1,  500.00,   500.00, 'Tender Support Pack - public-sector framework bid')
 on conflict do nothing;
-
-
--- -- DEV FUND CREDITS -----------------------------------------
--- The existing seed creates 3 placements (Farah, Ghadir, Hadi at Pret) with
--- 'paid' placement milestones. Mirror those payments as ringfenced credits
--- in the candidates' dev fund balances.
-
 insert into public.dev_fund_credits (candidate_id, source_milestone_id, partner_id, amount, source, notes)
 select
   pl.candidate_id,
   m.id,
   pl.partner_id,
-  m.amount * 0.30,  -- spec sec 14: 30% of milestone payment is ringfenced
+  m.amount * 0.30,
   'milestone',
   'Auto-credited from paid placement milestone (30% ringfenced per spec sec 14).'
 from public.placement_milestones m
 join public.placements pl on pl.id = m.placement_id
 where m.state = 'paid'
 on conflict do nothing;
-
--- Match funding from a hypothetical grant
 insert into public.dev_fund_credits (candidate_id, partner_id, amount, source, notes)
 values
   ('33333333-3333-3333-3333-000000000003', null, 500.00, 'match_funding', 'Chiamaka - match funding toward accountancy pathway.'),
   ('33333333-3333-3333-3333-000000000006', null, 250.00, 'match_funding', 'Farah - small match top-up.')
 on conflict do nothing;
-
--- Recompute balances now credits exist
 select public.recompute_dev_fund_balance(id) from public.candidates;
-
-
--- -- TRAINING REQUESTS ----------------------------------------
--- Realistic candidate-led requests aligned to seeded candidates' career goals.
-
 insert into public.training_requests (id, candidate_id, training_id, career_rationale, state, review_notes, decided_at)
 select
   '77777777-7777-7777-7777-000000000001',
-  '33333333-3333-3333-3333-000000000003',  -- Chiamaka, accountancy goal
+  '33333333-3333-3333-3333-000000000003',
   tc.id,
   'My long-term goal is chartered accountancy. The AAT Level 3 builds directly on bookkeeping fundamentals and is the standard pathway used by employers in Bristol. I will continue working part-time while studying.',
   'approved',
@@ -171,32 +107,29 @@ select
   now() - interval '14 days'
 from public.training_catalogue tc where tc.title = 'Accounting Level 3' limit 1
 on conflict (id) do nothing;
-
 insert into public.training_requests (id, candidate_id, training_id, career_rationale, state)
 select
   '77777777-7777-7777-7777-000000000002',
-  '33333333-3333-3333-3333-000000000001',  -- Amal, logistics goal
+  '33333333-3333-3333-3333-000000000001',
   tc.id,
   'IKEA promotes from within once you complete Team Leading. This is the standard internal progression and my line manager has confirmed she will support my application once certified.',
   'submitted'
 from public.training_catalogue tc where tc.title = 'Team Leading Level 3' limit 1
 on conflict (id) do nothing;
-
 insert into public.training_requests (id, candidate_id, training_id, career_rationale, state, review_notes)
 select
   '77777777-7777-7777-7777-000000000003',
-  '33333333-3333-3333-3333-000000000004',  -- Dinara, design history
+  '33333333-3333-3333-3333-000000000004',
   tc.id,
   'Bookkeeping L2 will let me transition from retail floor work into office finance - a clearer pathway given my prior design and admin experience.',
   'in_review',
   'Awaiting confirmation that the AAT provider has capacity for the Sep intake.'
 from public.training_catalogue tc where tc.title = 'Bookkeeping Level 2' limit 1
 on conflict (id) do nothing;
-
 insert into public.training_requests (id, candidate_id, custom_title, custom_provider, custom_cost, career_rationale, state, review_notes, decided_at)
 values (
   '77777777-7777-7777-7777-000000000004',
-  '33333333-3333-3333-3333-00000000000b',  -- Khaled
+  '33333333-3333-3333-3333-00000000000b',
   'IELTS UKVI Preparation Course',
   'British Council Birmingham',
   450.00,
@@ -205,11 +138,6 @@ values (
   'Decline - IELTS prep is not classified as accredited L2-L5 or sector certification per spec sec 14.2. Suggested alternative: Trinity GESE Grade 7 (B2) from the catalogue, which IS dev-fund eligible.',
   now() - interval '7 days'
 ) on conflict (id) do nothing;
-
-
--- -- DELPHI PANEL ---------------------------------------------
--- Methodology validation panel - weight ratio for hospitality programmes.
-
 insert into public.delphi_panels (id, name, research_question, options, state, consensus_option, consensus_method, consensus_reached_at)
 values (
   '88888888-8888-8888-8888-000000000001',
@@ -221,7 +149,6 @@ values (
   'agreement_70',
   now() - interval '21 days'
 ) on conflict (id) do nothing;
-
 insert into public.delphi_experts (id, panel_id, name, email, role) values
   ('99999999-9999-9999-9999-000000000001', '88888888-8888-8888-8888-000000000001', 'Dr Maya Iqbal',     'm.iqbal@aston.example',         'academic'),
   ('99999999-9999-9999-9999-000000000002', '88888888-8888-8888-8888-000000000001', 'Prof Adrian Brown', 'a.brown@aston.example',         'academic'),
@@ -234,13 +161,10 @@ insert into public.delphi_experts (id, panel_id, name, email, role) values
   ('99999999-9999-9999-9999-000000000009', '88888888-8888-8888-8888-000000000001', 'Janet Murray',      'j.murray@dwp.example',          'funder'),
   ('99999999-9999-9999-9999-00000000000a', '88888888-8888-8888-8888-000000000001', 'Yusuf Rahman',      'y.rahman@beneficiary.example',  'beneficiary_advocate')
 on conflict (panel_id, email) do nothing;
-
 insert into public.delphi_rounds (id, panel_id, round_number, opened_at, closed_at) values
   ('aaaaaaaa-aaaa-aaaa-aaaa-000000000001', '88888888-8888-8888-8888-000000000001', 1, now() - interval '60 days', now() - interval '40 days'),
   ('aaaaaaaa-aaaa-aaaa-aaaa-000000000002', '88888888-8888-8888-8888-000000000001', 2, now() - interval '35 days', now() - interval '21 days')
 on conflict (panel_id, round_number) do nothing;
-
--- Round 2 responses - 8 of 10 experts voted, 6 chose d3_1 -> 75% -> Rule A consensus.
 insert into public.delphi_responses (round_id, expert_id, selected_option, rationale) values
   ('aaaaaaaa-aaaa-aaaa-aaaa-000000000002', '99999999-9999-9999-9999-000000000001', 'd3_1',     'Aligned with empirical α/β patterns in 2024 hospitality pilots.'),
   ('aaaaaaaa-aaaa-aaaa-aaaa-000000000002', '99999999-9999-9999-9999-000000000002', 'd3_1',     'Saaty α=0.75 matches the prior literature on depth interventions.'),
@@ -251,11 +175,6 @@ insert into public.delphi_responses (round_id, expert_id, selected_option, ratio
   ('aaaaaaaa-aaaa-aaaa-aaaa-000000000002', '99999999-9999-9999-9999-000000000007', 'd3_1',     'Maintains visibility for Optional outcomes refugees value.'),
   ('aaaaaaaa-aaaa-aaaa-aaaa-000000000002', '99999999-9999-9999-9999-000000000009', 'd4_1',     'Lean further into Core given employment-outcome priority.')
 on conflict (round_id, expert_id) do nothing;
-
-
--- -- EVIDENCE PACK --------------------------------------------
--- The Comic Relief grant transition story.
-
 insert into public.evidence_packs (id, title, funder, funding_window, description, status, anonymisation_level, methodology_version) values (
   'bbbbbbbb-bbbb-bbbb-bbbb-000000000001',
   'Comic Relief - Bridge to Employment transition pack',
@@ -266,8 +185,6 @@ insert into public.evidence_packs (id, title, funder, funding_window, descriptio
   'standard',
   'v1.0'
 ) on conflict (id) do nothing;
-
--- Create the 14 sections, with content for the most-relevant ones drawn from the spreadsheet.
 insert into public.evidence_pack_sections (pack_id, section_key, sort_order, content, included) values
   ('bbbbbbbb-bbbb-bbbb-bbbb-000000000001', 'organisational_overview', 0,
    'Ashley Community & Housing (ACH) has supported refugee resettlement in Bristol and Birmingham since 2008. The Bridge to Employment programme operationalises ACH''s holistic capability framework with named employer partners, delivering measurable employment, education, and progression outcomes for refugee candidates.', true),
@@ -295,11 +212,6 @@ insert into public.evidence_pack_sections (pack_id, section_key, sort_order, con
   ('bbbbbbbb-bbbb-bbbb-bbbb-000000000001', 'ach_attestation', 13,
    'This pack is generated from primary ACH operational data. Methodology version v1.0. ACH staff have reviewed each section for accuracy prior to submission.', true)
 on conflict (pack_id, section_key) do nothing;
-
-
--- -- CAREER PROGRESSION REPORTS ------------------------------
--- Annual 2026 CPRs for the partners that had paid milestones in seed.sql.
-
 insert into public.career_progression_reports (
   partner_id, period_label,
   total_milestone_payments, total_dev_fund_contribution, match_funding_amplification,
@@ -319,17 +231,10 @@ insert into public.career_progression_reports (
     3, 0, 0, 0.00,
     0, 'v1.0')
 on conflict (partner_id, period_label) do nothing;
-
-
--- -- ENGAGEMENT REPORTS --------------------------------------
--- For a hypothetical sub-milestone exit - Doyle Collection candidate
--- (Jelena, Albanian, completed but left pre-6mo retention).
-
 insert into public.placements (id, candidate_id, partner_id, cohort_id, role_title, salary_band, salary_actual, start_date, end_date, status, sponsored_placement)
 values
   ('55555555-5555-5555-5555-000000000004', '33333333-3333-3333-3333-00000000000a', '11111111-1111-1111-1111-000000000003', '22222222-2222-2222-2222-000000000001', 'Front Desk Assistant', 'volume', 21000, '2026-10-14', '2027-01-30', 'left_pre_6mo', true)
 on conflict (id) do nothing;
-
 insert into public.engagement_reports (
   placement_id, partner_id,
   engagement_summary, placement_outcomes_factual, candidate_development_trajectory,
@@ -344,11 +249,6 @@ insert into public.engagement_reports (
   'Sub-milestone exits driven by candidate progression (not by adverse conditions) should be celebrated - they evidence the programme working as intended, even though no retention milestone fee is due.',
   'v1.0'
 ) on conflict (placement_id) do nothing;
-
-
--- -- EQUIVALENCE APPLICATIONS --------------------------------
--- Apply the seeded equivalence values to the 3 active Pret placements.
-
 insert into public.equivalence_applications (equivalence_id, applied_to_kind, applied_to_id, units, resulting_value)
 select
   ev.id,
@@ -359,7 +259,6 @@ select
 from public.equivalence_values ev
 where ev.outcome_code = 'employment_outcome_3mo' and ev.methodology = 'ach_local'
 limit 1;
-
 insert into public.equivalence_applications (equivalence_id, applied_to_kind, applied_to_id, units, resulting_value)
 select
   ev.id,
@@ -370,12 +269,6 @@ select
 from public.equivalence_values ev
 where ev.outcome_code = 'retention_savings_standard' and ev.methodology = 'ach_local'
 limit 1;
-
-
--- -- TRANSLATIONS --------------------------------------------
--- Seed common UI strings for English (source) and Tier B locales (ar, fr, es, uk).
--- Tier C locales get rows but content null (English shown when null) + needs review flag.
-
 with keys as (
   select unnest(array[
     'nav.dashboard',     'nav.partners',     'nav.candidates',  'nav.cohorts',
@@ -413,8 +306,6 @@ cross join lateral (values
   end)
 ) as v(content)
 on conflict (message_key, locale) do nothing;
-
--- Arabic (Tier B - machine translated, pending review)
 insert into public.translations (message_key, locale, content, reviewed, needs_native_review, source_method) values
   ('nav.dashboard',    'ar', 'لوحة التحكم',       false, false, 'machine_gemini'),
   ('nav.partners',     'ar', 'الشركاء',           false, false, 'machine_gemini'),
@@ -429,8 +320,6 @@ insert into public.translations (message_key, locale, content, reviewed, needs_n
   ('common.signOut',   'ar', 'تسجيل الخروج',      false, false, 'machine_gemini'),
   ('banner.translationPending', 'ar', 'الترجمة قيد المراجعة - يرجى استخدام اللغة الإنجليزية أو الاتصال بالأخصائي.', true, false, 'manual')
 on conflict (message_key, locale) do nothing;
-
--- French (Tier B)
 insert into public.translations (message_key, locale, content, reviewed, needs_native_review, source_method) values
   ('nav.dashboard',    'fr', 'Tableau de bord',     false, false, 'machine_gemini'),
   ('nav.partners',     'fr', 'Partenaires',         false, false, 'machine_gemini'),
@@ -443,8 +332,6 @@ insert into public.translations (message_key, locale, content, reviewed, needs_n
   ('common.signIn',    'fr', 'Se connecter',        false, false, 'machine_gemini'),
   ('common.signOut',   'fr', 'Se déconnecter',      false, false, 'machine_gemini')
 on conflict (message_key, locale) do nothing;
-
--- Spanish (Tier B)
 insert into public.translations (message_key, locale, content, reviewed, needs_native_review, source_method) values
   ('nav.dashboard',    'es', 'Panel',              false, false, 'machine_gemini'),
   ('nav.partners',     'es', 'Socios',             false, false, 'machine_gemini'),
@@ -454,8 +341,6 @@ insert into public.translations (message_key, locale, content, reviewed, needs_n
   ('common.cancel',    'es', 'Cancelar',           false, false, 'machine_gemini'),
   ('common.signIn',    'es', 'Iniciar sesión',     false, false, 'machine_gemini')
 on conflict (message_key, locale) do nothing;
-
--- Ukrainian (Tier B)
 insert into public.translations (message_key, locale, content, reviewed, needs_native_review, source_method) values
   ('nav.dashboard',    'uk', 'Панель',             false, false, 'machine_gemini'),
   ('nav.partners',     'uk', 'Партнери',           false, false, 'machine_gemini'),
@@ -465,16 +350,11 @@ insert into public.translations (message_key, locale, content, reviewed, needs_n
   ('common.cancel',    'uk', 'Скасувати',          false, false, 'machine_gemini'),
   ('common.signIn',    'uk', 'Увійти',             false, false, 'machine_gemini')
 on conflict (message_key, locale) do nothing;
-
--- Tier C locales (fa, ps, ti, so, ckb, sq) get null content (English shown when null)
--- and needs_native_review flag set true.
 insert into public.translations (message_key, locale, content, reviewed, needs_native_review, source_method)
 select t.k, loc, null, false, true, 'manual'
 from (select unnest(array['nav.dashboard','nav.partners','nav.candidates','nav.cohorts','nav.projects','common.save','common.cancel','common.signIn','common.signOut']) as k) t
 cross join unnest(array['fa','ps','ti','so','ckb','sq']) loc
 on conflict (message_key, locale) do nothing;
-
--- The one human-reviewed banner sentence for each Tier C locale.
 insert into public.translations (message_key, locale, content, reviewed, needs_native_review, source_method) values
   ('banner.translationPending', 'fa',  'ترجمه در حال بررسی است - لطفاً فعلاً از انگلیسی استفاده کنید یا با مددکار خود تماس بگیرید.', true, false, 'manual'),
   ('banner.translationPending', 'ps',  'ژباړه د بیاکتنې په حال کې ده - مهرباني وکړئ د اوس لپاره انګلیسي وکاروئ یا د خپل مرستندوی سره اړیکه ونیسئ.', true, false, 'manual'),
