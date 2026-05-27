@@ -19,21 +19,25 @@ interface Props {
   initial?: any;
   cancelHref: string;
   submitLabel?: string;
+  /** When true, the candidate_ref field is read-only (edit mode). */
+  refLocked?: boolean;
 }
 
-export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save candidate' }: Props) {
+export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save candidate', refLocked = false }: Props) {
   const [state, formAction] = useFormState(action, null);
   const fe = (k: string) => state && !state.ok ? state.fieldErrors?.[k]?.[0] : undefined;
+  const isEdit = !!initial?.candidate_ref;
 
   return (
     <form action={formAction} className="space-y-5 max-w-2xl">
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Candidate reference" error={fe('candidate_ref')}>
+        <Field label="Candidate reference" error={fe('candidate_ref')} hint={!isEdit ? 'Leave blank to auto-generate (e.g. C-2026-012)' : undefined}>
           <Input
             name="candidate_ref"
-            required
             defaultValue={initial?.candidate_ref}
-            placeholder="C-2026-042"
+            placeholder="Auto"
+            readOnly={refLocked}
+            className={refLocked ? 'bg-ach-page text-ach-navy/60 cursor-not-allowed' : undefined}
           />
         </Field>
         <Field label="Status" error={fe('status')}>
@@ -117,11 +121,12 @@ export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save
   );
 }
 
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function Field({ label, error, children, hint }: { label: string; error?: string; children: React.ReactNode; hint?: string }) {
   return (
     <div className="space-y-1.5">
       <Label>{label}</Label>
       {children}
+      {hint && !error && <div className="text-[11px] text-ach-navy/50">{hint}</div>}
       {error && <div className="text-[12px] text-[#8B3A4F]">{error}</div>}
     </div>
   );

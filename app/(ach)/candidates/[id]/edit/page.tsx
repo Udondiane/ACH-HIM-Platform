@@ -32,6 +32,7 @@ export default async function EditCandidatePage({ params }: { params: { id: stri
             initial={c}
             cancelHref={`/candidates/${params.id}`}
             submitLabel="Save changes"
+            refLocked
           />
         </CardContent>
       </Card>
