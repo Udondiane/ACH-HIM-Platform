@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 80" role="img" aria-label="ACH">
+  <title>ACH</title>
+  <g transform="translate(40 40)">
+    <g transform="translate(0 -22)">
+      <circle cx="0" cy="-3" r="3.4" fill="#E07B2F"/>
+      <path d="M-5 4 q5 -6 10 0 v6 h-10 z" fill="#E07B2F"/>
+    </g>
+    <g transform="translate(19 -11) rotate(60)">
+      <circle cx="0" cy="-3" r="3.4" fill="#5E7A3C"/>
+      <path d="M-5 4 q5 -6 10 0 v6 h-10 z" fill="#5E7A3C"/>
+    </g>
+    <g transform="translate(19 11) rotate(120)">
+      <circle cx="0" cy="-3" r="3.4" fill="#1F3A6B"/>
+      <path d="M-5 4 q5 -6 10 0 v6 h-10 z" fill="#1F3A6B"/>
+    </g>
+    <g transform="translate(0 22) rotate(180)">
+      <circle cx="0" cy="-3" r="3.4" fill="#5BAFD6"/>
+      <path d="M-5 4 q5 -6 10 0 v6 h-10 z" fill="#5BAFD6"/>
+    </g>
+    <g transform="translate(-19 11) rotate(240)">
+      <circle cx="0" cy="-3" r="3.4" fill="#F2C744"/>
+      <path d="M-5 4 q5 -6 10 0 v6 h-10 z" fill="#F2C744"/>
+    </g>
+    <g transform="translate(-19 -11) rotate(300)">
+      <circle cx="0" cy="-3" r="3.4" fill="#9BBF7C"/>
+      <path d="M-5 4 q5 -6 10 0 v6 h-10 z" fill="#9BBF7C"/>
+    </g>
+  </g>
+  <text x="80" y="55" font-family="Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="42" font-weight="700" fill="#0A1F3D" letter-spacing="-1.5">ACH</text>
+</svg>
