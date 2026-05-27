@@ -7,7 +7,7 @@ export function ImpersonationBanner({ partnerName, partnerId }: { partnerName: s
       <div className="flex items-center gap-2 text-[12px] text-ach-slate-deep">
         <Eye className="h-3.5 w-3.5" />
         <span>
-          Previewing as <span className="font-medium">{partnerName}</span> — this is exactly what they would see when signed in.
+          Previewing as <span className="font-medium">{partnerName}</span>
         </span>
       </div>
       <Link
