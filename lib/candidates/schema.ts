@@ -21,7 +21,7 @@ export const LOCALE_NAMES: Record<typeof LOCALES[number], string> = {
 };
 
 export const candidateSchema = z.object({
-  candidate_ref:     z.string().trim().min(1, 'Reference required').max(60),
+  candidate_ref:     z.string().trim().max(60).optional().or(z.literal('')),
   given_name:        z.string().trim().min(1, 'Given name required').max(120),
   family_name:       z.string().trim().max(120).optional().or(z.literal('')),
   preferred_locale:  z.enum(LOCALES).default('en'),
@@ -32,6 +32,7 @@ export const candidateSchema = z.object({
   career_goal_summary: z.string().trim().max(2000).optional().or(z.literal('')),
   development_plan:    z.string().trim().max(4000).optional().or(z.literal('')),
   notes:             z.string().trim().max(4000).optional().or(z.literal('')),
+  is_ach_tenant:     z.preprocess(v => v === 'on' || v === true || v === 'true', z.boolean()).default(false),
 });
 
 export type CandidateInput = z.infer<typeof candidateSchema>;

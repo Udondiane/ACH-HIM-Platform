@@ -13,12 +13,14 @@ function fdToPlain(fd: FormData): Record<string, unknown> {
   const obj: Record<string, unknown> = {};
   for (const [k, v] of fd.entries()) obj[k] = v;
   if (obj.arrival_year === '') obj.arrival_year = undefined;
+  // Unchecked checkboxes are absent from FormData entirely.
+  if (!('is_ach_tenant' in obj)) obj.is_ach_tenant = false;
   return obj;
 }
 
-function normalisePayload(input: ReturnType<typeof candidateSchema.parse>) {
+function normalisePayload(input: ReturnType<typeof candidateSchema.parse>, ref: string) {
   return {
-    candidate_ref: input.candidate_ref,
+    candidate_ref: ref,
     given_name: input.given_name,
     family_name: input.family_name || null,
     preferred_locale: input.preferred_locale,
@@ -29,7 +31,32 @@ function normalisePayload(input: ReturnType<typeof candidateSchema.parse>) {
     career_goal_summary: input.career_goal_summary || null,
     development_plan: input.development_plan || null,
     notes: input.notes || null,
+    is_ach_tenant: input.is_ach_tenant,
   };
+}
+
+async function nextCandidateRef(supabase: ReturnType<typeof createClient>): Promise<string> {
+  const year = new Date().getFullYear();
+  const prefix = `C-${year}-`;
+  const { data } = await supabase
+    .from('candidates')
+    .select('candidate_ref')
+    .like('candidate_ref', `${prefix}%`);
+
+  const refs = ((data ?? []) as { candidate_ref: string }[]).map(r => r.candidate_ref);
+  // Find the highest numeric suffix among refs matching the simple C-YYYY-NNN pattern.
+  // Refs with sub-codes like C-2025-VW3-012 are ignored — they won't collide because we
+  // pad to 3 digits and the next simple ref is independent.
+  const pattern = new RegExp(`^C-${year}-(\\d+)$`);
+  let max = 0;
+  for (const r of refs) {
+    const m = r.match(pattern);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      if (n > max) max = n;
+    }
+  }
+  return `${prefix}${String(max + 1).padStart(3, '0')}`;
 }
 
 export async function createCandidateAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
@@ -38,9 +65,12 @@ export async function createCandidateAction(_prev: ActionResult | null, fd: Form
     return { ok: false, error: 'Please fix the highlighted fields.', fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
   }
   const supabase = createClient();
+  const submittedRef = (parsed.data.candidate_ref ?? '').trim();
+  const ref = submittedRef || (await nextCandidateRef(supabase));
+
   const { data, error } = await supabase
     .from('candidates')
-    .insert(normalisePayload(parsed.data) as never)
+    .insert(normalisePayload(parsed.data, ref) as never)
     .select('id')
     .single();
   if (error) return { ok: false, error: error.message };
@@ -60,9 +90,12 @@ export async function updateCandidateAction(
     return { ok: false, error: 'Please fix the highlighted fields.', fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
   }
   const supabase = createClient();
+  // On update we require an existing ref (form preserves it). If somehow blank, regenerate.
+  const submittedRef = (parsed.data.candidate_ref ?? '').trim();
+  const ref = submittedRef || (await nextCandidateRef(supabase));
   const { error } = await supabase
     .from('candidates')
-    .update(normalisePayload(parsed.data) as never)
+    .update(normalisePayload(parsed.data, ref) as never)
     .eq('id', id);
   if (error) return { ok: false, error: error.message };
   revalidatePath('/candidates');

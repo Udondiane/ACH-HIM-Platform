@@ -41,7 +41,6 @@ export const projectSchema = z.object({
   project_ref: z.string().trim().min(1, 'Reference required').max(60),
   name: z.string().trim().min(1, 'Name required').max(200),
   description: z.string().trim().max(2000).optional().or(z.literal('')),
-  cohort_id: z.string().uuid().optional().or(z.literal('')),
   type: z.enum(PROJECT_TYPES),
   weight_ratio: z.enum(WEIGHT_RATIOS),
   hybrid_option: z.enum(HYBRID_OPTIONS).optional().or(z.literal('')),

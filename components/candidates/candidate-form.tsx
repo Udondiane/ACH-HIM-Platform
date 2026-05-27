@@ -19,21 +19,25 @@ interface Props {
   initial?: any;
   cancelHref: string;
   submitLabel?: string;
+  /** When true, the candidate_ref field is read-only (edit mode). */
+  refLocked?: boolean;
 }
 
-export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save candidate' }: Props) {
+export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save candidate', refLocked = false }: Props) {
   const [state, formAction] = useFormState(action, null);
   const fe = (k: string) => state && !state.ok ? state.fieldErrors?.[k]?.[0] : undefined;
+  const isEdit = !!initial?.candidate_ref;
 
   return (
     <form action={formAction} className="space-y-5 max-w-2xl">
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Candidate reference" error={fe('candidate_ref')}>
+        <Field label="Candidate reference" error={fe('candidate_ref')} hint={!isEdit ? 'Leave blank to auto-generate (e.g. C-2026-012)' : undefined}>
           <Input
             name="candidate_ref"
-            required
             defaultValue={initial?.candidate_ref}
-            placeholder="C-2026-042"
+            placeholder="Auto"
+            readOnly={refLocked}
+            className={refLocked ? 'bg-ach-page text-ach-navy/60 cursor-not-allowed' : undefined}
           />
         </Field>
         <Field label="Status" error={fe('status')}>
@@ -80,6 +84,21 @@ export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save
         <Input name="english_level" defaultValue={initial?.english_level ?? ''} placeholder="A1, A2, B1, B2, C1, C2" />
       </Field>
 
+      <label className="flex items-start gap-2.5 text-[13px] text-ach-navy/80 cursor-pointer">
+        <input
+          type="checkbox"
+          name="is_ach_tenant"
+          defaultChecked={!!initial?.is_ach_tenant}
+          className="mt-0.5 h-4 w-4 rounded border-ach-border text-ach-navy focus:ring-ach-navy/40"
+        />
+        <span>
+          <span className="text-ach-navy font-medium">Currently an ACH tenant</span>
+          <span className="block text-ach-navy/60 mt-0.5">
+            Tick if this candidate also rents accommodation from ACH. Used for housing-linked outcome reporting and integrated support pathways.
+          </span>
+        </span>
+      </label>
+
       <div className="pt-3 border-t-[0.5px] border-ach-border">
         <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">
           Private — staff only
@@ -117,11 +136,12 @@ export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save
   );
 }
 
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function Field({ label, error, children, hint }: { label: string; error?: string; children: React.ReactNode; hint?: string }) {
   return (
     <div className="space-y-1.5">
       <Label>{label}</Label>
       {children}
+      {hint && !error && <div className="text-[11px] text-ach-navy/50">{hint}</div>}
       {error && <div className="text-[12px] text-[#8B3A4F]">{error}</div>}
     </div>
   );

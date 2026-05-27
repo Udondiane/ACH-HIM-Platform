@@ -9,8 +9,10 @@ import { Trash2 } from 'lucide-react';
 
 export default async function EditCohortPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
-  const { data: cohort } = await supabase
-    .from('cohorts').select('*').eq('id', params.id).maybeSingle();
+  const [{ data: cohort }, { data: projects }] = await Promise.all([
+    supabase.from('cohorts').select('*').eq('id', params.id).maybeSingle(),
+    supabase.from('projects').select('id, name, project_ref').order('name'),
+  ]);
   if (!cohort) notFound();
   const c = cohort as any;
 
@@ -32,6 +34,7 @@ export default async function EditCohortPage({ params }: { params: { id: string 
             initial={c}
             cancelHref={`/cohorts/${params.id}`}
             submitLabel="Save changes"
+            projects={(projects as any[]) ?? []}
           />
         </CardContent>
       </Card>

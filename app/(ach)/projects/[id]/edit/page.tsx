@@ -7,10 +7,8 @@ import { updateProjectAction, type ActionResult } from '@/lib/projects/actions';
 
 export default async function EditProjectPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
-  const [{ data: project }, { data: cohorts }] = await Promise.all([
-    supabase.from('projects').select('*').eq('id', params.id).maybeSingle(),
-    supabase.from('cohorts').select('id, cohort_ref, name').neq('status', 'cancelled').order('cohort_ref'),
-  ]);
+  const { data: project } = await supabase
+    .from('projects').select('*').eq('id', params.id).maybeSingle();
   if (!project) notFound();
   const p = project as any;
 
@@ -29,7 +27,6 @@ export default async function EditProjectPage({ params }: { params: { id: string
           <ProjectForm
             action={action}
             initial={p}
-            cohorts={(cohorts as any[]) ?? []}
             cancelHref={`/projects/${params.id}`}
             submitLabel="Save changes"
           />
