@@ -1,34 +1,37 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { AchSidebar } from '@/components/ach/sidebar';
-import { AchTopbar } from '@/components/ach/topbar';
+import { PartnerSidebar } from '@/components/partner-portal/sidebar';
+import { PartnerTopbar } from '@/components/partner-portal/topbar';
+import { ImpersonationBanner } from '@/components/partner-portal/impersonation-banner';
+import { resolveCurrentPartner } from '@/lib/partners/resolve-current';
 import { AUTH_DISABLED } from '@/lib/auth/dev-bypass';
 
-export default async function AchLayout({ children }: { children: React.ReactNode }) {
+export default async function PartnerLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  let userEmail: string | null = null;
+
   if (!AUTH_DISABLED) {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) redirect('/sign-in');
-
-    const { data: roleRow } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    const role = roleRow as { role: string } | null;
-    if (!role || role.role !== 'ach_staff') {
-      if (role?.role === 'partner') redirect('/partner-dashboard');
-      if (role?.role === 'candidate') redirect('/candidate-dashboard');
-      redirect('/sign-in');
-    }
+    userEmail = user.email ?? null;
   }
+
+  // Layout cannot read searchParams in Next.js; the resolver falls back to
+  // the ach_view_as cookie that middleware persists from the ?as= query.
+  const partner = await resolveCurrentPartner();
 
   return (
     <div className="min-h-screen flex bg-ach-page">
-      <AchSidebar />
+      <PartnerSidebar partner={partner} />
       <div className="flex-1 flex flex-col min-w-0">
-        <AchTopbar />
+        <PartnerTopbar partner={partner} userEmail={userEmail} />
+        {partner?.isImpersonating && (
+          <ImpersonationBanner partnerName={partner.name} partnerId={partner.id} />
+        )}
         <main className="flex-1 p-8 overflow-x-auto">{children}</main>
       </div>
     </div>

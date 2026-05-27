@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   LayoutDashboard, Users, FileText, ScrollText, BadgeCheck,
   Building2, GraduationCap, ShieldCheck,
@@ -16,8 +16,10 @@ interface Partner {
 
 export function PartnerSidebar({ partner }: { partner: Partner | null }) {
   const pathname = usePathname();
+  const search = useSearchParams();
+  const asParam = search?.get('as');
+  const qs = asParam ? `?as=${encodeURIComponent(asParam)}` : '';
 
-  // Universal items
   const items: Array<
     | { section: string }
     | { href: string; label: string; icon: any }
@@ -57,7 +59,7 @@ export function PartnerSidebar({ partner }: { partner: Partner | null }) {
   return (
     <aside className="w-[228px] shrink-0 border-r-[0.5px] border-ach-border bg-white flex flex-col h-screen sticky top-0">
       <div className="px-5 py-6 border-b-[0.5px] border-ach-border">
-        <Link href="/partner-dashboard" className="flex flex-col">
+        <Link href={`/partner-dashboard${qs}`} className="flex flex-col">
           <span className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Partner portal</span>
           <span className="text-[15px] font-medium text-ach-navy mt-0.5 truncate">
             {partner?.name ?? 'Partner'}
@@ -78,7 +80,7 @@ export function PartnerSidebar({ partner }: { partner: Partner | null }) {
           return (
             <Link
               key={item.href}
-              href={item.href}
+              href={`${item.href}${qs}`}
               className={cn(
                 'flex items-center gap-2.5 px-2 py-1.5 rounded-[10px] text-[13px] transition-colors',
                 active ? 'bg-ach-page text-ach-navy font-medium' : 'text-ach-navy/70 hover:bg-ach-page hover:text-ach-navy'
