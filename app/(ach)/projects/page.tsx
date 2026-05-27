@@ -6,7 +6,20 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/ui/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
-import { PROJECT_TYPE_LABELS, WEIGHT_RATIO_LABELS } from '@/lib/projects/schema';
+import { PROJECT_TYPE_LABELS, WEIGHT_RATIO_LABELS, FUNDING_MODEL_LABELS, type FundingModel } from '@/lib/projects/schema';
+
+function FundingPill({ model }: { model: FundingModel }) {
+  const cls = model === 'commercial'
+    ? 'bg-ach-navy text-ach-cream border-ach-navy'
+    : model === 'hybrid'
+      ? 'bg-ach-slate-tint text-ach-slate-deep border-ach-slate-blue/30'
+      : 'bg-ach-page text-ach-navy/80 border-ach-border';
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] uppercase tracking-[1.1px] font-medium border-[0.5px] ${cls}`}>
+      {FUNDING_MODEL_LABELS[model]}
+    </span>
+  );
+}
 
 export default async function ProjectsListPage() {
   const supabase = createClient();
@@ -14,6 +27,7 @@ export default async function ProjectsListPage() {
     .from('projects')
     .select(`
       id, project_ref, name, description, type, weight_ratio, status, start_date,
+      funding_model, funder_name,
       cohorts(id, cohort_candidates(id))
     `)
     .order('created_at', { ascending: false });
@@ -50,9 +64,15 @@ export default async function ProjectsListPage() {
                   <div className="p-5">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">{p.project_ref}</div>
-                      <Badge>{p.status}</Badge>
+                      <div className="flex items-center gap-2">
+                        {p.funding_model && <FundingPill model={p.funding_model as FundingModel} />}
+                        <Badge>{p.status}</Badge>
+                      </div>
                     </div>
                     <h3 className="text-[15px] font-medium text-ach-navy">{p.name}</h3>
+                    {p.funder_name && (
+                      <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Funded by {p.funder_name}</div>
+                    )}
                     {p.description && (
                       <p className="text-[12.5px] text-ach-navy/70 mt-1.5 line-clamp-2">{p.description}</p>
                     )}
