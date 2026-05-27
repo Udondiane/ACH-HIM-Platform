@@ -135,7 +135,7 @@ on conflict do nothing;
 
 insert into public.dev_fund_credits (candidate_id, source_milestone_id, partner_id, amount, source, notes)
 select
-  m.candidate_id,
+  pl.candidate_id,
   m.id,
   pl.partner_id,
   m.amount * 0.30,  -- spec §14: 30% of milestone payment is ringfenced
