@@ -15,8 +15,9 @@ import {
   HYBRID_OPTIONS, HYBRID_OPTION_LABELS, OPTIONAL_SCHEMES, OPTIONAL_SCHEME_LABELS,
   CLASSIFICATION_QUESTIONS,
   FUNDING_MODELS, FUNDING_MODEL_LABELS, FUNDING_MODEL_HINTS,
+  FUNDING_QUESTION_LABELS,
   CAP_DOMAINS, CAP_DOMAIN_LABELS, CAP_DOMAIN_HINTS,
-  CAP_ANSWERS, CAP_ANSWER_LABELS,
+  deriveTypeAndWeight,
   type FundingModel, type CapAnswer, type CapDomain,
 } from '@/lib/projects/schema';
 import type { ActionResult } from '@/lib/projects/actions';
@@ -38,13 +39,49 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
   );
 
   const initialCapsRaw = (initial?.capability_questionnaire ?? {}) as Record<string, CapAnswer | null>;
-  const [caps, setCaps] = useState<Record<CapDomain, CapAnswer | ''>>({
-    employment: (initialCapsRaw.employment ?? '') as CapAnswer | '',
-    education:  (initialCapsRaw.education  ?? '') as CapAnswer | '',
-    belonging:  (initialCapsRaw.belonging  ?? '') as CapAnswer | '',
-    social:     (initialCapsRaw.social     ?? '') as CapAnswer | '',
-    health:     (initialCapsRaw.health     ?? '') as CapAnswer | '',
-  });
+  const initialCore = new Set<CapDomain>(
+    CAP_DOMAINS.filter(d => initialCapsRaw[d] === 'primary'),
+  );
+  const initialOptional = new Set<CapDomain>(
+    CAP_DOMAINS.filter(d => initialCapsRaw[d] === 'supporting'),
+  );
+  const [coreSet, setCoreSet] = useState<Set<CapDomain>>(initialCore);
+  const [optionalSet, setOptionalSet] = useState<Set<CapDomain>>(initialOptional);
+
+  const derived = deriveTypeAndWeight(coreSet.size, optionalSet.size);
+  const [typeValue, setTypeValue] = useState<string>(initial?.type ?? derived.type);
+  const [ratioValue, setRatioValue] = useState<string>(initial?.weight_ratio ?? derived.weight_ratio);
+  // Re-sync type/ratio when capability selection changes — Admin overrides
+  // taken AFTER selection still win because they live in their own Select.
+  const prevDerivedRef = useState<{ type: string; weight_ratio: string }>(derived)[0];
+  if (prevDerivedRef.type !== derived.type) {
+    prevDerivedRef.type = derived.type;
+    if (typeValue !== derived.type) setTimeout(() => setTypeValue(derived.type), 0);
+  }
+  if (prevDerivedRef.weight_ratio !== derived.weight_ratio) {
+    prevDerivedRef.weight_ratio = derived.weight_ratio;
+    if (ratioValue !== derived.weight_ratio) setTimeout(() => setRatioValue(derived.weight_ratio), 0);
+  }
+
+  function toggleCore(d: CapDomain) {
+    const next = new Set(coreSet);
+    if (next.has(d)) next.delete(d);
+    else {
+      if (next.size >= 3) return; // hard cap at 3 cores
+      next.add(d);
+      // moving to core removes from optional
+      const opt = new Set(optionalSet); opt.delete(d); setOptionalSet(opt);
+    }
+    setCoreSet(next);
+  }
+  function toggleOptional(d: CapDomain) {
+    if (coreSet.has(d)) return; // can't be both
+    const next = new Set(optionalSet);
+    if (next.has(d)) next.delete(d); else next.add(d);
+    setOptionalSet(next);
+  }
+
+  const labels = FUNDING_QUESTION_LABELS[fundingModel || 'unset'];
 
   // Live classification — updates as user picks answers
   const [q, setQ] = useState({
@@ -131,57 +168,122 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
       </div>
 
       <div className="pt-5 border-t-[0.5px] border-ach-border">
-        <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">Capability domains</div>
-        <p className="text-[12px] text-ach-navy/60 mb-4">
-          For each capability area, indicate how this project relates to it. The system uses these to auto-select Core and Optional domains for HIM scoring — you can fine-tune the selection later if needed.
-        </p>
-        <div className="space-y-3">
-          {CAP_DOMAINS.map(d => (
-            <div key={d} className="space-y-1.5">
-              <div>
-                <Label>{CAP_DOMAIN_LABELS[d]}</Label>
-                <div className="text-[11px] text-ach-navy/55 mt-0.5">{CAP_DOMAIN_HINTS[d]}</div>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {CAP_ANSWERS.map(ans => (
-                  <label
-                    key={ans}
-                    className={`flex items-center justify-center gap-1.5 text-[12px] cursor-pointer px-2 py-1.5 rounded-[8px] border-[0.5px] transition-colors text-center ${
-                      caps[d] === ans
-                        ? ans === 'primary'   ? 'border-ach-navy bg-ach-navy text-ach-cream'
-                        : ans === 'supporting' ? 'border-ach-navy bg-ach-page text-ach-navy'
-                                                : 'border-ach-border bg-ach-page/60 text-ach-navy/60'
-                        : 'border-ach-border bg-white text-ach-navy/70 hover:bg-ach-page'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name={`cap_${d}`}
-                      value={ans}
-                      checked={caps[d] === ans}
-                      onChange={() => setCaps({ ...caps, [d]: ans })}
-                      className="sr-only"
-                    />
-                    {CAP_ANSWER_LABELS[ans]}
-                  </label>
-                ))}
-              </div>
+        <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">Outcomes</div>
+
+        <div className="space-y-2 mb-5">
+          <div>
+            <Label>{labels.core}</Label>
+            <div className="text-[11.5px] text-ach-navy/55 mt-0.5">{labels.coreHint}</div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+            {CAP_DOMAINS.map(d => {
+              const selected = coreSet.has(d);
+              const disabled = !selected && coreSet.size >= 3;
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => toggleCore(d)}
+                  disabled={disabled}
+                  className={`text-left p-3 rounded-[10px] border-[0.5px] transition-colors ${
+                    selected
+                      ? 'border-ach-navy bg-ach-navy text-ach-cream'
+                      : disabled
+                        ? 'border-ach-border bg-ach-page/40 text-ach-navy/30 cursor-not-allowed'
+                        : 'border-ach-border bg-white text-ach-navy/80 hover:bg-ach-page'
+                  }`}
+                  aria-pressed={selected}
+                >
+                  <div className="text-[13px] font-medium">{CAP_DOMAIN_LABELS[d]}</div>
+                  <div className={`text-[11px] mt-0.5 ${selected ? 'text-ach-cream/75' : 'text-ach-navy/55'}`}>
+                    {CAP_DOMAIN_HINTS[d]}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="text-[11px] text-ach-navy/55 mt-2">
+            {coreSet.size}/3 selected
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div>
+            <Label>{labels.optional}</Label>
+            <div className="text-[11.5px] text-ach-navy/55 mt-0.5">{labels.optionalHint}</div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+            {CAP_DOMAINS.map(d => {
+              const isCore = coreSet.has(d);
+              const selected = optionalSet.has(d);
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => toggleOptional(d)}
+                  disabled={isCore}
+                  className={`text-left p-3 rounded-[10px] border-[0.5px] transition-colors ${
+                    isCore
+                      ? 'border-ach-border bg-ach-page/40 text-ach-navy/40 cursor-not-allowed'
+                      : selected
+                        ? 'border-ach-slate-blue bg-ach-slate-tint text-ach-slate-deep'
+                        : 'border-ach-border bg-white text-ach-navy/80 hover:bg-ach-page'
+                  }`}
+                  aria-pressed={selected}
+                >
+                  <div className="text-[13px] font-medium">{CAP_DOMAIN_LABELS[d]}</div>
+                  <div className={`text-[11px] mt-0.5 ${selected ? 'text-ach-slate-deep/80' : 'text-ach-navy/55'}`}>
+                    {isCore ? 'Already selected as a primary outcome' : CAP_DOMAIN_HINTS[d]}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {(coreSet.size > 0 || optionalSet.size > 0) && (
+          <div className="mt-5 rounded-[12px] bg-ach-slate-tint/40 p-4 border-[0.5px] border-ach-slate-blue/30">
+            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-slate-deep">Auto-derived</div>
+            <div className="text-[14.5px] font-medium text-ach-navy mt-1.5">
+              {PROJECT_TYPE_LABELS[derived.type]} · {WEIGHT_RATIO_LABELS[derived.weight_ratio].split(' — ')[0]}
             </div>
-          ))}
-        </div>
-        <div className="mt-3 text-[11px] text-ach-navy/55">
-          Primary focus → Core domain · Supporting outcome → Optional domain · Not addressed → excluded from scoring.
-        </div>
+            <div className="text-[12px] text-ach-navy/65 mt-1">
+              Core ({coreSet.size}): {coreSet.size === 0 ? '—' : Array.from(coreSet).map(d => CAP_DOMAIN_LABELS[d]).join(', ')}
+              {' · '}
+              Optional ({optionalSet.size}): {optionalSet.size === 0 ? '—' : Array.from(optionalSet).map(d => CAP_DOMAIN_LABELS[d]).join(', ')}
+            </div>
+            <div className="text-[11px] text-ach-navy/50 mt-1.5">
+              The capability mix and weight ratio above are auto-set from your picks. Open Admin below to override.
+            </div>
+          </div>
+        )}
+
+        {CAP_DOMAINS.map(d => {
+          const v = coreSet.has(d) ? 'primary' : optionalSet.has(d) ? 'supporting' : 'not_addressed';
+          return <input key={d} type="hidden" name={`cap_${d}`} value={v} />;
+        })}
       </div>
 
-      {/* Classification questionnaire */}
-      <div className="pt-5 border-t-[0.5px] border-ach-border">
+      <details className="pt-5 border-t-[0.5px] border-ach-border group">
+        <summary className="cursor-pointer list-none flex items-center justify-between">
+          <div>
+            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Admin · technical config</div>
+            <div className="text-[12px] text-ach-navy/55 mt-0.5">
+              Override the auto-derived project type or weight ratio, run the methodology classification questionnaire, or change advanced scoring options. Most projects can leave this closed.
+            </div>
+          </div>
+          <span className="text-[11px] text-ach-navy/55 group-open:hidden">Expand</span>
+          <span className="text-[11px] text-ach-navy/55 hidden group-open:inline">Collapse</span>
+        </summary>
+
+        <div className="mt-5 space-y-5">
+
+      <div>
         <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">
-          Classification (V2)
+          Methodology classification (Q1–Q4)
         </div>
         <p className="text-[12px] text-ach-navy/60 mb-4">
-          Answering these four questions derives the project type and suggests a weight ratio.
-          You can override the suggestion below.
+          Optional. The methodology classification questionnaire is an alternative way to derive type and weight ratio (used in HIM V2 academic compliance). Outcomes pick above already drives this automatically.
         </p>
 
         <div className="space-y-4">
@@ -226,13 +328,12 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
         )}
       </div>
 
-      {/* Weighting */}
-      <div className="pt-5 border-t-[0.5px] border-ach-border space-y-4">
-        <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">Weighting</div>
+      <div className="space-y-4">
+        <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">Weighting (override)</div>
 
         <div className="grid grid-cols-2 gap-4">
           <Field label="Project type" error={fe('type')}>
-            <Select name="type" defaultValue={initial?.type ?? result?.projectType ?? 'depth'}>
+            <Select name="type" value={typeValue} onValueChange={setTypeValue}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {PROJECT_TYPES.map(t => <SelectItem key={t} value={t}>{PROJECT_TYPE_LABELS[t]}</SelectItem>)}
@@ -240,7 +341,7 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
             </Select>
           </Field>
           <Field label="Weight ratio (α : β)" error={fe('weight_ratio')}>
-            <Select name="weight_ratio" defaultValue={initial?.weight_ratio ?? result?.suggestedRatio ?? 'd3_1'}>
+            <Select name="weight_ratio" value={ratioValue} onValueChange={setRatioValue}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {WEIGHT_RATIOS.map(r => <SelectItem key={r} value={r}>{WEIGHT_RATIO_LABELS[r]}</SelectItem>)}
@@ -275,6 +376,8 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
           />
         </Field>
       </div>
+        </div>
+      </details>
 
       {state && !state.ok && state.error && !state.fieldErrors && (
         <div className="text-[13px] text-[#8B3A4F] bg-ach-rose/10 rounded-[10px] px-3 py-2 border-[0.5px] border-ach-rose/30">

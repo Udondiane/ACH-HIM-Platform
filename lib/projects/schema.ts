@@ -115,6 +115,67 @@ export function deriveCapabilitiesFromAnswers(answers: Partial<Record<CapDomain,
   return out;
 }
 
+/**
+ * Derive the project type and weight ratio from how many capability domains
+ * the user marked as Core vs Optional. Keeps the methodology compliant
+ * (depth-oriented when the project has a clear single/dual focus, hybrid
+ * when it spreads across many areas) while removing the cognitive burden
+ * of picking these directly.
+ */
+export function deriveTypeAndWeight(coreCount: number, optionalCount: number): {
+  type: typeof PROJECT_TYPES[number];
+  weight_ratio: typeof WEIGHT_RATIOS[number];
+} {
+  if (coreCount === 0 && optionalCount === 0) {
+    return { type: 'depth', weight_ratio: 'd3_1' };
+  }
+  if (coreCount === 0) {
+    // No primary focus picked, only supporting. Project is broad by definition.
+    return { type: 'breadth', weight_ratio: optionalCount >= 3 ? 'b3_1' : 'b2_1' };
+  }
+  if (coreCount === 1) {
+    if (optionalCount === 0)      return { type: 'depth',  weight_ratio: 'd5_1' };
+    if (optionalCount <= 2)       return { type: 'depth',  weight_ratio: 'd3_1' };
+    /* 3+ */                       return { type: 'depth',  weight_ratio: 'd2_1' };
+  }
+  if (coreCount === 2) {
+    if (optionalCount === 0)      return { type: 'depth',  weight_ratio: 'd4_1' };
+    if (optionalCount <= 2)       return { type: 'depth',  weight_ratio: 'd3_1' };
+    /* 3 */                        return { type: 'hybrid', weight_ratio: 'd2_1' };
+  }
+  // coreCount === 3
+  if (optionalCount === 0)        return { type: 'depth',  weight_ratio: 'd3_1' };
+  if (optionalCount === 1)        return { type: 'depth',  weight_ratio: 'd2_1' };
+  /* 2 */                          return { type: 'hybrid', weight_ratio: 'd1_1' };
+}
+
+export const FUNDING_QUESTION_LABELS: Record<FundingModel | 'unset', { core: string; optional: string; coreHint: string; optionalHint: string }> = {
+  funded: {
+    core:        'What outcomes did the funder commission this project to achieve?',
+    coreHint:    'Pick 1–3. These are the outcomes the funder expects the project to deliver and report on.',
+    optional:    'What broader social value does the project also create?',
+    optionalHint:'Pick any additional impacts that strengthen the funder narrative without being the headline ask.',
+  },
+  hybrid: {
+    core:        'What outcomes do you commit to demonstrating to the buyer and the funder?',
+    coreHint:    'Pick 1–3. These are the outcomes you stand behind in both commercial and grant reporting.',
+    optional:    'What additional impacts strengthen the case for sustained investment?',
+    optionalHint:'Pick any further outcomes the project also touches — useful for moving fully commercial later.',
+  },
+  commercial: {
+    core:        'What outcomes does the buyer specifically pay for?',
+    coreHint:    'Pick 1–3. The outcomes the buyer expects to see in their reporting line.',
+    optional:    'What additional value does the project deliver beyond the buyer ask?',
+    optionalHint:'Pick any further impacts — useful for ED&I, social value, or wider ESG narratives.',
+  },
+  unset: {
+    core:        'What outcomes is this project designed to achieve?',
+    coreHint:    'Pick 1–3 capability areas that the project actively works to improve.',
+    optional:    'What other impacts might the project generate?',
+    optionalHint:'Pick any further capability areas the project touches, even if they are not the headline outcome.',
+  },
+};
+
 export const CLASSIFICATION_QUESTIONS = [
   {
     key: 'classification_q1',
