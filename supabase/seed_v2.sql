@@ -196,7 +196,7 @@ on conflict (id) do nothing;
 insert into public.training_requests (id, candidate_id, custom_title, custom_provider, custom_cost, career_rationale, state, review_notes, decided_at)
 values (
   '77777777-7777-7777-7777-000000000004',
-  '33333333-3333-3333-3333-000000000010',  -- Khaled
+  '33333333-3333-3333-3333-00000000000b',  -- Khaled
   'IELTS UKVI Preparation Course',
   'British Council Birmingham',
   450.00,
