@@ -318,6 +318,20 @@ insert into public.placement_milestones (placement_id, kind, amount, due_on, sta
   ($bk$55555555-5555-5555-5555-008100000003$bk$::uuid, $bk$retention_12mo$bk$, 300.00, $bk$2026-12-15$bk$, $bk$pending$bk$)
 on conflict do nothing;
 
+update public.cohorts
+   set project_id = $bk$44444444-4444-4444-4444-000000000001$bk$::uuid
+ where id in (
+   $bk$22222222-2222-2222-2222-000000000010$bk$::uuid,
+   $bk$22222222-2222-2222-2222-000000000011$bk$::uuid,
+   $bk$22222222-2222-2222-2222-000000000012$bk$::uuid,
+   $bk$22222222-2222-2222-2222-000000000013$bk$::uuid,
+   $bk$22222222-2222-2222-2222-000000000014$bk$::uuid,
+   $bk$22222222-2222-2222-2222-000000000015$bk$::uuid,
+   $bk$22222222-2222-2222-2222-000000000016$bk$::uuid,
+   $bk$22222222-2222-2222-2222-000000000017$bk$::uuid,
+   $bk$22222222-2222-2222-2222-000000000018$bk$::uuid
+ ) and project_id is null;
+
 select public.recompute_partner_tier(id) from public.partners;
 
 insert into public.development_fund_balances (candidate_id)

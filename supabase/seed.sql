@@ -64,10 +64,12 @@ select id, true, false, false from public.candidates
 where candidate_ref in ('C-2026-001','C-2026-003','C-2026-006','C-2026-008','C-2026-010')
 on conflict do nothing;
 insert into public.projects
-  (id, project_ref, name, description, cohort_id, type, weight_ratio, hybrid_option, start_date, end_date, status)
+  (id, project_ref, name, description, type, weight_ratio, hybrid_option, start_date, end_date, status)
 values
-  ('44444444-4444-4444-4444-000000000001', 'PRJ-2026-B2E-Q3', $bk$Bridge to Employment - Q3 cohort$bk$, $bk$Memo sec A - 12-week B2E programme.$bk$, '22222222-2222-2222-2222-000000000001', 'depth', 'd3_1', 'A', '2026-07-15', '2026-10-07', 'active')
+  ('44444444-4444-4444-4444-000000000001', 'PRJ-B2E', $bk$Bridge to Employment$bk$, $bk$12-week ACH employability programme combining pre-employment training, paid work-trial placements, and 12 months in-work support. The intervention design - capability mix, weight ratio, classification - applies to every B2E cohort regardless of partner sector.$bk$, 'depth', 'd3_1', 'A', '2024-03-01', null, 'active')
 on conflict (id) do nothing;
+update public.cohorts set project_id = '44444444-4444-4444-4444-000000000001'
+  where id = '22222222-2222-2222-2222-000000000001' and project_id is null;
 insert into public.project_capabilities (project_id, domain, role)
 values
   ('44444444-4444-4444-4444-000000000001', 'employment', 'core'),
