@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { projectSchema } from './schema';
+import { projectSchema, deriveCapabilitiesFromAnswers, CAP_DOMAINS, type CapAnswer } from './schema';
 import { classify, type ClassificationResponses } from '@/lib/scoring/classification';
 import type { DomainId } from '@/lib/scoring/types';
 
@@ -33,10 +33,19 @@ function normalisePayload(input: ReturnType<typeof projectSchema.parse>) {
     } as ClassificationResponses);
     classification_total = cls.total;
   }
+  const capabilityQuestionnaire = {
+    employment: input.cap_employment || null,
+    education:  input.cap_education  || null,
+    belonging:  input.cap_belonging  || null,
+    social:     input.cap_social     || null,
+    health:     input.cap_health     || null,
+  };
   return {
     project_ref: input.project_ref,
     name: input.name,
     description: input.description || null,
+    funding_model: input.funding_model || null,
+    funder_name: input.funder_name || null,
     type: input.type,
     weight_ratio: input.weight_ratio,
     hybrid_option: input.hybrid_option || null,
@@ -47,10 +56,32 @@ function normalisePayload(input: ReturnType<typeof projectSchema.parse>) {
     classification_q3: q3 || null,
     classification_q4: q4 || null,
     classification_total,
+    capability_questionnaire: capabilityQuestionnaire,
     start_date: input.start_date || null,
     end_date: input.end_date || null,
     status: input.status,
   };
+}
+
+async function syncCapabilitiesFromAnswers(
+  supabase: ReturnType<typeof createClient>,
+  projectId: string,
+  answers: Record<string, CapAnswer | '' | null | undefined>,
+) {
+  const derived = deriveCapabilitiesFromAnswers(answers as never);
+  const anyAnswered = CAP_DOMAINS.some(d => {
+    const a = answers[`cap_${d}`];
+    return a != null && a !== '';
+  });
+  if (!anyAnswered) return;
+  await supabase.from('project_capabilities').delete().eq('project_id', projectId);
+  if (derived.length > 0) {
+    await supabase.from('project_capabilities').insert(
+      derived.map(c => ({
+        project_id: projectId, domain: c.domain, role: c.role, selected_factors: [],
+      })) as never,
+    );
+  }
 }
 
 export async function createProjectAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
@@ -65,6 +96,13 @@ export async function createProjectAction(_prev: ActionResult | null, fd: FormDa
     .select('id').single();
   if (error) return { ok: false, error: error.message };
   const row = data as { id: string } | null;
+  await syncCapabilitiesFromAnswers(supabase, row!.id, {
+    cap_employment: parsed.data.cap_employment,
+    cap_education:  parsed.data.cap_education,
+    cap_belonging:  parsed.data.cap_belonging,
+    cap_social:     parsed.data.cap_social,
+    cap_health:     parsed.data.cap_health,
+  });
   revalidatePath('/projects');
   revalidatePath('/dashboard');
   redirect(`/projects/${row!.id}`);
@@ -81,6 +119,13 @@ export async function updateProjectAction(
   const { error } = await supabase
     .from('projects').update(normalisePayload(parsed.data) as never).eq('id', id);
   if (error) return { ok: false, error: error.message };
+  await syncCapabilitiesFromAnswers(supabase, id, {
+    cap_employment: parsed.data.cap_employment,
+    cap_education:  parsed.data.cap_education,
+    cap_belonging:  parsed.data.cap_belonging,
+    cap_social:     parsed.data.cap_social,
+    cap_health:     parsed.data.cap_health,
+  });
   revalidatePath('/projects');
   revalidatePath(`/projects/${id}`);
   return { ok: true, id };

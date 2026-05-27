@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { CapabilityPicker } from '@/components/projects/capability-picker';
 import {
   PROJECT_TYPE_LABELS, WEIGHT_RATIO_LABELS, OPTIONAL_SCHEME_LABELS,
+  FUNDING_MODEL_LABELS, type FundingModel,
 } from '@/lib/projects/schema';
 import { COHORT_STATUS_LABELS } from '@/lib/cohorts/schema';
 
@@ -56,6 +57,12 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
           </CardHeader>
           <CardContent>
             <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-[13px]">
+              <DT label="Funding model">
+                {p.funding_model
+                  ? <FundingPill model={p.funding_model as FundingModel} />
+                  : <span className="text-ach-navy/45">—</span>}
+              </DT>
+              <DT label="Funder">{p.funder_name ?? <span className="text-ach-navy/45">—</span>}</DT>
               <DT label="Type">{PROJECT_TYPE_LABELS[p.type as keyof typeof PROJECT_TYPE_LABELS]}</DT>
               <DT label="Weight ratio">{WEIGHT_RATIO_LABELS[p.weight_ratio as keyof typeof WEIGHT_RATIO_LABELS]}</DT>
               <DT label="Hybrid option">{p.hybrid_option ?? '—'}</DT>
@@ -208,6 +215,19 @@ function timepointLabel(t: string): string {
     baseline: 'Baseline', mid_3mo: '3 months', exit_6mo: '6 months', followup_12mo: '12 months',
   };
   return map[t] ?? t;
+}
+
+function FundingPill({ model }: { model: FundingModel }) {
+  const cls = model === 'commercial'
+    ? 'bg-ach-navy text-ach-cream border-ach-navy'
+    : model === 'hybrid'
+      ? 'bg-ach-slate-tint text-ach-slate-deep border-ach-slate-blue/30'
+      : 'bg-ach-page text-ach-navy/80 border-ach-border';
+  return (
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10.5px] uppercase tracking-[1.2px] font-medium border-[0.5px] ${cls}`}>
+      {FUNDING_MODEL_LABELS[model]}
+    </span>
+  );
 }
 
 function DT({ label, children }: { label: string; children: React.ReactNode }) {

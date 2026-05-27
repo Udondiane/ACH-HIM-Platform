@@ -35,12 +35,54 @@ export const OPTIONAL_SCHEME_LABELS: Record<typeof OPTIONAL_SCHEMES[number], str
   coverage_weighted: 'Coverage-weighted (V2)',
 };
 
+export const FUNDING_MODELS = ['funded', 'hybrid', 'commercial'] as const;
+export type FundingModel = typeof FUNDING_MODELS[number];
+export const FUNDING_MODEL_LABELS: Record<FundingModel, string> = {
+  funded:     'Funded',
+  hybrid:     'Hybrid',
+  commercial: 'Commercial',
+};
+export const FUNDING_MODEL_HINTS: Record<FundingModel, string> = {
+  funded:     'Restricted funding (trust, foundation, statutory) covers the full delivery cost. Project depends on the grant continuing.',
+  hybrid:     'Combines grant subsidy with buyer fees. Transitional model toward full sustainability. Common during the move off restricted funding.',
+  commercial: 'Buyer pays at or near full cost recovery. Project sustains itself and may generate surplus that supports other work.',
+};
+
+export const CAP_DOMAINS = ['employment', 'education', 'belonging', 'social', 'health'] as const;
+export type CapDomain = typeof CAP_DOMAINS[number];
+export const CAP_DOMAIN_LABELS: Record<CapDomain, string> = {
+  employment: 'Employment',
+  education:  'Education',
+  belonging:  'Belonging',
+  social:     'Social',
+  health:     'Health',
+};
+export const CAP_DOMAIN_HINTS: Record<CapDomain, string> = {
+  employment: 'Securing or sustaining paid work, salary progression, employment-readiness.',
+  education:  'Learning, skills, qualifications, English language, vocational training.',
+  belonging:  'Settlement, cultural connection, sense of identity and place in the community.',
+  social:     'Peer networks, mentoring, friendships, community participation.',
+  health:     'Mental wellbeing, physical health, resilience, access to care.',
+};
+
+export const CAP_ANSWERS = ['not_addressed', 'supporting', 'primary'] as const;
+export type CapAnswer = typeof CAP_ANSWERS[number];
+export const CAP_ANSWER_LABELS: Record<CapAnswer, string> = {
+  not_addressed: 'Not addressed',
+  supporting:    'Supporting outcome',
+  primary:       'Primary focus',
+};
+
+const capAnswerSchema = z.enum(CAP_ANSWERS).optional().or(z.literal(''));
+
 const dateOrEmpty = z.string().trim().regex(/^(\d{4}-\d{2}-\d{2})?$/).optional().or(z.literal(''));
 
 export const projectSchema = z.object({
   project_ref: z.string().trim().min(1, 'Reference required').max(60),
   name: z.string().trim().min(1, 'Name required').max(200),
   description: z.string().trim().max(2000).optional().or(z.literal('')),
+  funding_model: z.enum(FUNDING_MODELS).optional().or(z.literal('')),
+  funder_name: z.string().trim().max(200).optional().or(z.literal('')),
   type: z.enum(PROJECT_TYPES),
   weight_ratio: z.enum(WEIGHT_RATIOS),
   hybrid_option: z.enum(HYBRID_OPTIONS).optional().or(z.literal('')),
@@ -50,10 +92,28 @@ export const projectSchema = z.object({
   classification_q2: z.enum(['A','B','C']).optional().or(z.literal('')),
   classification_q3: z.enum(['A','B','C']).optional().or(z.literal('')),
   classification_q4: z.enum(['A','B','C']).optional().or(z.literal('')),
+  cap_employment: capAnswerSchema,
+  cap_education:  capAnswerSchema,
+  cap_belonging:  capAnswerSchema,
+  cap_social:     capAnswerSchema,
+  cap_health:     capAnswerSchema,
   start_date: dateOrEmpty,
   end_date: dateOrEmpty,
   status: z.string().default('active'),
 });
+
+export function deriveCapabilitiesFromAnswers(answers: Partial<Record<CapDomain, CapAnswer | ''>>): {
+  domain: CapDomain;
+  role: 'core' | 'optional';
+}[] {
+  const out: { domain: CapDomain; role: 'core' | 'optional' }[] = [];
+  for (const d of CAP_DOMAINS) {
+    const ans = answers[d];
+    if (ans === 'primary') out.push({ domain: d, role: 'core' });
+    else if (ans === 'supporting') out.push({ domain: d, role: 'optional' });
+  }
+  return out;
+}
 
 export const CLASSIFICATION_QUESTIONS = [
   {
