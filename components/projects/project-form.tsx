@@ -80,19 +80,24 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
 
   const labels = FUNDING_QUESTION_LABELS[fundingModel || 'unset'];
 
+  const isEdit = !!initial?.project_ref;
   return (
     <form action={formAction} className="space-y-5 max-w-2xl">
-      <div className="grid grid-cols-2 gap-4">
+      <input type="hidden" name="status" value={initial?.status ?? 'active'} />
+      {isEdit && (
         <Field label="Project reference" error={fe('project_ref')}>
-          <Input name="project_ref" required defaultValue={initial?.project_ref} placeholder="PRJ-2026-B2E-Q3" />
+          <Input
+            name="project_ref"
+            defaultValue={initial?.project_ref}
+            readOnly
+            className="bg-ach-page text-ach-navy/60 cursor-not-allowed"
+          />
         </Field>
-        <Field label="Status" error={fe('status')}>
-          <Input name="status" defaultValue={initial?.status ?? 'active'} />
-        </Field>
-      </div>
+      )}
+      {!isEdit && <input type="hidden" name="project_ref" value="" />}
 
       <Field label="Name" error={fe('name')}>
-        <Input name="name" required defaultValue={initial?.name} />
+        <Input name="name" required defaultValue={initial?.name} placeholder="e.g. Bridge to Employment" />
       </Field>
 
       <Field label="Description" error={fe('description')}>

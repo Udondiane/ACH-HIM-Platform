@@ -82,7 +82,7 @@ const capAnswerSchema = z.enum(CAP_ANSWERS).optional().or(z.literal(''));
 const dateOrEmpty = z.string().trim().regex(/^(\d{4}-\d{2}-\d{2})?$/).optional().or(z.literal(''));
 
 export const projectSchema = z.object({
-  project_ref: z.string().trim().min(1, 'Reference required').max(60),
+  project_ref: z.string().trim().max(60).optional().or(z.literal('')),
   name: z.string().trim().min(1, 'Name required').max(200),
   description: z.string().trim().max(2000).optional().or(z.literal('')),
   funding_model: z.enum(FUNDING_MODELS).optional().or(z.literal('')),
