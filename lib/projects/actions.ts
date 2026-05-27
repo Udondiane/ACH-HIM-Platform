@@ -17,7 +17,25 @@ function fdToPlain(fd: FormData): Record<string, unknown> {
   return obj;
 }
 
-function normalisePayload(input: ReturnType<typeof projectSchema.parse>) {
+async function nextProjectRef(supabase: ReturnType<typeof createClient>): Promise<string> {
+  const year = new Date().getFullYear();
+  const prefix = `PRJ-${year}-`;
+  const { data } = await supabase
+    .from('projects').select('project_ref').like('project_ref', `${prefix}%`);
+  const refs = ((data ?? []) as { project_ref: string }[]).map(r => r.project_ref);
+  const pattern = new RegExp(`^PRJ-${year}-(\\d+)$`);
+  let max = 0;
+  for (const r of refs) {
+    const m = r.match(pattern);
+    if (m) {
+      const n = parseInt(m[1], 10);
+      if (n > max) max = n;
+    }
+  }
+  return `${prefix}${String(max + 1).padStart(3, '0')}`;
+}
+
+function normalisePayload(input: ReturnType<typeof projectSchema.parse>, ref: string) {
   // Compute classification_total if all four questions answered
   let classification_total: number | null = null;
   const q1 = input.classification_q1 as 'A'|'B'|'C'|'';
@@ -43,7 +61,7 @@ function normalisePayload(input: ReturnType<typeof projectSchema.parse>) {
     rights:     input.cap_rights     || null,
   };
   return {
-    project_ref: input.project_ref,
+    project_ref: ref,
     name: input.name,
     description: input.description || null,
     funding_model: input.funding_model || null,
@@ -92,9 +110,11 @@ export async function createProjectAction(_prev: ActionResult | null, fd: FormDa
     return { ok: false, error: 'Please fix the highlighted fields.', fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
   }
   const supabase = createClient();
+  const submittedRef = (parsed.data.project_ref ?? '').trim();
+  const ref = submittedRef || (await nextProjectRef(supabase));
   const { data, error } = await supabase
     .from('projects')
-    .insert(normalisePayload(parsed.data) as never)
+    .insert(normalisePayload(parsed.data, ref) as never)
     .select('id').single();
   if (error) return { ok: false, error: error.message };
   const row = data as { id: string } | null;
@@ -120,8 +140,10 @@ export async function updateProjectAction(
     return { ok: false, error: 'Please fix the highlighted fields.', fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
   }
   const supabase = createClient();
+  const submittedRef = (parsed.data.project_ref ?? '').trim();
+  const ref = submittedRef || (await nextProjectRef(supabase));
   const { error } = await supabase
-    .from('projects').update(normalisePayload(parsed.data) as never).eq('id', id);
+    .from('projects').update(normalisePayload(parsed.data, ref) as never).eq('id', id);
   if (error) return { ok: false, error: error.message };
   await syncCapabilitiesFromAnswers(supabase, id, {
     cap_employment: parsed.data.cap_employment,
