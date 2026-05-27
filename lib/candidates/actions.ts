@@ -13,6 +13,8 @@ function fdToPlain(fd: FormData): Record<string, unknown> {
   const obj: Record<string, unknown> = {};
   for (const [k, v] of fd.entries()) obj[k] = v;
   if (obj.arrival_year === '') obj.arrival_year = undefined;
+  // Unchecked checkboxes are absent from FormData entirely.
+  if (!('is_ach_tenant' in obj)) obj.is_ach_tenant = false;
   return obj;
 }
 
@@ -29,6 +31,7 @@ function normalisePayload(input: ReturnType<typeof candidateSchema.parse>, ref: 
     career_goal_summary: input.career_goal_summary || null,
     development_plan: input.development_plan || null,
     notes: input.notes || null,
+    is_ach_tenant: input.is_ach_tenant,
   };
 }
 

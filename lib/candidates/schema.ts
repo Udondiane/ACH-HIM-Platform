@@ -32,6 +32,7 @@ export const candidateSchema = z.object({
   career_goal_summary: z.string().trim().max(2000).optional().or(z.literal('')),
   development_plan:    z.string().trim().max(4000).optional().or(z.literal('')),
   notes:             z.string().trim().max(4000).optional().or(z.literal('')),
+  is_ach_tenant:     z.preprocess(v => v === 'on' || v === true || v === 'true', z.boolean()).default(false),
 });
 
 export type CandidateInput = z.infer<typeof candidateSchema>;

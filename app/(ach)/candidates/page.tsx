@@ -14,7 +14,7 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
   const supabase = createClient();
   let q = supabase
     .from('candidates')
-    .select('id, candidate_ref, given_name, family_name, preferred_locale, country_of_origin, status, arrival_year')
+    .select('id, candidate_ref, given_name, family_name, preferred_locale, country_of_origin, status, arrival_year, is_ach_tenant')
     .order('created_at', { ascending: false });
 
   if (searchParams?.status && (CANDIDATE_STATUSES as readonly string[]).includes(searchParams.status)) {
@@ -67,6 +67,7 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
                 <Th>Given name</Th>
                 <Th>Country</Th>
                 <Th>Language</Th>
+                <Th>Tenant</Th>
                 <Th>Status</Th>
               </tr>
             </thead>
@@ -81,6 +82,7 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
                   <Td>{c.given_name}</Td>
                   <Td className="text-ach-navy/70">{c.country_of_origin ?? '—'}</Td>
                   <Td className="text-ach-navy/70">{LOCALE_NAMES[c.preferred_locale as keyof typeof LOCALE_NAMES] ?? c.preferred_locale}</Td>
+                  <Td>{c.is_ach_tenant ? <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] uppercase tracking-[1.2px] font-medium border-[0.5px] bg-ach-slate-tint text-ach-slate-deep border-ach-slate-blue/30">ACH</span> : <span className="text-ach-navy/40 text-[12px]">—</span>}</Td>
                   <Td><Badge>{CANDIDATE_STATUS_LABELS[c.status as keyof typeof CANDIDATE_STATUS_LABELS] ?? c.status}</Badge></Td>
                 </tr>
               ))}
