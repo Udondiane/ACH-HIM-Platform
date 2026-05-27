@@ -185,9 +185,9 @@ on conflict (id) do nothing;
 insert into public.training_requests (id, candidate_id, training_id, career_rationale, state, review_notes)
 select
   '77777777-7777-7777-7777-000000000003',
-  '33333333-3333-3333-3333-000000000004',  -- Dinara, design background
+  '33333333-3333-3333-3333-000000000004',  -- Dinara, design history
   tc.id,
-  'Bookkeeping L2 will let me transition from retail floor work into back-office finance - a clearer pathway given my prior design/admin background.',
+  'Bookkeeping L2 will let me transition from retail floor work into office finance - a clearer pathway given my prior design and admin experience.',
   'in_review',
   'Awaiting confirmation that the AAT provider has capacity for the Sep intake.'
 from public.training_catalogue tc where tc.title = 'Bookkeeping Level 2' limit 1
@@ -374,7 +374,7 @@ limit 1;
 
 -- -- TRANSLATIONS --------------------------------------------
 -- Seed common UI strings for English (source) and Tier B locales (ar, fr, es, uk).
--- Tier C locales get rows but content null (English fallback) + needs_native_review.
+-- Tier C locales get rows but content null (English shown when null) + needs review flag.
 
 with keys as (
   select unnest(array[
@@ -466,7 +466,8 @@ insert into public.translations (message_key, locale, content, reviewed, needs_n
   ('common.signIn',    'uk', 'Увійти',             false, false, 'machine_gemini')
 on conflict (message_key, locale) do nothing;
 
--- Tier C locales (fa, ps, ti, so, ckb, sq) get null content + needs_native_review flag.
+-- Tier C locales (fa, ps, ti, so, ckb, sq) get null content (English shown when null)
+-- and needs_native_review flag set true.
 insert into public.translations (message_key, locale, content, reviewed, needs_native_review, source_method)
 select t.k, loc, null, false, true, 'manual'
 from (select unnest(array['nav.dashboard','nav.partners','nav.candidates','nav.cohorts','nav.projects','common.save','common.cancel','common.signIn','common.signOut']) as k) t
