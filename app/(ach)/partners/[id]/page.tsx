@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Pencil, ExternalLink } from 'lucide-react';
+import { Pencil, ExternalLink, Eye } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
@@ -38,9 +38,14 @@ export default async function PartnerDetailPage({ params }: { params: { id: stri
         title={p.name}
         description={[p.sector, p.region].filter(Boolean).join(' · ') || undefined}
         actions={
-          <Link href={`/partners/${p.id}/edit`}>
-            <Button variant="secondary"><Pencil className="h-3.5 w-3.5" />Edit</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href={`/partner-dashboard?as=${p.id}`} target="_blank">
+              <Button variant="secondary"><Eye className="h-3.5 w-3.5" />View as this partner</Button>
+            </Link>
+            <Link href={`/partners/${p.id}/edit`}>
+              <Button variant="secondary"><Pencil className="h-3.5 w-3.5" />Edit</Button>
+            </Link>
+          </div>
         }
       />
 
