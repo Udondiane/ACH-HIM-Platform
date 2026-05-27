@@ -14,7 +14,7 @@ export default async function CohortsListPage({ searchParams }: { searchParams?:
   const supabase = createClient();
   let q = supabase
     .from('cohorts')
-    .select('id, cohort_ref, name, structure, status, location, start_date, target_size')
+    .select('id, cohort_ref, name, structure, status, location, start_date, target_size, project_id, projects(id, project_ref, name)')
     .order('start_date', { ascending: false, nullsFirst: false });
 
   if (searchParams?.status && (COHORT_STATUSES as readonly string[]).includes(searchParams.status)) {
@@ -66,6 +66,9 @@ export default async function CohortsListPage({ searchParams }: { searchParams?:
                     <Badge>{COHORT_STATUS_LABELS[c.status as keyof typeof COHORT_STATUS_LABELS]}</Badge>
                   </div>
                   <h3 className="text-[15px] font-medium text-ach-navy">{c.name}</h3>
+                  {c.projects && (
+                    <div className="text-[11px] text-ach-navy/55 mt-1">Project: {c.projects.project_ref}</div>
+                  )}
                   <div className="text-[12px] text-ach-navy/60 mt-2 flex items-center gap-2 flex-wrap">
                     <span>{COHORT_STRUCTURE_LABELS[c.structure as keyof typeof COHORT_STRUCTURE_LABELS]}</span>
                     {c.location && <><span>·</span><span>{c.location}</span></>}

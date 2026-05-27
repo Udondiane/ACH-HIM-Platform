@@ -19,15 +19,26 @@ export default async function StartAssessmentPage({ params }: { params: { id: st
   if (!project) notFound();
   const p = project as any;
 
-  // Candidates available: those in the project's cohort
-  const { data: cohortCandidates } = p.cohort_id
+  // Candidates available: anyone enrolled in any cohort that runs this project.
+  const { data: cohortIds } = await supabase
+    .from('cohorts').select('id').eq('project_id', params.id);
+  const ids = ((cohortIds as { id: string }[] | null) ?? []).map(c => c.id);
+
+  const { data: cohortCandidates } = ids.length > 0
     ? await supabase.from('cohort_candidates')
         .select('candidate_id, candidates(id, candidate_ref, given_name)')
-        .eq('cohort_id', p.cohort_id)
+        .in('cohort_id', ids)
     : { data: [] as any[] };
 
-  const candidates = (cohortCandidates as any[] | null)
-    ?.map(cc => cc.candidates).filter(Boolean) ?? [];
+  // Deduplicate candidates that might appear via more than one cohort linkage.
+  const seen = new Set<string>();
+  const candidates = ((cohortCandidates as any[] | null) ?? [])
+    .map(cc => cc.candidates)
+    .filter((c): c is { id: string; candidate_ref: string; given_name: string } => {
+      if (!c || seen.has(c.id)) return false;
+      seen.add(c.id);
+      return true;
+    });
 
   async function action(formData: FormData) {
     'use server';

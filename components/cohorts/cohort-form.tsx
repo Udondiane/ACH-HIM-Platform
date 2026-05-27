@@ -19,9 +19,10 @@ interface Props {
   initial?: any;
   cancelHref: string;
   submitLabel?: string;
+  projects?: { id: string; name: string; project_ref: string }[];
 }
 
-export function CohortForm({ action, initial, cancelHref, submitLabel = 'Save cohort' }: Props) {
+export function CohortForm({ action, initial, cancelHref, submitLabel = 'Save cohort', projects = [] }: Props) {
   const [state, formAction] = useFormState(action, null);
   const fe = (k: string) => state && !state.ok ? state.fieldErrors?.[k]?.[0] : undefined;
 
@@ -40,6 +41,18 @@ export function CohortForm({ action, initial, cancelHref, submitLabel = 'Save co
           </Select>
         </Field>
       </div>
+
+      <Field label="Project" error={fe('project_id')} hint="The intervention design this cohort runs. Sets the Core/Optional capability mix used in HIM scoring.">
+        <Select name="project_id" defaultValue={initial?.project_id ?? ''}>
+          <SelectTrigger><SelectValue placeholder="Select a project" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">— None (unlinked) —</SelectItem>
+            {projects.map(p => (
+              <SelectItem key={p.id} value={p.id}>{p.project_ref} · {p.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </Field>
 
       <Field label="Name" error={fe('name')}>
         <Input name="name" required defaultValue={initial?.name} placeholder="Bridge to Employment — Bristol Q3 2026" />
@@ -102,11 +115,12 @@ export function CohortForm({ action, initial, cancelHref, submitLabel = 'Save co
   );
 }
 
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+function Field({ label, error, children, hint }: { label: string; error?: string; children: React.ReactNode; hint?: string }) {
   return (
     <div className="space-y-1.5">
       <Label>{label}</Label>
       {children}
+      {hint && !error && <div className="text-[11px] text-ach-navy/50">{hint}</div>}
       {error && <div className="text-[12px] text-[#8B3A4F]">{error}</div>}
     </div>
   );

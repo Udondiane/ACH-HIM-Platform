@@ -21,12 +21,11 @@ import { classify } from '@/lib/scoring/classification';
 interface Props {
   action: (prev: ActionResult | null, fd: FormData) => Promise<ActionResult>;
   initial?: any;
-  cohorts: { id: string; cohort_ref: string; name: string }[];
   cancelHref: string;
   submitLabel?: string;
 }
 
-export function ProjectForm({ action, initial, cohorts, cancelHref, submitLabel = 'Save project' }: Props) {
+export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save project' }: Props) {
   const [state, formAction] = useFormState(action, null);
   const fe = (k: string) => state && !state.ok ? state.fieldErrors?.[k]?.[0] : undefined;
 
@@ -62,18 +61,6 @@ export function ProjectForm({ action, initial, cohorts, cancelHref, submitLabel 
 
       <Field label="Description" error={fe('description')}>
         <Textarea name="description" defaultValue={initial?.description ?? ''} rows={2} />
-      </Field>
-
-      <Field label="Cohort" error={fe('cohort_id')}>
-        <Select name="cohort_id" defaultValue={initial?.cohort_id ?? ''}>
-          <SelectTrigger><SelectValue placeholder="No cohort (standalone)" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">No cohort (standalone)</SelectItem>
-            {cohorts.map(c => (
-              <SelectItem key={c.id} value={c.id}>{c.cohort_ref} · {c.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </Field>
 
       <div className="grid grid-cols-2 gap-4">

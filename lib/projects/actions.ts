@@ -37,7 +37,6 @@ function normalisePayload(input: ReturnType<typeof projectSchema.parse>) {
     project_ref: input.project_ref,
     name: input.name,
     description: input.description || null,
-    cohort_id: input.cohort_id || null,
     type: input.type,
     weight_ratio: input.weight_ratio,
     hybrid_option: input.hybrid_option || null,
