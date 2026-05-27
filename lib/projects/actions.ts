@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { projectSchema, deriveCapabilitiesFromAnswers, CAP_DOMAINS, type CapAnswer } from './schema';
+import { projectSchema, deriveCapabilitiesFromAnswers, CAP_DOMAINS, type CapAnswer, type CapDomain } from './schema';
 import { classify, type ClassificationResponses } from '@/lib/scoring/classification';
 import type { DomainId } from '@/lib/scoring/types';
 
@@ -88,7 +88,14 @@ async function syncCapabilitiesFromAnswers(
   projectId: string,
   answers: Record<string, CapAnswer | '' | null | undefined>,
 ) {
-  const derived = deriveCapabilitiesFromAnswers(answers as never);
+  // Caller passes cap_employment, cap_housing, etc. Strip the prefix before
+  // handing to deriveCapabilitiesFromAnswers, which expects bare domain keys.
+  const stripped: Partial<Record<CapDomain, CapAnswer | ''>> = {};
+  for (const d of CAP_DOMAINS) {
+    const v = answers[`cap_${d}`];
+    if (v != null) stripped[d as CapDomain] = v as CapAnswer | '';
+  }
+  const derived = deriveCapabilitiesFromAnswers(stripped);
   const anyAnswered = CAP_DOMAINS.some(d => {
     const a = answers[`cap_${d}`];
     return a != null && a !== '';
