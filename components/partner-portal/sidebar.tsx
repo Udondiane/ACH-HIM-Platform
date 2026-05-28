@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
-  LayoutDashboard, Users, FileText,
+  LayoutDashboard, Users, FileText, ScrollText,
   Building2, GraduationCap, ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -34,6 +34,7 @@ export function PartnerSidebar({ partner }: { partner: Partner | null }) {
     items.push(
       { section: 'Hiring' },
       { href: '/partner/placements',    label: 'Placements',         icon: Users },
+      { href: '/partner/milestones',    label: 'Retention milestones', icon: ScrollText },
       { section: 'Impact' },
       { href: '/partner/development-fund', label: 'Development fund', icon: GraduationCap },
     );
