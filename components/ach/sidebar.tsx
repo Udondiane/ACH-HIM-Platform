@@ -19,6 +19,7 @@ const NAV = [
   { href: '/pricing',            label: 'Pricing tool',     icon: Calculator },
   { href: '/development-fund',   label: 'Development fund', icon: CircleDollarSign },
   { section: 'Reports' },
+  { href: '/aggregate',          label: 'Aggregate',        icon: LayoutDashboard },
   { href: '/evidence-pack',      label: 'Evidence packs',   icon: FileText },
   { href: '/toms-crosswalk',     label: 'TOMs crosswalk',   icon: BarChart3 },
   { href: '/reports',            label: 'Other reports',    icon: ScrollText },
