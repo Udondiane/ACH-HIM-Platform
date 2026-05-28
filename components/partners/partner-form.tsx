@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -22,8 +21,6 @@ interface Props {
     region?: string | null;
     website?: string | null;
     employee_count?: number | null;
-    notes?: string | null;
-    consent_public_listing?: boolean;
   };
   cancelHref: string;
   submitLabel?: string;
@@ -92,25 +89,6 @@ export function PartnerForm({ action, initial, cancelHref, submitLabel = 'Save p
           />
         </Field>
       </div>
-
-      <Field label="Internal notes" error={fe('notes')}>
-        <Textarea name="notes" defaultValue={initial?.notes ?? ''} rows={4} />
-      </Field>
-
-      <label className="flex items-start gap-2.5 text-[13px] text-ach-navy/80 cursor-pointer">
-        <input
-          type="checkbox"
-          name="consent_public_listing"
-          defaultChecked={initial?.consent_public_listing}
-          className="mt-0.5 h-4 w-4 rounded border-ach-border text-ach-navy focus:ring-ach-navy/40"
-        />
-        <span>
-          <span className="text-ach-navy font-medium">Public listing consent</span>
-          <span className="block text-ach-navy/60 mt-0.5">
-            Partner has consented to appear on the public Verified Partner page (once they reach Verified tier).
-          </span>
-        </span>
-      </label>
 
       {state && !state.ok && state.error && !state.fieldErrors && (
         <div className="text-[13px] text-[#8B3A4F] bg-ach-rose/10 rounded-[10px] px-3 py-2 border-[0.5px] border-ach-rose/30">
