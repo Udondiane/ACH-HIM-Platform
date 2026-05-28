@@ -32,6 +32,9 @@ function normalisePayload(input: ReturnType<typeof candidateSchema.parse>, ref: 
     development_plan: input.development_plan || null,
     notes: input.notes || null,
     is_ach_tenant: input.is_ach_tenant,
+    exit_reason: input.exit_reason || null,
+    exit_date: input.exit_date || null,
+    exit_notes: input.exit_notes || null,
   };
 }
 

@@ -42,9 +42,14 @@ export default async function CohortDetailPage({ params }: { params: { id: strin
           c.programme_weeks && `${c.programme_weeks} weeks`,
         ].filter(Boolean).join(' · ')}
         actions={
-          <Link href={`/cohorts/${c.id}/edit`}>
-            <Button variant="secondary"><Pencil className="h-3.5 w-3.5" />Edit</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href={`/cohorts/${c.id}/capability-report`}>
+              <Button variant="secondary">Capability Investor Report</Button>
+            </Link>
+            <Link href={`/cohorts/${c.id}/edit`}>
+              <Button variant="secondary"><Pencil className="h-3.5 w-3.5" />Edit</Button>
+            </Link>
+          </div>
         }
       />
 
