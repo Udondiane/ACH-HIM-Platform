@@ -36,20 +36,13 @@ export function AchSidebar() {
   return (
     <aside className="w-[228px] shrink-0 border-r-[0.5px] border-ach-border bg-white flex flex-col h-screen sticky top-0">
       <div className="px-5 py-6 border-b-[0.5px] border-ach-border">
-        <Link href="/dashboard" className="flex items-center gap-3">
-          <img
-            src="/ach-logo.svg"
-            alt="ACH"
-            className="h-10 w-auto shrink-0"
-          />
-          <div className="flex flex-col min-w-0">
-            <span className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">
-              Ashley Community
-            </span>
-            <span className="text-[13px] font-medium text-ach-navy mt-0.5">
-              HIM Platform
-            </span>
-          </div>
+        <Link href="/dashboard" className="flex flex-col">
+          <span className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">
+            Ashley Community
+          </span>
+          <span className="text-[15px] font-medium text-ach-navy mt-0.5">
+            HIM Platform
+          </span>
         </Link>
       </div>
       <nav className="flex-1 overflow-y-auto px-3 py-4">
