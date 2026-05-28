@@ -104,6 +104,27 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
         <Textarea name="description" defaultValue={initial?.description ?? ''} rows={2} />
       </Field>
 
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="Focus area">
+          <Input name="focus_area" defaultValue={initial?.focus_area ?? ''} placeholder="e.g. Refugee employment, Bristol" />
+        </Field>
+        <Field label="Personnel / team">
+          <Input name="personnel" defaultValue={initial?.personnel ?? ''} placeholder="e.g. ACH IAG team, IKEA HR" />
+        </Field>
+      </div>
+
+      <Field label="Evaluation approach">
+        <select
+          name="evaluation_type"
+          defaultValue={initial?.evaluation_type ?? ''}
+          className="w-full rounded-[10px] border-[0.5px] border-ach-border bg-white px-3 py-2 text-[13px] text-ach-navy focus:outline-none focus:ring-1 focus:ring-ach-navy/40"
+        >
+          <option value="">Not specified</option>
+          <option value="formative">Formative — during project</option>
+          <option value="summative">Summative — post project</option>
+        </select>
+      </Field>
+
       <div className="pt-5 border-t-[0.5px] border-ach-border">
         <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">Funding model</div>
         <p className="text-[12px] text-ach-navy/60 mb-4">

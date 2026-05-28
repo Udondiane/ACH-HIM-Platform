@@ -8,6 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { IndicatorScorer } from '@/components/assessments/indicator-scorer';
 import { HimScoreCard } from '@/components/assessments/him-score-card';
+import { TranscriptModal } from '@/components/assessments/transcript-modal';
+import { AttachmentUploader } from '@/components/assessments/attachment-uploader';
+import { getTranslations } from 'next-intl/server';
 import { completeAssessmentAction } from '@/lib/assessments/actions';
 import { calculateHim } from '@/lib/scoring/him';
 import type { DomainId, IndicatorResponse, ProjectCapability } from '@/lib/scoring/types';
@@ -32,30 +35,37 @@ export default async function AssessmentRunnerPage({
   const supabase = createClient();
 
   // Load everything in parallel
-  const [project, assessment, capabilities, framework, responses] = await Promise.all([
+  const [project, assessment, capabilities, framework, responses, attachments] = await Promise.all([
     supabase.from('projects').select('*').eq('id', params.id).maybeSingle(),
     supabase.from('assessments').select('*, candidates(candidate_ref, given_name)').eq('id', params.assessmentId).maybeSingle(),
     supabase.from('project_capabilities').select('domain, role').eq('project_id', params.id),
     Promise.all([
-      supabase.from('factors').select('id, name, conversion_factor_type, is_universal, measurement_method'),
+      supabase.from('factors').select('id, name, conversion_factor_type, is_universal, measurement_method, measurement_question'),
       supabase.from('factor_domains').select('factor_id, domain_id'),
       supabase.from('indicators').select('id, factor_id, name, sort_order').order('sort_order'),
     ]),
-    supabase.from('assessment_responses').select('indicator_id, numeric_value, narrative').eq('assessment_id', params.assessmentId),
+    supabase.from('assessment_responses').select('indicator_id, numeric_value, narrative, observable_changes, practices').eq('assessment_id', params.assessmentId),
+    supabase.from('assessment_attachments').select('id, file_name, mime_type, size_bytes, uploaded_at').eq('assessment_id', params.assessmentId).order('uploaded_at', { ascending: false }),
   ]);
 
   if (!project.data || !assessment.data) notFound();
   const p = project.data as any;
   const a = assessment.data as any;
+  const isLocked = !!p.is_locked || a.status === 'reviewed';
 
   const caps = ((capabilities.data as any[]) ?? []) as { domain: DomainId; role: 'core'|'optional' }[];
   const [factorsRes, factorDomainsRes, indicatorsRes] = framework;
   const factors = (factorsRes.data as any[]) ?? [];
   const factorDomains = (factorDomainsRes.data as any[]) ?? [];
   const indicators = (indicatorsRes.data as any[]) ?? [];
-  const respMap = new Map<string, { numeric_value: number | null; narrative: string | null }>();
+  const respMap = new Map<string, { numeric_value: number | null; narrative: string | null; observable_changes: string | null; practices: string | null }>();
   for (const r of (responses.data as any[]) ?? []) {
-    respMap.set(r.indicator_id, { numeric_value: r.numeric_value, narrative: r.narrative });
+    respMap.set(r.indicator_id, {
+      numeric_value: r.numeric_value,
+      narrative: r.narrative,
+      observable_changes: r.observable_changes,
+      practices: r.practices,
+    });
   }
 
   // Group factors by domain for the project's Core + Optional selection
@@ -116,6 +126,19 @@ export default async function AssessmentRunnerPage({
     await completeAssessmentAction(params.assessmentId, params.id);
   }
 
+  // Translated assessment strings (Tier B locales render translations
+  // where supplied, fall back to English for missing keys via deepMerge)
+  const t = await getTranslations('assessment');
+  const tDomain = (id: string) => {
+    try { return t(`domains.${id}` as never); } catch { return DOMAIN_LABELS[id] ?? id; }
+  };
+  const tFactor = (id: string, fallback: string) => {
+    try { return t(`factors.${id}` as never); } catch { return fallback; }
+  };
+  const tMeasurement = (id: string, fallback: string) => {
+    try { return t(`measurements.${id}` as never); } catch { return fallback; }
+  };
+
   return (
     <div className="max-w-6xl mx-auto">
       <PageHeader
@@ -125,11 +148,19 @@ export default async function AssessmentRunnerPage({
         title={`Assessment · ${TIMEPOINT_LABELS[a.timepoint] ?? a.timepoint}`}
         description={`Score each indicator from 0 to 5 (or Yes/No for binary factors). The HIM score on the right updates live as you fill in responses.`}
         actions={
-          a.status !== 'completed' ? (
-            <form action={handleComplete}>
-              <Button type="submit"><CheckCircle2 className="h-4 w-4" />Mark complete</Button>
-            </form>
-          ) : <Badge>Completed</Badge>
+          <div className="flex items-center gap-2">
+            {a.status !== 'completed' && !isLocked && (
+              <TranscriptModal
+                assessmentId={a.id}
+                indicatorLabels={Object.fromEntries(indicators.map((i: any) => [i.id, i.name]))}
+              />
+            )}
+            {a.status !== 'completed' ? (
+              <form action={handleComplete}>
+                <Button type="submit"><CheckCircle2 className="h-4 w-4" />Mark complete</Button>
+              </form>
+            ) : <Badge>Completed</Badge>}
+          </div>
         }
       />
 
@@ -161,7 +192,7 @@ export default async function AssessmentRunnerPage({
                         {cap.role}
                       </div>
                       <div className="text-[15px] font-medium text-ach-navy mt-0.5">
-                        {DOMAIN_LABELS[cap.domain] ?? cap.domain}
+                        {tDomain(cap.domain)}
                       </div>
                     </div>
                     <div className="text-[11.5px] text-ach-navy/60">
@@ -178,13 +209,16 @@ export default async function AssessmentRunnerPage({
                     return (
                       <div key={fac.id} className="mb-5 last:mb-0">
                         <div className="flex items-center gap-2 mb-2">
-                          <div className="text-[12.5px] font-medium text-ach-navy">{fac.name}</div>
+                          <div className="text-[12.5px] font-medium text-ach-navy">{tFactor(fac.id, fac.name)}</div>
                           {fac.is_universal && (
                             <span className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/50">Universal</span>
                           )}
                           <span className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/50">
                             {fac.conversion_factor_type}
                           </span>
+                        </div>
+                        <div className="text-[11.5px] text-ach-navy/65 mb-2 italic">
+                          {tMeasurement(fac.id, fac.measurement_question ?? '')}
                         </div>
                         <div className="space-y-1">
                           {inds.map(ind => {
@@ -201,6 +235,9 @@ export default async function AssessmentRunnerPage({
                                 }}
                                 initialValue={r?.numeric_value ?? null}
                                 initialNarrative={r?.narrative ?? null}
+                                initialObservableChanges={r?.observable_changes ?? null}
+                                initialPractices={r?.practices ?? null}
+                                locked={isLocked}
                               />
                             );
                           })}
@@ -215,6 +252,16 @@ export default async function AssessmentRunnerPage({
         </div>
 
         <div className="space-y-4">
+          <Card>
+            <CardContent className="pt-5">
+              <AttachmentUploader
+                assessmentId={params.assessmentId}
+                initialAttachments={(attachments.data as any[]) ?? []}
+                locked={isLocked || a.status === 'completed'}
+              />
+            </CardContent>
+          </Card>
+
           {him ? (
             <HimScoreCard result={him} />
           ) : (

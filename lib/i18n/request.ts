@@ -3,12 +3,10 @@ import { cookies, headers } from 'next/headers';
 import { locales, defaultLocale, type Locale } from './config';
 
 function resolveLocale(): Locale {
-  // 1. Cookie preference (set by language switcher / user prefs)
   const cookieLocale = cookies().get('ach_locale')?.value;
   if (cookieLocale && (locales as readonly string[]).includes(cookieLocale)) {
     return cookieLocale as Locale;
   }
-  // 2. Accept-Language header (best effort)
   const acceptLang = headers().get('accept-language') ?? '';
   for (const part of acceptLang.split(',')) {
     const tag = part.split(';')[0]?.trim().toLowerCase();
@@ -21,24 +19,39 @@ function resolveLocale(): Locale {
   return defaultLocale;
 }
 
+/* Deep merge: locale-specific values override English source, but
+   missing keys in the locale file fall through to English. Lets us
+   add partial translations (e.g. Arabic gets the full assessment
+   namespace; other Tier B locales still show English for that
+   namespace without throwing). */
+function deepMerge(base: any, overlay: any): any {
+  if (overlay == null) return base;
+  if (typeof overlay !== 'object' || Array.isArray(overlay)) return overlay;
+  const out: any = { ...base };
+  for (const k of Object.keys(overlay)) {
+    if (k.startsWith('__')) continue; // skip metadata keys
+    if (typeof overlay[k] === 'object' && !Array.isArray(overlay[k]) && overlay[k] !== null) {
+      out[k] = deepMerge(base?.[k] ?? {}, overlay[k]);
+    } else if (overlay[k] !== '' && overlay[k] !== null && overlay[k] !== undefined) {
+      out[k] = overlay[k];
+    }
+  }
+  return out;
+}
+
 export default getRequestConfig(async () => {
   const locale = resolveLocale();
-
-  // Load English as ultimate fallback, plus the requested locale.
-  // Tier-C locales return the English message bundle (i.e. show English
-  // strings) while UI still renders the language switcher / banner.
   const enMessages = (await import(`../../messages/en/common.json`)).default;
   let messages = enMessages;
 
   if (locale !== 'en') {
     try {
       const loaded = (await import(`../../messages/${locale}/common.json`)).default as Record<string, unknown>;
-      // If the file is the stub (Tier-C), fall back to English silently;
-      // banner.json handles the user-facing notice.
       if (loaded?.__stub === true) {
         messages = enMessages;
       } else {
-        messages = loaded as typeof enMessages;
+        // Deep-merge so missing keys fall back to English transparently
+        messages = deepMerge(enMessages, loaded);
       }
     } catch {
       messages = enMessages;

@@ -38,26 +38,23 @@ export default async function PartnerMilestonesPage({
   const pending = rows.filter(r => r.state === 'pending');
   const totalPaid = paid.reduce((s, r) => s + Number(r.amount ?? 0), 0);
   const totalPending = pending.reduce((s, r) => s + Number(r.amount ?? 0), 0);
-
-  const placementMilestones = rows.filter(r => r.kind === 'placement');
-  const retentionMilestones = rows.filter(r => r.kind !== 'placement');
-  const totalRetentionPaid = retentionMilestones
-    .filter(r => r.state === 'paid')
-    .reduce((s, r) => s + Number(r.amount ?? 0), 0);
+  const placementMs = rows.filter(r => r.kind === 'placement');
+  const retentionMs = rows.filter(r => r.kind !== 'placement');
+  const retentionPaid = retentionMs.filter(r => r.state === 'paid').reduce((s, r) => s + Number(r.amount ?? 0), 0);
 
   return (
     <div className="max-w-6xl mx-auto">
       <PageHeader
-        miniLabel="Milestone payments"
+        miniLabel="Retention milestones"
         title="Milestone history"
-        description="Placement and retention milestones for every candidate hired through ACH. Retention milestones ringfence into the Development Fund."
+        description="Placement and retention milestone payments per candidate. Retention milestone payments ringfence into the Development Fund."
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-5">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-5">
         <Kpi label="Total paid" value={`£${totalPaid.toLocaleString()}`} sub={`${paid.length} milestones`} />
         <Kpi label="Outstanding" value={`£${totalPending.toLocaleString()}`} sub={`${pending.length} due`} />
-        <Kpi label="Placement fees" value={`£${placementMilestones.filter(r => r.state === 'paid').reduce((s, r) => s + Number(r.amount), 0).toLocaleString()}`} sub="paid at hire" />
-        <Kpi label="Retention fees" value={`£${totalRetentionPaid.toLocaleString()}`} sub="into Dev Fund" />
+        <Kpi label="Placement fees" value={`£${placementMs.filter(r => r.state === 'paid').reduce((s, r) => s + Number(r.amount), 0).toLocaleString()}`} sub="paid at hire" />
+        <Kpi label="Retention fees" value={`£${retentionPaid.toLocaleString()}`} sub="into Dev Fund" />
       </div>
 
       {rows.length === 0 ? (

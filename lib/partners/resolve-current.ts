@@ -6,6 +6,7 @@ export type ResolvedPartner = {
   id: string;
   name: string;
   type: string;
+  types: string[];
   sector?: string | null;
   region?: string | null;
   status?: string | null;
@@ -73,11 +74,15 @@ export async function resolveCurrentPartner(
 
   const { data: partner } = await supabase
     .from('partners')
-    .select('id, name, type, sector, region, status')
+    .select('id, name, type, types, sector, region, status')
     .eq('id', partnerId)
     .maybeSingle();
 
   const p = partner as any;
   if (!p) return null;
-  return { ...p, isImpersonating: impersonating };
+  // Normalise: prefer types array; fall back to wrapping legacy type.
+  const types: string[] = Array.isArray(p.types) && p.types.length > 0
+    ? p.types
+    : p.type ? [p.type] : [];
+  return { ...p, types, isImpersonating: impersonating };
 }

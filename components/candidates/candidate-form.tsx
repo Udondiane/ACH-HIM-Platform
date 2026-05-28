@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select';
 import {
   CANDIDATE_STATUSES, CANDIDATE_STATUS_LABELS, LOCALES, LOCALE_NAMES,
+  EXIT_REASONS, EXIT_REASON_LABELS,
 } from '@/lib/candidates/schema';
 import type { ActionResult } from '@/lib/candidates/actions';
 
@@ -116,6 +117,33 @@ export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save
             <Textarea name="development_plan" defaultValue={initial?.development_plan ?? ''} rows={4} />
           </Field>
         </div>
+      </div>
+
+      <div className="pt-3 border-t-[0.5px] border-ach-border">
+        <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">
+          Exit (if applicable)
+        </div>
+        <p className="text-[12px] text-ach-navy/60 mb-3">
+          When a candidate leaves the programme, capture WHY. The platform reports cohort outcomes both ways — completers basis AND intention-to-treat (dropouts held at baseline) — so leavers stay in the analysis. &quot;Got a job&quot; is a programme WIN, not a loss.
+        </p>
+        <div className="grid grid-cols-2 gap-4 mb-3">
+          <Field label="Exit reason" error={fe('exit_reason')}>
+            <select
+              name="exit_reason"
+              defaultValue={initial?.exit_reason ?? ''}
+              className="w-full rounded-[10px] border-[0.5px] border-ach-border bg-white px-3 py-2 text-[13px] text-ach-navy focus:outline-none focus:ring-1 focus:ring-ach-navy/40"
+            >
+              <option value="">— Not exited —</option>
+              {EXIT_REASONS.map(r => <option key={r} value={r}>{EXIT_REASON_LABELS[r]}</option>)}
+            </select>
+          </Field>
+          <Field label="Exit date" error={fe('exit_date')}>
+            <Input name="exit_date" type="date" defaultValue={initial?.exit_date ?? ''} />
+          </Field>
+        </div>
+        <Field label="Exit notes" error={fe('exit_notes')} hint="Concrete detail for the cohort funnel — name of employer, course title, follow-up plan, etc.">
+          <Textarea name="exit_notes" defaultValue={initial?.exit_notes ?? ''} rows={2} />
+        </Field>
       </div>
 
       <Field label="Internal notes" error={fe('notes')}>
