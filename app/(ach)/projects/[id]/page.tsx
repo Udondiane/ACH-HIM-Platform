@@ -7,6 +7,10 @@ import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CapabilityPicker } from '@/components/projects/capability-picker';
+import { CapabilityRadar } from '@/components/charts/capability-radar';
+import { CapabilityBar } from '@/components/charts/capability-bar';
+import { WordCloud } from '@/components/charts/word-cloud';
+import { ProjectExportButton } from '@/components/projects/project-export-button';
 import {
   PROJECT_TYPE_LABELS, WEIGHT_RATIO_LABELS, OPTIONAL_SCHEME_LABELS,
   FUNDING_MODEL_LABELS, type FundingModel,
@@ -20,7 +24,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
   if (!project) notFound();
   const p = project as any;
 
-  const [capabilities, assessments, cohorts] = await Promise.all([
+  const [capabilities, assessments, cohorts, responses] = await Promise.all([
     supabase.from('project_capabilities').select('domain, role').eq('project_id', params.id),
     supabase.from('assessments')
       .select('id, timepoint, assessed_on, status, candidate_id, candidates(candidate_ref, given_name)')
@@ -29,11 +33,59 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
       .select('id, cohort_ref, name, status, location, start_date, target_size, cohort_candidates(id)')
       .eq('project_id', params.id)
       .order('start_date', { ascending: false }),
+    supabase.from('assessment_responses')
+      .select(`
+        numeric_value, narrative, observable_changes, practices,
+        indicators(factor_id, factors(factor_domains(domain_id))),
+        assessments!inner(project_id, timepoint)
+      `)
+      .eq('assessments.project_id', params.id),
   ]);
 
   const caps = (capabilities.data as any[]) ?? [];
   const cohortRows = (cohorts.data as any[]) ?? [];
   const totalStarts = cohortRows.reduce((s, c) => s + (c.cohort_candidates?.length ?? 0), 0);
+
+  // Aggregate response scores into per-domain averages for chart rendering
+  const allResponses = (responses.data as any[]) ?? [];
+  const domainAggregate: Record<string, { baselineSum: number; baselineN: number; exitSum: number; exitN: number; currentSum: number; currentN: number }> = {};
+  for (const r of allResponses) {
+    if (r.numeric_value == null) continue;
+    const fds: any[] = r.indicators?.factors?.factor_domains ?? [];
+    for (const fd of fds) {
+      const dom = fd.domain_id;
+      if (!domainAggregate[dom]) domainAggregate[dom] = { baselineSum: 0, baselineN: 0, exitSum: 0, exitN: 0, currentSum: 0, currentN: 0 };
+      const v = Number(r.numeric_value);
+      domainAggregate[dom].currentSum += v;
+      domainAggregate[dom].currentN += 1;
+      if (r.assessments?.timepoint === 'baseline') {
+        domainAggregate[dom].baselineSum += v;
+        domainAggregate[dom].baselineN += 1;
+      } else if (r.assessments?.timepoint === 'exit_6mo' || r.assessments?.timepoint === 'followup_12mo') {
+        domainAggregate[dom].exitSum += v;
+        domainAggregate[dom].exitN += 1;
+      }
+    }
+  }
+  const radarData = caps.map(c => {
+    const agg = domainAggregate[c.domain] ?? { baselineSum: 0, baselineN: 0, exitSum: 0, exitN: 0, currentSum: 0, currentN: 0 };
+    return {
+      domain: c.domain,
+      baseline: agg.baselineN > 0 ? agg.baselineSum / agg.baselineN : null,
+      exit: agg.exitN > 0 ? agg.exitSum / agg.exitN : null,
+      current: agg.currentN > 0 ? agg.currentSum / agg.currentN : null,
+    };
+  });
+  const barData = caps.map(c => {
+    const agg = domainAggregate[c.domain];
+    return {
+      domain: c.domain,
+      score: agg && agg.currentN > 0 ? agg.currentSum / agg.currentN : 0,
+      role: c.role as 'core' | 'optional',
+    };
+  });
+  const narrativeTexts: string[] = allResponses.flatMap(r => [r.observable_changes, r.practices, r.narrative].filter(Boolean));
+  const hasAnyAssessmentData = allResponses.length > 0;
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -44,11 +96,21 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
         title={p.name}
         description={p.description ?? undefined}
         actions={
-          <Link href={`/projects/${p.id}/edit`}>
-            <Button variant="secondary"><Pencil className="h-3.5 w-3.5" />Edit</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <ProjectExportButton projectId={p.id} projectRef={p.project_ref} />
+            <Link href={`/projects/${p.id}/edit`}>
+              <Button variant="secondary"><Pencil className="h-3.5 w-3.5" />Edit</Button>
+            </Link>
+          </div>
         }
       />
+
+      {p.is_locked && (
+        <div className="mb-4 text-[12.5px] text-ach-slate-deep bg-ach-slate-tint rounded-[10px] px-3 py-2 border-[0.5px] border-ach-slate-blue/30 flex items-center gap-2">
+          <span className="text-[10.5px] uppercase tracking-[1.2px] font-medium">Locked</span>
+          <span>Core/Optional selection is locked because assessments are in flight. Unlock from the Edit page if you need to change the design.</span>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
         <Card className="lg:col-span-2">
@@ -110,6 +172,41 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
           <CapabilityPicker projectId={p.id} initial={caps} />
         </CardContent>
       </Card>
+
+      {hasAnyAssessmentData && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+          <Card>
+            <CardHeader>
+              <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Capability radar</div>
+              <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Aggregate scores per domain. Baseline (lighter) vs Exit/Follow-up (darker).</div>
+            </CardHeader>
+            <CardContent>
+              <CapabilityRadar data={radarData} mode="comparison" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Current scores by domain</div>
+              <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Faded bars are Optional; full opacity are Core.</div>
+            </CardHeader>
+            <CardContent>
+              <CapabilityBar data={barData} />
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {narrativeTexts.length > 0 && (
+        <Card className="mb-4">
+          <CardHeader>
+            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Themes in evidence</div>
+            <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Most frequent words across observable changes, practices, and narrative responses.</div>
+          </CardHeader>
+          <CardContent>
+            <WordCloud texts={narrativeTexts} />
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="mb-4">
         <CardHeader>
