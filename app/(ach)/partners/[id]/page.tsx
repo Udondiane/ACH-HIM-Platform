@@ -33,7 +33,7 @@ export default async function PartnerDetailPage({ params }: { params: { id: stri
       <PageHeader
         backHref="/partners"
         backLabel="Partners"
-        miniLabel={PARTNER_TYPE_LABELS[p.type as keyof typeof PARTNER_TYPE_LABELS]}
+        miniLabel="Partner"
         title={p.name}
         description={[p.sector, p.region].filter(Boolean).join(' · ') || undefined}
         actions={
@@ -54,7 +54,13 @@ export default async function PartnerDetailPage({ params }: { params: { id: stri
         </CardHeader>
         <CardContent>
           <dl className="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4 text-[13px]">
-            <DT label="Type"><Badge variant={p.type}>{PARTNER_TYPE_LABELS[p.type as keyof typeof PARTNER_TYPE_LABELS]}</Badge></DT>
+            <DT label="Types">
+              <div className="flex flex-wrap gap-1">
+                {((p.types as string[] | null) ?? (p.type ? [p.type] : [])).map((t: string) => (
+                  <Badge key={t} variant={t as any}>{PARTNER_TYPE_LABELS[t as keyof typeof PARTNER_TYPE_LABELS] ?? t}</Badge>
+                ))}
+              </div>
+            </DT>
             <DT label="Status"><Badge variant={p.status}>{PARTNER_STATUS_LABELS[p.status as keyof typeof PARTNER_STATUS_LABELS]}</Badge></DT>
             <DT label="Sector">{p.sector ?? '—'}</DT>
             <DT label="Region">{p.region ?? '—'}</DT>
