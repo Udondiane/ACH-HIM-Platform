@@ -9,15 +9,21 @@ import { updateProjectAction, deleteProjectAction, type ActionResult } from '@/l
 
 export default async function EditProjectPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
-  const { data: project } = await supabase
+  const projectRes = await supabase
     .from('projects').select('*').eq('id', params.id).maybeSingle();
-  if (!project) notFound();
-  const p = project as any;
+  if (projectRes.error) {
+    console.error('[projects/edit] project fetch error', projectRes.error);
+    throw new Error(`Project fetch failed: ${projectRes.error.message}`);
+  }
+  if (!projectRes.data) notFound();
+  const p = projectRes.data as any;
 
   const [cohortCountRes, assessmentCountRes] = await Promise.all([
     supabase.from('cohorts').select('id', { count: 'exact', head: true }).eq('project_id', params.id),
     supabase.from('assessments').select('id', { count: 'exact', head: true }).eq('project_id', params.id),
   ]);
+  if (cohortCountRes.error) console.error('[projects/edit] cohort count error', cohortCountRes.error);
+  if (assessmentCountRes.error) console.error('[projects/edit] assessment count error', assessmentCountRes.error);
   const cohortCount = cohortCountRes.count ?? 0;
   const assessmentCount = assessmentCountRes.count ?? 0;
 
