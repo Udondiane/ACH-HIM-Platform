@@ -154,10 +154,12 @@ export async function updateProjectAction(
   if (error) return { ok: false, error: error.message };
   await syncCapabilitiesFromAnswers(supabase, id, {
     cap_employment: parsed.data.cap_employment,
+    cap_housing:    parsed.data.cap_housing,
     cap_education:  parsed.data.cap_education,
+    cap_health:     parsed.data.cap_health,
     cap_belonging:  parsed.data.cap_belonging,
     cap_social:     parsed.data.cap_social,
-    cap_health:     parsed.data.cap_health,
+    cap_rights:     parsed.data.cap_rights,
   });
   revalidatePath('/projects');
   revalidatePath(`/projects/${id}`);
