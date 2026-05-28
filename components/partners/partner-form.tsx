@@ -57,8 +57,11 @@ export function PartnerForm({ action, initial, cancelHref, submitLabel = 'Save p
         <Label>Partner type{state && !state.ok && fe('types') && (
           <span className="text-[12px] text-[#8B3A4F] ml-2 font-normal">{fe('types')}</span>
         )}</Label>
-        <div className="text-[11.5px] text-ach-navy/55 mt-0.5 mb-2">
-          Tick all that apply. A partner can hold multiple relationships with ACH simultaneously.
+        <div className="text-[11.5px] text-ach-navy/70 mt-0.5 mb-2">
+          Tick every relationship that applies — they overlap freely. A Workforce Partner can also be a
+          Capability Investor (e.g. an employer that hires candidates AND sponsors cohorts), and a
+          Training Partner can also be a Workforce Partner (e.g. a firm that commissions ED&amp;I training
+          AND hires through ACH). Pick all that apply.
         </div>
         <div className="space-y-2">
           {PARTNER_TYPES.map(t => (
