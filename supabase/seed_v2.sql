@@ -150,8 +150,8 @@ values (
   now() - interval $bk$21 days$bk$
 ) on conflict (id) do nothing;
 insert into public.delphi_experts (id, panel_id, name, email, role) values
-  ('99999999-9999-9999-9999-000000000001', '88888888-8888-8888-8888-000000000001', $bk$Dr Maya Iqbal$bk$,     'm.iqbal@aston.example',         'academic'),
-  ('99999999-9999-9999-9999-000000000002', '88888888-8888-8888-8888-000000000001', $bk$Prof Adrian Brown$bk$, 'a.brown@aston.example',         'academic'),
+  ('99999999-9999-9999-9999-000000000001', '88888888-8888-8888-8888-000000000001', $bk$Dr Hannah Pearson$bk$,     'h.pearson@bristol.example',     'academic'),
+  ('99999999-9999-9999-9999-000000000002', '88888888-8888-8888-8888-000000000001', $bk$Prof Aidan Walsh$bk$,      'a.walsh@kcl.example',           'academic'),
   ('99999999-9999-9999-9999-000000000003', '88888888-8888-8888-8888-000000000001', $bk$Sarah Mitchell$bk$,    'sarah.mitchell@burgessalmon.example',  'practitioner'),
   ('99999999-9999-9999-9999-000000000004', '88888888-8888-8888-8888-000000000001', $bk$James Okafor$bk$,      'j.okafor@pret.example',         'practitioner'),
   ('99999999-9999-9999-9999-000000000005', '88888888-8888-8888-8888-000000000001', $bk$Linnea Bergström$bk$,  'l.bergstrom@ikea.example',      'practitioner'),
