@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { IndicatorScorer } from '@/components/assessments/indicator-scorer';
 import { HimScoreCard } from '@/components/assessments/him-score-card';
 import { TranscriptModal } from '@/components/assessments/transcript-modal';
+import { getTranslations } from 'next-intl/server';
 import { completeAssessmentAction } from '@/lib/assessments/actions';
 import { calculateHim } from '@/lib/scoring/him';
 import type { DomainId, IndicatorResponse, ProjectCapability } from '@/lib/scoring/types';
@@ -38,7 +39,7 @@ export default async function AssessmentRunnerPage({
     supabase.from('assessments').select('*, candidates(candidate_ref, given_name)').eq('id', params.assessmentId).maybeSingle(),
     supabase.from('project_capabilities').select('domain, role').eq('project_id', params.id),
     Promise.all([
-      supabase.from('factors').select('id, name, conversion_factor_type, is_universal, measurement_method'),
+      supabase.from('factors').select('id, name, conversion_factor_type, is_universal, measurement_method, measurement_question'),
       supabase.from('factor_domains').select('factor_id, domain_id'),
       supabase.from('indicators').select('id, factor_id, name, sort_order').order('sort_order'),
     ]),
@@ -123,6 +124,19 @@ export default async function AssessmentRunnerPage({
     await completeAssessmentAction(params.assessmentId, params.id);
   }
 
+  // Translated assessment strings (Tier B locales render translations
+  // where supplied, fall back to English for missing keys via deepMerge)
+  const t = await getTranslations('assessment');
+  const tDomain = (id: string) => {
+    try { return t(`domains.${id}` as never); } catch { return DOMAIN_LABELS[id] ?? id; }
+  };
+  const tFactor = (id: string, fallback: string) => {
+    try { return t(`factors.${id}` as never); } catch { return fallback; }
+  };
+  const tMeasurement = (id: string, fallback: string) => {
+    try { return t(`measurements.${id}` as never); } catch { return fallback; }
+  };
+
   return (
     <div className="max-w-6xl mx-auto">
       <PageHeader
@@ -176,7 +190,7 @@ export default async function AssessmentRunnerPage({
                         {cap.role}
                       </div>
                       <div className="text-[15px] font-medium text-ach-navy mt-0.5">
-                        {DOMAIN_LABELS[cap.domain] ?? cap.domain}
+                        {tDomain(cap.domain)}
                       </div>
                     </div>
                     <div className="text-[11.5px] text-ach-navy/60">
@@ -193,13 +207,16 @@ export default async function AssessmentRunnerPage({
                     return (
                       <div key={fac.id} className="mb-5 last:mb-0">
                         <div className="flex items-center gap-2 mb-2">
-                          <div className="text-[12.5px] font-medium text-ach-navy">{fac.name}</div>
+                          <div className="text-[12.5px] font-medium text-ach-navy">{tFactor(fac.id, fac.name)}</div>
                           {fac.is_universal && (
                             <span className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/50">Universal</span>
                           )}
                           <span className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/50">
                             {fac.conversion_factor_type}
                           </span>
+                        </div>
+                        <div className="text-[11.5px] text-ach-navy/65 mb-2 italic">
+                          {tMeasurement(fac.id, fac.measurement_question ?? '')}
                         </div>
                         <div className="space-y-1">
                           {inds.map(ind => {
