@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
-  LayoutDashboard, Users, FileText, ScrollText, BadgeCheck,
+  LayoutDashboard, Users, FileText,
   Building2, GraduationCap, ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -31,17 +31,14 @@ export function PartnerSidebar({ partner }: { partner: Partner | null }) {
     items.push(
       { section: 'Hiring' },
       { href: '/partner/placements',    label: 'Placements',         icon: Users },
-      { href: '/partner/milestones',    label: 'Milestone payments', icon: ScrollText },
       { section: 'Impact' },
       { href: '/partner/development-fund', label: 'Development fund', icon: GraduationCap },
-      { href: '/partner/verified-tier', label: 'Verified tier',      icon: BadgeCheck },
     );
   } else if (partner?.type === 'capability_investor') {
     items.push(
       { section: 'Impact' },
       { href: '/partner/sponsorships',  label: 'Sponsorships',       icon: Building2 },
       { href: '/partner/capability',    label: 'Capability uplift',  icon: GraduationCap },
-      { href: '/partner/verified-tier', label: 'Verified tier',      icon: BadgeCheck },
     );
   } else if (partner?.type === 'training_partner') {
     items.push(

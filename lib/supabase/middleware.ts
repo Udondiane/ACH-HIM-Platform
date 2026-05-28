@@ -38,7 +38,6 @@ export async function updateSession(request: NextRequest) {
   const isPublic =
     path === '/' ||
     path.startsWith('/sign-in') ||
-    path.startsWith('/verified-partners') ||
     path.startsWith('/api/public') ||
     path.startsWith('/_next') ||
     path.includes('.');
