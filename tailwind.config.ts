@@ -20,7 +20,7 @@ const config: Config = {
         // ACH brand
         'ach-navy':       '#0A1F3D',
         'ach-cream':      '#FBF8F2',
-        'ach-page':       '#F4EFF8',
+        'ach-page':       '#F9F5FC',
         'ach-card':       '#FFFFFF',
         'ach-border':     '#EEEAE0',
         // domain accents (muted ~15%)
