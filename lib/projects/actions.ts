@@ -164,6 +164,14 @@ export async function updateProjectAction(
   return { ok: true, id };
 }
 
+export async function deleteProjectAction(id: string) {
+  const supabase = createClient();
+  await supabase.from('projects').delete().eq('id', id);
+  revalidatePath('/projects');
+  revalidatePath('/dashboard');
+  redirect('/projects');
+}
+
 export async function setProjectCapabilitiesAction(
   projectId: string,
   capabilities: { domain: DomainId; role: 'core' | 'optional' }[],
