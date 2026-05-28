@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { IndicatorScorer } from '@/components/assessments/indicator-scorer';
 import { HimScoreCard } from '@/components/assessments/him-score-card';
 import { TranscriptModal } from '@/components/assessments/transcript-modal';
+import { AttachmentUploader } from '@/components/assessments/attachment-uploader';
 import { getTranslations } from 'next-intl/server';
 import { completeAssessmentAction } from '@/lib/assessments/actions';
 import { calculateHim } from '@/lib/scoring/him';
@@ -34,7 +35,7 @@ export default async function AssessmentRunnerPage({
   const supabase = createClient();
 
   // Load everything in parallel
-  const [project, assessment, capabilities, framework, responses] = await Promise.all([
+  const [project, assessment, capabilities, framework, responses, attachments] = await Promise.all([
     supabase.from('projects').select('*').eq('id', params.id).maybeSingle(),
     supabase.from('assessments').select('*, candidates(candidate_ref, given_name)').eq('id', params.assessmentId).maybeSingle(),
     supabase.from('project_capabilities').select('domain, role').eq('project_id', params.id),
@@ -44,6 +45,7 @@ export default async function AssessmentRunnerPage({
       supabase.from('indicators').select('id, factor_id, name, sort_order').order('sort_order'),
     ]),
     supabase.from('assessment_responses').select('indicator_id, numeric_value, narrative, observable_changes, practices').eq('assessment_id', params.assessmentId),
+    supabase.from('assessment_attachments').select('id, file_name, mime_type, size_bytes, uploaded_at').eq('assessment_id', params.assessmentId).order('uploaded_at', { ascending: false }),
   ]);
 
   if (!project.data || !assessment.data) notFound();
@@ -250,6 +252,16 @@ export default async function AssessmentRunnerPage({
         </div>
 
         <div className="space-y-4">
+          <Card>
+            <CardContent className="pt-5">
+              <AttachmentUploader
+                assessmentId={params.assessmentId}
+                initialAttachments={(attachments.data as any[]) ?? []}
+                locked={isLocked || a.status === 'completed'}
+              />
+            </CardContent>
+          </Card>
+
           {him ? (
             <HimScoreCard result={him} />
           ) : (
