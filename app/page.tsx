@@ -46,7 +46,7 @@ export default async function HomePage() {
           Sign in
         </Link>
         <p className="mt-12 text-ach-text-meta" style={{ fontSize: 11, letterSpacing: 0.3 }}>
-          Ashley Community &amp; Housing · in partnership with Aston Business School
+          ACH
         </p>
       </div>
     </main>

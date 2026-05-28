@@ -6,7 +6,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'ACH HIM Platform',
-  description: 'Holistic Impact Metric — Ashley Community & Housing',
+  description: 'Holistic Impact Metric — ACH',
 };
 
 export default async function RootLayout({
