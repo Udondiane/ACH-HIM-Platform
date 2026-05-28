@@ -34,11 +34,11 @@ export default async function PartnerDevFundPage({
       <PageHeader
         miniLabel="Development Fund"
         title="Development Fund contribution"
-        description="Your retention milestone payments fund candidate-led development training — accredited qualifications, sector certifications, language progression, and pre-degree access. Each candidate decides how to use their balance."
+        description="A ringfenced contribution that funds candidate-led development training — accredited qualifications, sector certifications, language progression, and pre-degree access. Each candidate decides how to use their balance."
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
-        <Kpi label="Total contributed" value={`£${totalContributed.toLocaleString()}`} sub="across all retention milestones" />
+        <Kpi label="Total contributed" value={`£${totalContributed.toLocaleString()}`} sub="invested in candidate progression" />
         <Kpi label="Candidates supported" value={String(candidatesSupported)} sub="have a Dev Fund balance" />
         <Kpi label="Average per candidate" value={candidatesSupported > 0 ? `£${Math.round(totalContributed / candidatesSupported).toLocaleString()}` : '£0'} sub="based on your contributions" />
       </div>
@@ -49,13 +49,13 @@ export default async function PartnerDevFundPage({
         </CardHeader>
         <CardContent className="text-[13px] text-ach-navy/80 space-y-3 max-w-prose">
           <p>
-            For every retention milestone you pay, ACH ringfences a proportion into the Development Fund. The fund is held in trust for the placed candidate and unlocks at specific durability checkpoints.
+            The Development Fund is a ringfenced pool you contribute to as part of your partnership with ACH. It is held in trust for placed candidates and unlocks at specific progression checkpoints.
           </p>
           <p>
             Candidates spend their balance on training that builds long-term capability: vocational qualifications, English progression, sector-specific certifications, or pre-university access programmes. ACH caseworkers review each request to make sure it aligns with the candidate&apos;s development plan.
           </p>
           <p>
-            <span className="font-medium text-ach-navy">Why this matters for you:</span> the Dev Fund is what converts your retention payment from a transactional fee into a measurable social value contribution. It appears separately in your Verified tier evidence pack.
+            <span className="font-medium text-ach-navy">Why this matters for you:</span> the Dev Fund converts a hiring relationship into a measurable social value contribution, separately documented in your evidence pack.
           </p>
         </CardContent>
       </Card>
