@@ -1,7 +1,7 @@
 insert into public.partners
   (id, name, type, status, sector, region, employee_count, consent_public_listing, notes)
 values
-  ('11111111-1111-1111-1111-000000000001', $bk$Burges Salmon$bk$,     'capability_investor', 'active', 'Legal', 'Bristol', 750, true,  $bk$ED&I/CSR-led; already paid for cultural awareness training. Annex H Family 2.$bk$),
+  ('11111111-1111-1111-1111-000000000001', $bk$Burges Salmon$bk$,     'training_partner',    'active', 'Legal', 'Bristol', 750, true,  $bk$ED&I-led; pays ACH to deliver cultural-awareness and inclusion training to legal-team staff. Not a placement buyer.$bk$),
   ('11111111-1111-1111-1111-000000000002', $bk$Pret A Manger$bk$,     'workforce_partner',   'active', 'Hospitality', $bk$Bristol & Birmingham$bk$, 380, true, $bk$Strongest historical 60% offer rate; in-kind to date.$bk$),
   ('11111111-1111-1111-1111-000000000003', $bk$Doyle Collection (The Bristol Hotel)$bk$, 'workforce_partner', 'active', 'Hospitality', 'Bristol', 220, false, $bk$Twin-signal: Visit West cohort + webinar attendee. Single property, modest hiring.$bk$),
   ('11111111-1111-1111-1111-000000000004', $bk$Bowmer & Kirkland$bk$, 'capability_investor', 'active', 'Construction',  'Bristol', 1600, true,  $bk$Public-sector framework bidders. Tender Support Pack target.$bk$),
