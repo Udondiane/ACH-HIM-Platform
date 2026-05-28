@@ -92,7 +92,7 @@ export function TranscriptModal({
               {!suggestions && (
                 <>
                   <p className="text-[12.5px] text-ach-navy/75">
-                    Paste the candidate interview transcript below. Gemini will read it and propose scores + observable changes + practices for each relevant indicator. You review and accept or reject each suggestion before it is saved.
+                    Paste the candidate interview transcript below. Azure OpenAI will read it and propose scores + observable changes + practices for each relevant indicator. You review and accept or reject each suggestion before it is saved.
                   </p>
                   <textarea
                     value={transcript}
@@ -102,7 +102,7 @@ export function TranscriptModal({
                     className="w-full rounded-[10px] border-[0.5px] border-ach-border bg-white px-3 py-2 text-[12.5px] text-ach-navy placeholder:text-ach-navy/40 focus:outline-none focus:ring-1 focus:ring-ach-navy/40"
                   />
                   <div className="text-[11px] text-ach-navy/55">
-                    Up to 30,000 characters. Transcript content leaves your platform only during this request and is not retained by Gemini for training.
+                    Up to 30,000 characters. Processed in your ACH Azure tenant (UK datacentre). Transcript content is not retained for model training under Microsoft's Data Processing Agreement.
                   </div>
                 </>
               )}
