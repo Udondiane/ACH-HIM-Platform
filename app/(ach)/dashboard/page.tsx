@@ -64,7 +64,7 @@ export default async function AchDashboardPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+      <div className="mt-4">
         <Card>
           <CardHeader>
             <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">
@@ -90,27 +90,6 @@ export default async function AchDashboardPage() {
             <p>
               <span className="text-ach-navy font-medium">4.</span> Set up the{' '}
               <Link href="/projects" className="underline">project</Link> (Core/Optional capabilities, depth or breadth), then run assessments.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">
-              Method version
-            </div>
-            <div className="text-[15px] font-medium text-ach-navy mt-1">
-              Methodology v1.0
-            </div>
-          </CardHeader>
-          <CardContent className="text-[13px] text-ach-navy/80 space-y-2.5">
-            <p>
-              Scoring follows the HIM Methodology Specification v1 (Aston Business
-              School CREME). Pricing follows the per-candidate sponsorship model.
-            </p>
-            <p className="text-[12px] text-ach-navy/60">
-              All exported reports stamp the methodology version they were generated under,
-              so historical reports remain traceable even if the methodology evolves.
             </p>
           </CardContent>
         </Card>

@@ -199,7 +199,7 @@ insert into public.evidence_pack_sections (pack_id, section_key, sort_order, con
   ('bbbbbbbb-bbbb-bbbb-bbbb-000000000001', 'candidate_stories', 5,
    $bk$Tanya (Visit West cohort, 2024) - secured a University of the West of England undergraduate place following programme completion. Multiple other candidates progressed into Business English and Accounting Level 1.$bk$, true),
   ('bbbbbbbb-bbbb-bbbb-bbbb-000000000001', 'methodology_academic_grounding', 6,
-   $bk$Scoring follows the HIM Methodology Specification v1.0 (Udondian, Aston Business School CREME, May 2026). The seven-domain capability framework, two-step indicator-to-domain rollup, asymmetric depth/breadth weight ratios, and universal-factor deduplication are all peer-reviewed.$bk$, true),
+   $bk$Scoring follows the HIM Methodology Specification v1.0 (May 2026). The seven-domain capability framework, two-step indicator-to-domain rollup, asymmetric depth/breadth weight ratios, and universal-factor deduplication are documented in the published spec.$bk$, true),
   ('bbbbbbbb-bbbb-bbbb-bbbb-000000000001', 'distinctiveness_innovation', 7,
    $bk$Three differentiators: (1) Matrix-accredited IAG service. (2) Lived-experience staff team. (3) Documented CSR evidence base via named global brand partnerships (IKEA, Pret).$bk$, true),
   ('bbbbbbbb-bbbb-bbbb-bbbb-000000000001', 'theory_of_change', 8, null, true),
@@ -207,7 +207,7 @@ insert into public.evidence_pack_sections (pack_id, section_key, sort_order, con
    $bk$True cohort cost (loaded): GBP 16,696 (GBP 1,670 per candidate base + 20% overhead + 5% contingency). Recommended sale prices range from GBP 26,914 (public sector/NGO) to GBP 43,410 (large corporate). Current IKEA contribution of GBP 8,000 per cohort covers only 19% of true cost. The GBP 78,164 annual funding gap from the Oct 2026 Comic Relief end-date is closeable via repriced employer fees + IAG statutory commissioning.$bk$, true),
   ('bbbbbbbb-bbbb-bbbb-bbbb-000000000001', 'funder_citation_blocks', 10, null, true),
   ('bbbbbbbb-bbbb-bbbb-bbbb-000000000001', 'evidence_references', 11,
-   $bk$• ACH Annual Reports 2024, 2025\n• Programme Performance Data (Mar 2024 - Apr 2026)\n• HIM Methodology Specification v1.0 (Aston CREME, May 2026)\n• Sustainable Revenue Model memo (May 2026)\n• Matrix Standard accreditation (Jun 2025)$bk$, true),
+   $bk$• ACH Annual Reports 2024, 2025\n• Programme Performance Data (Mar 2024 - Apr 2026)\n• HIM Methodology Specification v1.0 (May 2026)\n• Sustainable Revenue Model memo (May 2026)\n• Matrix Standard accreditation (Jun 2025)$bk$, true),
   ('bbbbbbbb-bbbb-bbbb-bbbb-000000000001', 'visual_material', 12, null, false),
   ('bbbbbbbb-bbbb-bbbb-bbbb-000000000001', 'ach_attestation', 13,
    $bk$This pack is generated from primary ACH operational data. Methodology version v1.0. ACH staff have reviewed each section for accuracy prior to submission.$bk$, true)
