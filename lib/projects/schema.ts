@@ -81,12 +81,25 @@ const capAnswerSchema = z.enum(CAP_ANSWERS).optional().or(z.literal(''));
 
 const dateOrEmpty = z.string().trim().regex(/^(\d{4}-\d{2}-\d{2})?$/).optional().or(z.literal(''));
 
+export const EVALUATION_TYPES = ['formative', 'summative'] as const;
+export const EVALUATION_TYPE_LABELS: Record<typeof EVALUATION_TYPES[number], string> = {
+  formative: 'Formative (during project)',
+  summative: 'Summative (post project)',
+};
+export const EVALUATION_TYPE_HINTS: Record<typeof EVALUATION_TYPES[number], string> = {
+  formative: 'Ongoing assessment - useful for adjusting delivery while the project is still running.',
+  summative: 'End-point assessment - measures overall outcomes once the project is complete.',
+};
+
 export const projectSchema = z.object({
   project_ref: z.string().trim().max(60).optional().or(z.literal('')),
   name: z.string().trim().min(1, 'Name required').max(200),
   description: z.string().trim().max(2000).optional().or(z.literal('')),
   funding_model: z.enum(FUNDING_MODELS).optional().or(z.literal('')),
   funder_name: z.string().trim().max(200).optional().or(z.literal('')),
+  evaluation_type: z.enum(EVALUATION_TYPES).optional().or(z.literal('')),
+  personnel: z.string().trim().max(2000).optional().or(z.literal('')),
+  focus_area: z.string().trim().max(500).optional().or(z.literal('')),
   type: z.enum(PROJECT_TYPES),
   weight_ratio: z.enum(WEIGHT_RATIOS),
   hybrid_option: z.enum(HYBRID_OPTIONS).optional().or(z.literal('')),
