@@ -14,11 +14,12 @@ export default async function PartnersListPage({ searchParams }: { searchParams?
   const supabase = createClient();
   let query = supabase
     .from('partners')
-    .select('id, name, type, status, sector, region, employee_count')
+    .select('id, name, type, types, status, sector, region, employee_count')
     .order('created_at', { ascending: false });
 
   if (searchParams?.type && (PARTNER_TYPES as readonly string[]).includes(searchParams.type)) {
-    query = query.eq('type', searchParams.type);
+    // Array containment: partners.types contains the filter value
+    query = query.contains('types', [searchParams.type]);
   }
 
   const { data: partners, error } = await query;
@@ -89,7 +90,11 @@ export default async function PartnersListPage({ searchParams }: { searchParams?
                     </Link>
                   </Td>
                   <Td>
-                    <Badge variant={p.type}>{PARTNER_TYPE_LABELS[p.type as keyof typeof PARTNER_TYPE_LABELS] ?? p.type}</Badge>
+                    <div className="flex flex-wrap gap-1">
+                      {((p.types as string[] | null) ?? (p.type ? [p.type] : [])).map((t: string) => (
+                        <Badge key={t} variant={t as any}>{PARTNER_TYPE_LABELS[t as keyof typeof PARTNER_TYPE_LABELS] ?? t}</Badge>
+                      ))}
+                    </div>
                   </Td>
                   <Td><Badge variant={p.status}>{p.status}</Badge></Td>
                   <Td className="text-ach-navy/70">{p.sector ?? '—'}</Td>

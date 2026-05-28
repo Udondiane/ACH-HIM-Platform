@@ -29,7 +29,7 @@ const AUDIT_KIND_LABELS: Record<string, string> = {
   narrative_quote: 'Narrative quote',
 };
 
-export async function TrainingPartnerDashboard({ partner }: { partner: any }) {
+export async function TrainingPartnerDashboard({ partner, hideHeader }: { partner: any; hideHeader?: boolean }) {
   const supabase = createClient();
 
   const [auditEntries, inclusionAssessments] = await Promise.all([
@@ -50,12 +50,17 @@ export async function TrainingPartnerDashboard({ partner }: { partner: any }) {
   const previousInclusion = assessments[1];
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <PageHeader
-        miniLabel="Training partner"
-        title={`Welcome, ${partner.name}`}
-        description="Track the practice changes you've adopted, the policy updates verified by ACH audit, and your year-over-year Inclusion Assessment."
-      />
+    <div>
+      {hideHeader ? (
+        <div className="mb-4 pb-3 border-b-[0.5px] border-ach-border">
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/55">As a Training Partner</div>
+        </div>
+      ) : (
+        <PageHeader
+          miniLabel="ACH Training Partner"
+          title={`Welcome, ${partner.name}`}
+        />
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <KpiCard label="Audit entries" value={String(entries.length)} sub={`${confirmed} confirmed`} />

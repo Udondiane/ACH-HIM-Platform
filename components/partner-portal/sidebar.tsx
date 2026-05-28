@@ -12,6 +12,7 @@ interface Partner {
   id: string;
   name: string;
   type: string;
+  types?: string[];
 }
 
 export function PartnerSidebar({ partner }: { partner: Partner | null }) {
@@ -20,6 +21,8 @@ export function PartnerSidebar({ partner }: { partner: Partner | null }) {
   const asParam = search?.get('as');
   const qs = asParam ? `?as=${encodeURIComponent(asParam)}` : '';
 
+  const types: string[] = partner?.types ?? (partner?.type ? [partner.type] : []);
+
   const items: Array<
     | { section: string }
     | { href: string; label: string; icon: any }
@@ -27,20 +30,22 @@ export function PartnerSidebar({ partner }: { partner: Partner | null }) {
     { href: '/partner-dashboard', label: 'Dashboard', icon: LayoutDashboard },
   ];
 
-  if (partner?.type === 'workforce_partner') {
+  if (types.includes('workforce_partner')) {
     items.push(
       { section: 'Hiring' },
       { href: '/partner/placements',    label: 'Placements',         icon: Users },
       { section: 'Impact' },
       { href: '/partner/development-fund', label: 'Development fund', icon: GraduationCap },
     );
-  } else if (partner?.type === 'capability_investor') {
+  }
+  if (types.includes('capability_investor')) {
     items.push(
-      { section: 'Impact' },
+      { section: 'Investment' },
       { href: '/partner/sponsorships',  label: 'Sponsorships',       icon: Building2 },
       { href: '/partner/capability',    label: 'Capability uplift',  icon: GraduationCap },
     );
-  } else if (partner?.type === 'training_partner') {
+  }
+  if (types.includes('training_partner')) {
     items.push(
       { section: 'Practice change' },
       { href: '/partner/audit-entries', label: 'Audit entries',      icon: ShieldCheck },

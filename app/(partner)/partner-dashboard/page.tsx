@@ -3,7 +3,9 @@ import { WorkforcePartnerDashboard } from '@/components/partner-portal/workforce
 import { TrainingPartnerDashboard } from '@/components/partner-portal/training-partner-dashboard';
 import { Card, CardContent } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
+import { Badge } from '@/components/ui/badge';
 import { resolveCurrentPartner } from '@/lib/partners/resolve-current';
+import { PARTNER_TYPE_LABELS } from '@/lib/partners/schema';
 
 export default async function PartnerDashboardPage({
   searchParams,
@@ -26,13 +28,47 @@ export default async function PartnerDashboardPage({
     );
   }
 
-  if (partner.type === 'capability_investor') return <CapabilityInvestorDashboard partner={partner} />;
-  if (partner.type === 'workforce_partner')   return <WorkforcePartnerDashboard   partner={partner} />;
-  if (partner.type === 'training_partner')    return <TrainingPartnerDashboard    partner={partner} />;
+  const types = partner.types ?? [];
+  const isMulti = types.length > 1;
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <PageHeader miniLabel="Partner workspace" title={partner.name} description={`Unsupported partner type: ${partner.type}`} />
+    <div className="max-w-6xl mx-auto">
+      {isMulti && (
+        <div className="mb-6">
+          <PageHeader
+            miniLabel="Partner workspace"
+            title={`Welcome, ${partner.name}`}
+          />
+          <div className="flex items-center gap-2 -mt-3 mb-1 flex-wrap">
+            {types.map(t => (
+              <Badge key={t} variant={t as any}>{PARTNER_TYPE_LABELS[t as keyof typeof PARTNER_TYPE_LABELS] ?? t}</Badge>
+            ))}
+            <span className="text-[11.5px] text-ach-navy/55 ml-1">
+              You hold {types.length} relationships with ACH. Each section below covers one of them.
+            </span>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-10">
+        {types.includes('workforce_partner') && (
+          <WorkforcePartnerDashboard partner={partner} hideHeader={isMulti} />
+        )}
+        {types.includes('capability_investor') && (
+          <CapabilityInvestorDashboard partner={partner} hideHeader={isMulti} />
+        )}
+        {types.includes('training_partner') && (
+          <TrainingPartnerDashboard partner={partner} hideHeader={isMulti} />
+        )}
+        {types.length === 0 && (
+          <Card>
+            <CardContent className="pt-6 text-[13px] text-ach-navy/70">
+              No partner type is set on this partner. An ACH admin needs to assign at least one type
+              (Workforce Partner, Capability Investor, or Training Partner) for the dashboard to populate.
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }

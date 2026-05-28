@@ -3,7 +3,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
-export async function CapabilityInvestorDashboard({ partner }: { partner: any }) {
+export async function CapabilityInvestorDashboard({ partner, hideHeader }: { partner: any; hideHeader?: boolean }) {
   const supabase = createClient();
 
   const { data: cohortPartners } = await supabase
@@ -23,11 +23,17 @@ export async function CapabilityInvestorDashboard({ partner }: { partner: any })
   const sponsored = (sponsoredCandidates as any[]) ?? [];
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <PageHeader
-        miniLabel="ACH Capability Investor"
-        title={`Welcome, ${partner.name}`}
-      />
+    <div>
+      {hideHeader ? (
+        <div className="mb-4 pb-3 border-b-[0.5px] border-ach-border">
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/55">As a Capability Investor</div>
+        </div>
+      ) : (
+        <PageHeader
+          miniLabel="ACH Capability Investor"
+          title={`Welcome, ${partner.name}`}
+        />
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <KpiCard label="Sponsorships" value={String(totalSponsorships)} sub="committed" />

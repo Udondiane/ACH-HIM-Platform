@@ -8,12 +8,16 @@ import { partnerSchema } from './schema';
 function fdToPlain(fd: FormData): Record<string, unknown> {
   const obj: Record<string, unknown> = {};
   for (const [k, v] of fd.entries()) {
-    obj[k] = v;
+    if (k === 'types') {
+      // multi-checkbox: collect all values for the same key into an array
+      const existing = obj.types as string[] | undefined;
+      obj.types = existing ? [...existing, v as string] : [v as string];
+    } else {
+      obj[k] = v;
+    }
   }
-  // Checkboxes: if not checked, the field is absent from FormData.
-  if (!('consent_public_listing' in obj)) obj.consent_public_listing = false;
-  // Empty optional numbers
   if (obj.employee_count === '') obj.employee_count = undefined;
+  if (!obj.types) obj.types = [];
   return obj;
 }
 
@@ -33,14 +37,12 @@ export async function createPartnerAction(_prev: ActionResult | null, fd: FormDa
   const supabase = createClient();
   const payload = {
     name: parsed.data.name,
-    type: parsed.data.type,
+    types: parsed.data.types,
     status: parsed.data.status,
     sector: parsed.data.sector || null,
     region: parsed.data.region || null,
     website: parsed.data.website || null,
     employee_count: parsed.data.employee_count === '' ? null : parsed.data.employee_count ?? null,
-    notes: parsed.data.notes || null,
-    consent_public_listing: parsed.data.consent_public_listing,
   };
   const { data, error } = await supabase
     .from('partners')
@@ -71,14 +73,12 @@ export async function updatePartnerAction(
   const supabase = createClient();
   const payload = {
     name: parsed.data.name,
-    type: parsed.data.type,
+    types: parsed.data.types,
     status: parsed.data.status,
     sector: parsed.data.sector || null,
     region: parsed.data.region || null,
     website: parsed.data.website || null,
     employee_count: parsed.data.employee_count === '' ? null : parsed.data.employee_count ?? null,
-    notes: parsed.data.notes || null,
-    consent_public_listing: parsed.data.consent_public_listing,
   };
   const { error } = await supabase
     .from('partners')
