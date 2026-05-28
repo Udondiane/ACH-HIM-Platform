@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { PARTNER_TYPE_LABELS } from '@/lib/partners/schema';
 
 export const metadata = {
-  title: 'Verified Partners · Ashley Community',
+  title: 'Verified Partners · ACH',
 };
 
 export default async function VerifiedPartnersPublicPage() {
@@ -26,7 +26,7 @@ export default async function VerifiedPartnersPublicPage() {
       <div className="max-w-5xl mx-auto px-6 py-12">
         <div className="mb-12">
           <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">
-            Ashley Community
+            ACH
           </div>
           <h1 className="text-[42px] font-medium tracking-[-0.5px] text-ach-navy leading-tight mb-4">
             Verified Partners
@@ -74,7 +74,7 @@ export default async function VerifiedPartnersPublicPage() {
         <div className="mt-16 pt-8 border-t-[0.5px] border-ach-border text-[12px] text-ach-navy/60">
           <p className="max-w-2xl leading-relaxed">
             Inclusion on this page reflects partners&apos; consent to public listing and their current
-            tier status. Verification is conducted by Ashley Community &amp; Housing.
+            tier status. Verification is conducted by ACH.
           </p>
         </div>
       </div>

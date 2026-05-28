@@ -187,7 +187,7 @@ insert into public.evidence_packs (id, title, funder, funding_window, descriptio
 ) on conflict (id) do nothing;
 insert into public.evidence_pack_sections (pack_id, section_key, sort_order, content, included) values
   ('bbbbbbbb-bbbb-bbbb-bbbb-000000000001', 'organisational_overview', 0,
-   $bk$Ashley Community & Housing (ACH) has supported refugee resettlement in Bristol and Birmingham since 2008. The Bridge to Employment programme operationalises ACH's holistic capability framework with named employer partners, delivering measurable employment, education, and progression outcomes for refugee candidates.$bk$, true),
+   $bk$ACH has supported refugee resettlement in Bristol and Birmingham since 2008. The Bridge to Employment programme operationalises ACH's holistic capability framework with named employer partners, delivering measurable employment, education, and progression outcomes for refugee candidates.$bk$, true),
   ('bbbbbbbb-bbbb-bbbb-bbbb-000000000001', 'programme_overview', 1,
    $bk$Bridge to Employment (B2E) is a 12-week structured programme combining pre-employment training, paid work-trial placements, and 12 months of in-work support. Each cohort is co-designed with one or more employer partners around specific vacancy pipelines. Cohorts run between 8 and 14 candidates.$bk$, true),
   ('bbbbbbbb-bbbb-bbbb-bbbb-000000000001', 'current_scale_reach', 2,

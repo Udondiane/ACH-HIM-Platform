@@ -38,7 +38,7 @@ export function AchSidebar() {
       <div className="px-5 py-6 border-b-[0.5px] border-ach-border">
         <Link href="/dashboard" className="flex flex-col">
           <span className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">
-            Ashley Community
+            ACH
           </span>
           <span className="text-[15px] font-medium text-ach-navy mt-0.5">
             HIM Platform
