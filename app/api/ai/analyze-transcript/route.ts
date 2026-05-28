@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import OpenAI from 'openai';
 import { createClient } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
@@ -18,11 +18,35 @@ interface PerIndicatorSuggestion {
   confidence: 'low' | 'medium' | 'high';
 }
 
+/**
+ * AI transcript analysis backed by Azure OpenAI.
+ *
+ * Required env vars (set in Vercel project settings):
+ *   AZURE_OPENAI_API_KEY        - the API key from your Azure OpenAI resource
+ *   AZURE_OPENAI_ENDPOINT       - e.g. https://ach-openai-uksouth.openai.azure.com
+ *   AZURE_OPENAI_DEPLOYMENT     - the deployment name you set in Azure
+ *                                 (e.g. "gpt-4o-mini" or "ach-assistant")
+ *   AZURE_OPENAI_API_VERSION    - optional, defaults to 2024-08-01-preview
+ *
+ * Why Azure OpenAI rather than the public OpenAI API or Gemini:
+ *   - UK South / UK West data residency available
+ *   - Microsoft signs a Data Processing Agreement, useful for the
+ *     refugee-data DPIA the IKEA pilot needs
+ *   - Microsoft for Nonprofits typically supplies Azure credit so
+ *     this is effectively free for the pilot
+ */
 export async function POST(req: NextRequest) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
+  const apiKey = process.env.AZURE_OPENAI_API_KEY;
+  const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
+  const deployment = process.env.AZURE_OPENAI_DEPLOYMENT;
+  const apiVersion = process.env.AZURE_OPENAI_API_VERSION ?? '2024-08-01-preview';
+
+  if (!apiKey || !endpoint || !deployment) {
     return NextResponse.json(
-      { ok: false, error: 'AI transcript analysis is not configured. Set GEMINI_API_KEY in environment.' },
+      {
+        ok: false,
+        error: 'AI transcript analysis is not configured. ACH admin: set AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_DEPLOYMENT in environment.',
+      },
       { status: 503 },
     );
   }
@@ -43,7 +67,6 @@ export async function POST(req: NextRequest) {
 
   const supabase = createClient();
 
-  // Load the assessment's project capabilities and all relevant indicators.
   const { data: assessment } = await supabase
     .from('assessments').select('project_id, candidate_id').eq('id', body.assessmentId).maybeSingle();
   if (!assessment) {
@@ -72,15 +95,12 @@ export async function POST(req: NextRequest) {
     relevantIndicators = relevantIndicators.filter(i => allow.has(i.id));
   }
 
-  /* Build the prompt. We give Gemini the list of indicators with their
-     measurement method and ask for a structured JSON response with a
-     score, observable_changes, practices, and confidence for each. */
   const indicatorList = relevantIndicators.map(i => {
     const f = factorsById.get(i.factor_id);
     return `- ${i.id} :: ${i.name} (factor: ${f?.name ?? '?'}, method: ${f?.measurement_method ?? '?'})`;
   }).join('\n');
 
-  const systemPrompt = `You are a careful evaluation analyst for ACH (Ashley Community), a charity supporting refugees in the UK. You read interview transcripts from caseworker conversations with refugees and extract evidence against the HIM capability framework.
+  const systemPrompt = `You are a careful evaluation analyst for ACH, a UK charity supporting refugees. You read interview transcripts from caseworker conversations with refugees and extract evidence against the HIM capability framework.
 
 For each indicator below, output:
 - numericValue: integer 0-5 if evidence supports a score; null if no evidence found
@@ -90,7 +110,7 @@ For each indicator below, output:
 
 Never fabricate evidence. If the transcript does not address an indicator, set numericValue to null and leave text empty.
 
-Output ONLY a JSON array, no markdown fences, no commentary.`;
+Return ONLY a JSON object with a single field "suggestions" containing the array. No markdown, no commentary.`;
 
   const userPrompt = `Indicators to assess:
 ${indicatorList}
@@ -100,30 +120,40 @@ Transcript:
 ${body.transcript}
 """
 
-Return a JSON array of objects with shape:
-{"indicatorId": string, "numericValue": number|null, "observableChanges": string, "practices": string, "confidence": "low"|"medium"|"high"}`;
+Return JSON: {"suggestions": [{"indicatorId": string, "numericValue": number|null, "observableChanges": string, "practices": string, "confidence": "low"|"medium"|"high"}]}`;
 
   try {
-    const ai = new GoogleGenerativeAI(apiKey);
-    const model = ai.getGenerativeModel({
-      model: 'gemini-1.5-flash',
-      systemInstruction: systemPrompt,
-      generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
+    const client = new OpenAI({
+      apiKey,
+      baseURL: `${endpoint.replace(/\/$/, '')}/openai/deployments/${deployment}`,
+      defaultQuery: { 'api-version': apiVersion },
+      defaultHeaders: { 'api-key': apiKey },
     });
-    const r = await model.generateContent(userPrompt);
-    const text = r.response.text();
-    let parsed: PerIndicatorSuggestion[];
+
+    const completion = await client.chat.completions.create({
+      // Azure expects an empty model field; it routes by deployment name in the URL
+      model: deployment,
+      temperature: 0.2,
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+    });
+
+    const text = completion.choices[0]?.message?.content ?? '';
+    let parsed: { suggestions: PerIndicatorSuggestion[] };
     try {
       parsed = JSON.parse(text);
     } catch {
-      // Try to recover from any extra text
-      const m = text.match(/\[[\s\S]*\]/);
+      const m = text.match(/\{[\s\S]*\}/);
       if (!m) return NextResponse.json({ ok: false, error: 'AI returned unparseable response' }, { status: 502 });
       parsed = JSON.parse(m[0]);
     }
-    // Defensive trimming
+    const suggestionsRaw = Array.isArray(parsed?.suggestions) ? parsed.suggestions : [];
+
     const allowedIds = new Set(relevantIndicators.map(i => i.id));
-    const suggestions = parsed
+    const suggestions = suggestionsRaw
       .filter(s => s && typeof s.indicatorId === 'string' && allowedIds.has(s.indicatorId))
       .map(s => ({
         indicatorId: s.indicatorId,
@@ -134,7 +164,7 @@ Return a JSON array of objects with shape:
       }));
     return NextResponse.json({ ok: true, suggestions });
   } catch (e: any) {
-    console.error('[ai/analyze-transcript] error', e);
+    console.error('[ai/analyze-transcript] Azure OpenAI error', e);
     return NextResponse.json({ ok: false, error: e?.message ?? 'AI request failed' }, { status: 500 });
   }
 }
