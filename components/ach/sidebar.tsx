@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Building2, Users, FolderKanban,
-  CircleDollarSign, BookOpen, BadgeCheck, Lightbulb, FileText,
-  Languages, BarChart3, ScrollText, Calculator, Settings2,
+  CircleDollarSign, FileText,
+  Languages, ScrollText, Calculator, Settings2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -18,11 +18,6 @@ const NAV = [
   { section: 'Operations' },
   { href: '/pricing',            label: 'Pricing tool',     icon: Calculator },
   { href: '/development-fund',   label: 'Development fund', icon: CircleDollarSign },
-  { href: '/equivalence',        label: 'Equivalence',      icon: BookOpen },
-  { href: '/verified-network',   label: 'Verified network', icon: BadgeCheck },
-  { section: 'Method (V2)' },
-  { href: '/delphi',             label: 'Delphi panels',    icon: Lightbulb },
-  { href: '/dr-analysis',        label: 'DR analysis',      icon: BarChart3 },
   { section: 'Reports' },
   { href: '/evidence-pack',      label: 'Evidence packs',   icon: FileText },
   { href: '/reports',            label: 'Other reports',    icon: ScrollText },
