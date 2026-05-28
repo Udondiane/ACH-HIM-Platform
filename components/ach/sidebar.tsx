@@ -3,9 +3,9 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, Building2, Users, Layers, FolderKanban,
-  CircleDollarSign, BookOpen, BadgeCheck, Lightbulb, FileText,
-  Languages, BarChart3, ScrollText, Calculator,
+  LayoutDashboard, Building2, Users, FolderKanban,
+  CircleDollarSign, FileText,
+  Languages, ScrollText, Calculator, Settings2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -15,19 +15,14 @@ const NAV = [
   { href: '/partners',           label: 'Partners',         icon: Building2 },
   { href: '/candidates',         label: 'Candidates',       icon: Users },
   { href: '/projects',           label: 'Projects',         icon: FolderKanban },
-  { href: '/cohorts',            label: 'Cohorts',          icon: Layers },
   { section: 'Operations' },
   { href: '/pricing',            label: 'Pricing tool',     icon: Calculator },
   { href: '/development-fund',   label: 'Development fund', icon: CircleDollarSign },
-  { href: '/equivalence',        label: 'Equivalence',      icon: BookOpen },
-  { href: '/verified-network',   label: 'Verified network', icon: BadgeCheck },
-  { section: 'Method (V2)' },
-  { href: '/delphi',             label: 'Delphi panels',    icon: Lightbulb },
-  { href: '/dr-analysis',        label: 'DR analysis',      icon: BarChart3 },
   { section: 'Reports' },
   { href: '/evidence-pack',      label: 'Evidence packs',   icon: FileText },
   { href: '/reports',            label: 'Other reports',    icon: ScrollText },
   { section: 'Admin' },
+  { href: '/admin/projects',     label: 'Project admin',    icon: Settings2 },
   { href: '/translations',       label: 'Translations',     icon: Languages },
 ] as const;
 
@@ -38,7 +33,7 @@ export function AchSidebar() {
       <div className="px-5 py-6 border-b-[0.5px] border-ach-border">
         <Link href="/dashboard" className="flex flex-col">
           <span className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">
-            Ashley Community
+            ACH
           </span>
           <span className="text-[15px] font-medium text-ach-navy mt-0.5">
             HIM Platform

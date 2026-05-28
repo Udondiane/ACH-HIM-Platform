@@ -1,12 +1,11 @@
 insert into public.partners
   (id, name, type, status, sector, region, employee_count, consent_public_listing, notes)
 values
-  ('11111111-1111-1111-1111-000000000001', $bk$Burges Salmon$bk$,     'capability_investor', 'active', 'Legal', 'Bristol', 750, true,  $bk$ED&I/CSR-led; already paid for cultural awareness training. Annex H Family 2.$bk$),
+  ('11111111-1111-1111-1111-000000000001', $bk$Burges Salmon$bk$,     'training_partner',    'active', 'Legal', 'Bristol', 750, true,  $bk$ED&I-led; pays ACH to deliver cultural-awareness and inclusion training to legal-team staff. Not a placement buyer.$bk$),
   ('11111111-1111-1111-1111-000000000002', $bk$Pret A Manger$bk$,     'workforce_partner',   'active', 'Hospitality', $bk$Bristol & Birmingham$bk$, 380, true, $bk$Strongest historical 60% offer rate; in-kind to date.$bk$),
   ('11111111-1111-1111-1111-000000000003', $bk$Doyle Collection (The Bristol Hotel)$bk$, 'workforce_partner', 'active', 'Hospitality', 'Bristol', 220, false, $bk$Twin-signal: Visit West cohort + webinar attendee. Single property, modest hiring.$bk$),
   ('11111111-1111-1111-1111-000000000004', $bk$Bowmer & Kirkland$bk$, 'capability_investor', 'active', 'Construction',  'Bristol', 1600, true,  $bk$Public-sector framework bidders. Tender Support Pack target.$bk$),
-  ('11111111-1111-1111-1111-000000000005', 'IKEA',              'workforce_partner',   'active', 'Retail',         $bk$Bristol & Birmingham$bk$, 11000, true, $bk$Largest paying partner historically; April 2026 cohort oversubscribed.$bk$),
-  ('11111111-1111-1111-1111-000000000006', $bk$Aston Business School$bk$, 'training_partner', 'active', $bk$Higher Education$bk$, 'Birmingham', 4200, true, $bk$Academic partner; receives ACH training in inclusive employer practice. Not a sponsorship buyer.$bk$)
+  ('11111111-1111-1111-1111-000000000005', 'IKEA',              'workforce_partner',   'active', 'Retail',         $bk$Bristol & Birmingham$bk$, 11000, true, $bk$Largest paying partner historically; April 2026 cohort oversubscribed.$bk$)
 on conflict (id) do nothing;
 insert into public.partner_contacts (partner_id, name, role, email, is_primary)
 values
@@ -14,8 +13,7 @@ values
   ('11111111-1111-1111-1111-000000000002', $bk$James Okafor$bk$,    $bk$Head of Talent (UK)$bk$,    'j.okafor@pret.example',                   true),
   ('11111111-1111-1111-1111-000000000003', $bk$Anika Patel$bk$,     $bk$Talent Acquisition$bk$,     'a.patel@doylecollection.example',         true),
   ('11111111-1111-1111-1111-000000000004', $bk$Mark Hughes$bk$,     $bk$Social Value Coordinator$bk$,'m.hughes@bandk.example',                 true),
-  ('11111111-1111-1111-1111-000000000005', $bk$Linnea Bergström$bk$,$bk$Co-worker Resources Mgr$bk$,'l.bergstrom@ikea.example',                true),
-  ('11111111-1111-1111-1111-000000000006', $bk$Dr Maya Iqbal$bk$,   $bk$CREME Director$bk$,         'm.iqbal@aston.example',                   true)
+  ('11111111-1111-1111-1111-000000000005', $bk$Linnea Bergström$bk$,$bk$Co-worker Resources Mgr$bk$,'l.bergstrom@ikea.example',                true)
 on conflict do nothing;
 insert into public.cohorts
   (id, cohort_ref, name, structure, status, location, sector_focus, start_date, end_date, programme_weeks, target_size, delivery_cost, notes)

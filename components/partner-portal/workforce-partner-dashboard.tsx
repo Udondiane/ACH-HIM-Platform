@@ -56,16 +56,15 @@ export async function WorkforcePartnerDashboard({ partner }: { partner: any }) {
   return (
     <div className="max-w-6xl mx-auto">
       <PageHeader
-        miniLabel="Workforce partner"
+        miniLabel="ACH Workforce Partner"
         title={`Welcome, ${partner.name}`}
-        description="At-a-glance view of your placements, retention milestones, Development Fund contribution, and Verified tier status."
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <KpiCard label="Placements" value={String(totalPlacements)} sub={`${activePlacements} active`} />
         <KpiCard label="Retained at 12mo" value={String(retainedAt12mo)} sub="completed the full year" />
         <KpiCard label="Milestone paid" value={`£${totalPaid.toLocaleString()}`} sub={`£${totalPending.toLocaleString()} pending`} />
-        <KpiCard label="Retention savings (est.)" value={`£${retentionSavings.toLocaleString()}`} sub="CIPD lower-bound" />
+        <KpiCard label="Retention savings (est.)" value={`£${retentionSavings.toLocaleString()}`} sub="across retained placements" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
