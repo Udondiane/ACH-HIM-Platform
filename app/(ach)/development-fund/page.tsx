@@ -1,4 +1,4 @@
-import { CircleDollarSign, BookOpen } from 'lucide-react';
+import { PoundSterling, BookOpen } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -86,7 +86,7 @@ export default async function DevelopmentFundPage() {
           <CardContent className="pt-0">
             {requests.length === 0 ? (
               <EmptyState
-                icon={<CircleDollarSign className="h-8 w-8" />}
+                icon={<PoundSterling className="h-8 w-8" />}
                 title="No requests yet"
                 description="Candidate-led training requests will appear here once submitted."
               />
