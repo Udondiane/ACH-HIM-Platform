@@ -15,6 +15,7 @@ function fdToPlain(fd: FormData): Record<string, unknown> {
   if (obj.arrival_year === '') obj.arrival_year = undefined;
   // Unchecked checkboxes are absent from FormData entirely.
   if (!('is_ach_tenant' in obj)) obj.is_ach_tenant = false;
+  if (!('at_risk' in obj)) obj.at_risk = false;
   return obj;
 }
 
@@ -32,6 +33,8 @@ function normalisePayload(input: ReturnType<typeof candidateSchema.parse>, ref: 
     development_plan: input.development_plan || null,
     notes: input.notes || null,
     is_ach_tenant: input.is_ach_tenant,
+    at_risk: input.at_risk,
+    at_risk_reason: input.at_risk_reason || null,
     exit_reason: input.exit_reason || null,
     exit_date: input.exit_date || null,
     exit_notes: input.exit_notes || null,

@@ -8,7 +8,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { CANDIDATE_STATUSES, CANDIDATE_STATUS_LABELS, LOCALE_NAMES } from '@/lib/candidates/schema';
 
-type Search = { status?: string };
+type Search = { status?: string; at_risk?: string };
 
 type CandidateRow = {
   id: string;
@@ -20,6 +20,8 @@ type CandidateRow = {
   status: string;
   arrival_year: number | null;
   is_ach_tenant: boolean;
+  at_risk: boolean;
+  at_risk_reason: string | null;
   cohort_candidates: {
     cohorts: {
       id: string;
@@ -41,13 +43,16 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
     .from('candidates')
     .select(`
       id, candidate_ref, given_name, family_name, preferred_locale,
-      country_of_origin, status, arrival_year, is_ach_tenant,
+      country_of_origin, status, arrival_year, is_ach_tenant, at_risk, at_risk_reason,
       cohort_candidates(cohorts(id, project_id, start_date, projects(id, project_ref, name)))
     `)
     .order('candidate_ref');
 
   if (searchParams?.status && (CANDIDATE_STATUSES as readonly string[]).includes(searchParams.status)) {
     q = q.eq('status', searchParams.status);
+  }
+  if (searchParams?.at_risk === 'true') {
+    q = q.eq('at_risk', true);
   }
 
   const { data: candidatesRaw, error } = await q;
@@ -100,10 +105,17 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
       />
 
       <div className="flex items-center gap-2 mb-5 flex-wrap">
-        <FilterPill href="/candidates" label="All statuses" active={!searchParams?.status} />
+        <FilterPill href="/candidates" label="All statuses" active={!searchParams?.status && searchParams?.at_risk !== 'true'} />
         {CANDIDATE_STATUSES.map(s => (
           <FilterPill key={s} href={`/candidates?status=${s}`} label={CANDIDATE_STATUS_LABELS[s]} active={searchParams?.status === s} />
         ))}
+        <div className="w-px h-5 bg-ach-border mx-1" />
+        <FilterPill
+          href="/candidates?at_risk=true"
+          label="At risk"
+          active={searchParams?.at_risk === 'true'}
+          variant="risk"
+        />
       </div>
 
       {error && <ErrorBanner message={error.message} />}
@@ -195,9 +207,11 @@ function GroupSection({
                 <Td className="text-ach-navy/70">{c.country_of_origin ?? '—'}</Td>
                 <Td className="text-ach-navy/70">{LOCALE_NAMES[c.preferred_locale as keyof typeof LOCALE_NAMES] ?? c.preferred_locale}</Td>
                 <Td>
-                  {c.is_ach_tenant
-                    ? <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] uppercase tracking-[1.2px] font-medium border-[0.5px] bg-ach-slate-tint text-ach-slate-deep border-ach-slate-blue/30">ACH</span>
-                    : <span className="text-ach-navy/40 text-[12px]">—</span>}
+                  {c.at_risk
+                    ? <span title={c.at_risk_reason ?? 'At risk'} className="inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] uppercase tracking-[1.2px] font-medium border-[0.5px] bg-ach-rose/15 text-[#8B3A4F] border-ach-rose/40">At risk</span>
+                    : c.is_ach_tenant
+                      ? <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] uppercase tracking-[1.2px] font-medium border-[0.5px] bg-ach-slate-tint text-ach-slate-deep border-ach-slate-blue/30">ACH</span>
+                      : <span className="text-ach-navy/40 text-[12px]">—</span>}
                 </Td>
                 <Td><Badge>{CANDIDATE_STATUS_LABELS[c.status as keyof typeof CANDIDATE_STATUS_LABELS] ?? c.status}</Badge></Td>
               </tr>
@@ -215,12 +229,18 @@ function Th({ children }: { children: React.ReactNode }) {
 function Td({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return <td className={`px-4 py-3 ${className}`}>{children}</td>;
 }
-function FilterPill({ href, label, active }: { href: string; label: string; active: boolean }) {
+function FilterPill({ href, label, active, variant }: { href: string; label: string; active: boolean; variant?: 'risk' }) {
+  const activeCls = variant === 'risk'
+    ? 'bg-[#8B3A4F] text-white border-[#8B3A4F]'
+    : 'bg-ach-navy text-ach-cream border-ach-navy';
+  const idleCls = variant === 'risk'
+    ? 'bg-ach-rose/10 text-[#8B3A4F] border-ach-rose/30 hover:bg-ach-rose/15'
+    : 'bg-white text-ach-navy/70 border-ach-border hover:bg-ach-page';
   return (
     <Link
       href={href}
       className={`px-3 py-1 rounded-full text-[12px] border-[0.5px] transition-colors ${
-        active ? 'bg-ach-navy text-ach-cream border-ach-navy' : 'bg-white text-ach-navy/70 border-ach-border hover:bg-ach-page'
+        active ? activeCls : idleCls
       }`}
     >
       {label}

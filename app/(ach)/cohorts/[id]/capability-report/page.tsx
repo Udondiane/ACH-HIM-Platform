@@ -9,6 +9,7 @@ import { CapabilityRadar } from '@/components/charts/capability-radar';
 import { CapabilityBar } from '@/components/charts/capability-bar';
 import { computeUplift, computeFunnel } from '@/lib/scoring/uplift';
 import { CohortTomsCalculator } from '@/components/toms/cohort-toms-calculator';
+import { SynthesizeButton } from '@/components/reports/synthesize-button';
 
 const DOMAIN_LABELS: Record<string, string> = {
   employment: 'Employment',
@@ -50,6 +51,34 @@ export default async function CapabilityInvestorReportPage({ params }: { params:
 
   if (!cohortRes.data) notFound();
   const cohort = cohortRes.data as any;
+
+  /* Non-selected counterfactual cohort: candidates with assessments
+     scoped to this project who exited with reason
+     not_selected_for_programme and are NOT in this cohort. */
+  const projectId = cohort.project_id ?? cohort.projects?.id;
+  const [nonSelectedRes, sroiProxiesRes, latestSynthesisRes] = await Promise.all([
+    projectId
+      ? supabase.from('candidates')
+          .select(`
+            id,
+            assessments!inner(
+              project_id, timepoint,
+              assessment_responses(numeric_value, indicators(factors(factor_domains(domain_id))))
+            )
+          `)
+          .eq('exit_reason', 'not_selected_for_programme')
+          .eq('assessments.project_id', projectId)
+      : Promise.resolve({ data: [] as any[] }),
+    supabase.from('sroi_proxies').select('*'),
+    supabase.from('cohort_narrative_synthesis')
+      .select('themes, sentiment_summary, generated_at, source_count')
+      .eq('cohort_id', params.id)
+      .order('generated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+  const synthesis = (latestSynthesisRes.data as any) ?? null;
+  const sroiProxies = (sroiProxiesRes.data as any[]) ?? [];
   const projectCaps = ((projectCapsRes.data as any[]) ?? [])
     .filter((c: any) => c.project_id === cohort.project_id);
 
@@ -71,6 +100,39 @@ export default async function CapabilityInvestorReportPage({ params }: { params:
 
   const uplift = computeUplift(responses, starterIds, domainsForCohort);
   const funnel = computeFunnel(candidateRows.map((c: any) => ({ exit_reason: c.exit_reason, status: c.status })));
+
+  /* Counterfactual cohort: HIM uplift for candidates who applied to
+     this project but were NOT selected for the programme. */
+  const nonSelectedRows = (nonSelectedRes.data as any[]) ?? [];
+  const nonSelectedStarterIds = nonSelectedRows.map(c => c.id);
+  const nonSelectedResponses = nonSelectedRows.flatMap(c =>
+    (c.assessments ?? []).flatMap((a: any) =>
+      (a.assessment_responses ?? []).flatMap((r: any) => {
+        const domains = r.indicators?.factors?.factor_domains ?? [];
+        return domains.map((fd: any) => ({
+          candidate_id: c.id,
+          assessment_id: a.id,
+          timepoint: a.timepoint,
+          domain: fd.domain_id,
+          numeric_value: r.numeric_value,
+        }));
+      })
+    )
+  );
+  const counterfactualUplift = computeUplift(nonSelectedResponses, nonSelectedStarterIds, domainsForCohort);
+
+  /* SROI translation */
+  const { computeSroi } = await import('@/lib/scoring/sroi');
+  const sroi = computeSroi(
+    uplift.map(u => ({
+      domain: u.domain,
+      upliftCompleters: u.upliftCompleters,
+      upliftItt: u.upliftItt,
+      completersN: u.completersN,
+      starterN: u.starterN,
+    })),
+    sroiProxies,
+  );
 
   const radarData = uplift.map(u => ({
     domain: u.domain,
@@ -237,6 +299,53 @@ export default async function CapabilityInvestorReportPage({ params }: { params:
         </CardContent>
       </Card>
 
+      {/* 2b. Counterfactual: selected vs non-selected */}
+      {nonSelectedStarterIds.length > 0 && (
+        <Card className="mb-5">
+          <CardHeader>
+            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Counterfactual: selected vs non-selected applicants</div>
+            <div className="text-[12.5px] text-ach-navy/60 mt-0.5">
+              HIM uplift for candidates who applied to this project but were NOT selected for the programme. ACH continues to support them; their capability trajectory acts as a comparison group. Headline ask from the IKEA brief: evidence for the people you don&apos;t hire.
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-hidden rounded-[12px] border-[0.5px] border-ach-border">
+              <table className="w-full text-[12.5px]">
+                <thead className="bg-ach-page">
+                  <tr>
+                    <th className="text-left px-3 py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Domain</th>
+                    <th className="text-right px-3 py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Selected uplift (ITT)</th>
+                    <th className="text-right px-3 py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Non-selected uplift (ITT)</th>
+                    <th className="text-right px-3 py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Programme effect</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {uplift.map(u => {
+                    const cf = counterfactualUplift.find(c => c.domain === u.domain);
+                    const selected = u.upliftItt;
+                    const nonSelected = cf?.upliftItt ?? null;
+                    const effect = (selected != null && nonSelected != null) ? selected - nonSelected : null;
+                    return (
+                      <tr key={u.domain} className="border-t-[0.5px] border-ach-border">
+                        <td className="px-3 py-2 text-ach-navy font-medium">{DOMAIN_LABELS[u.domain] ?? u.domain}</td>
+                        <td className="px-3 py-2 text-right tabular-nums">{selected != null ? (selected >= 0 ? '+' : '') + selected.toFixed(2) : '—'}</td>
+                        <td className="px-3 py-2 text-right tabular-nums text-ach-navy/65">{nonSelected != null ? (nonSelected >= 0 ? '+' : '') + nonSelected.toFixed(2) : '—'}</td>
+                        <td className={`px-3 py-2 text-right tabular-nums font-medium ${effect != null && effect > 0 ? 'text-[#5E7A3C]' : effect != null && effect < 0 ? 'text-[#8B3A4F]' : 'text-ach-navy/55'}`}>
+                          {effect != null ? (effect >= 0 ? '+' : '') + effect.toFixed(2) : '—'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="text-[11.5px] text-ach-navy/55 mt-3">
+              Comparison cohort size: {nonSelectedStarterIds.length} non-selected applicants with baseline assessment. Not a randomised control (selection is non-random by definition); presented as an observational reference, not a causal estimate.
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* 3. TOMs translation */}
       <Card className="mb-5">
         <CardHeader>
@@ -258,6 +367,82 @@ export default async function CapabilityInvestorReportPage({ params }: { params:
             }))}
             initialClaims={tomsClaims.map(c => ({ toms_code: c.toms_code, quantity: c.quantity, notes: c.notes }))}
           />
+        </CardContent>
+      </Card>
+
+      {/* 3a. SROI translation */}
+      {sroi.byDomain.length > 0 && (sroi.totalCompleters > 0 || sroi.totalItt > 0) && (
+        <Card className="mb-5">
+          <CardHeader>
+            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">3a. SROI translation (£ social value, capability-uplift based)</div>
+            <div className="text-[12.5px] text-ach-navy/60 mt-0.5">
+              For non-procurement corporate ESG reporting where a £-denominated anchor is expected. Computed from per-domain HIM uplift × SROI proxy value per capability achievement, proportional to the 0–5 capability scale. Indicative; verify proxies against the buyer&apos;s preferred SROI version.
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+              <Stat label="SROI £ (completers basis)" value={`£${Math.round(sroi.totalCompleters).toLocaleString()}`} sub="across candidates with baseline + exit" />
+              <Stat label="SROI £ (intention-to-treat)" value={`£${Math.round(sroi.totalItt).toLocaleString()}`} sub="conservative, dropouts held at baseline" />
+            </div>
+            <div className="overflow-hidden rounded-[12px] border-[0.5px] border-ach-border">
+              <table className="w-full text-[12.5px]">
+                <thead className="bg-ach-page">
+                  <tr>
+                    <th className="text-left px-3 py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Domain</th>
+                    <th className="text-left px-3 py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">SROI proxy</th>
+                    <th className="text-right px-3 py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">£ / full achievement</th>
+                    <th className="text-right px-3 py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Uplift (completers)</th>
+                    <th className="text-right px-3 py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">£ completers</th>
+                    <th className="text-right px-3 py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">£ ITT</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sroi.byDomain.map(d => (
+                    <tr key={d.capability} className="border-t-[0.5px] border-ach-border">
+                      <td className="px-3 py-2 text-ach-navy font-medium">{DOMAIN_LABELS[d.capability] ?? d.capability}</td>
+                      <td className="px-3 py-2 text-ach-navy/75">{d.proxy_label}</td>
+                      <td className="px-3 py-2 text-right tabular-nums text-ach-navy/65">£{d.proxy_value_gbp.toLocaleString()}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{d.uplift_completers != null ? (d.uplift_completers >= 0 ? '+' : '') + d.uplift_completers.toFixed(2) : '—'}</td>
+                      <td className="px-3 py-2 text-right tabular-nums font-medium text-ach-navy">£{Math.round(d.total_completers_gbp).toLocaleString()}</td>
+                      <td className="px-3 py-2 text-right tabular-nums text-ach-navy/75">£{Math.round(d.total_itt_gbp).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="bg-ach-page border-t-[0.5px] border-ach-border">
+                  <tr>
+                    <td colSpan={4} className="px-3 py-2 text-right text-[11px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Total</td>
+                    <td className="px-3 py-2 text-right tabular-nums font-medium text-ach-navy">£{Math.round(sroi.totalCompleters).toLocaleString()}</td>
+                    <td className="px-3 py-2 text-right tabular-nums font-medium text-ach-navy">£{Math.round(sroi.totalItt).toLocaleString()}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+            <div className="text-[11px] text-ach-navy/55 mt-3 max-w-prose">
+              Methodology: per-candidate uplift on 0–5 scale × (uplift / 5) × proxy_value × candidate count. ITT denominator = starters; completers denominator = candidates with both baseline + exit assessments. The SROI figure is a translation for buyers expecting £ anchors and does NOT replace the capability-uplift evidence above.
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 3b. Narrative synthesis (AI) */}
+      <Card className="mb-5">
+        <CardHeader>
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Qualitative themes (AI synthesis)</div>
+        </CardHeader>
+        <CardContent>
+          <SynthesizeButton
+            cohortId={params.id}
+            initial={synthesis ? {
+              themes: synthesis.themes ?? [],
+              sentiment_summary: synthesis.sentiment_summary ?? '',
+              notable_patterns: [],
+            } : null}
+          />
+          {synthesis?.generated_at && (
+            <div className="text-[11px] text-ach-navy/50 mt-3">
+              Last generated {new Date(synthesis.generated_at).toLocaleString('en-GB')} from {synthesis.source_count} narrative entries.
+            </div>
+          )}
         </CardContent>
       </Card>
 
