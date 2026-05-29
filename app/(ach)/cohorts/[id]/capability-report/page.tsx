@@ -9,6 +9,7 @@ import { CapabilityRadar } from '@/components/charts/capability-radar';
 import { CapabilityBar } from '@/components/charts/capability-bar';
 import { computeUplift, computeFunnel } from '@/lib/scoring/uplift';
 import { CohortTomsCalculator } from '@/components/toms/cohort-toms-calculator';
+import { SynthesizeButton } from '@/components/reports/synthesize-button';
 
 const DOMAIN_LABELS: Record<string, string> = {
   employment: 'Employment',
@@ -47,6 +48,15 @@ export default async function CapabilityInvestorReportPage({ params }: { params:
     supabase.from('toms_codes').select('*').order('sort_order'),
     supabase.from('cohort_toms_claims').select('toms_code, quantity, notes').eq('cohort_id', params.id),
   ]);
+
+  const latestSynthesisRes = await supabase
+    .from('cohort_narrative_synthesis')
+    .select('themes, sentiment_summary, generated_at, source_count')
+    .eq('cohort_id', params.id)
+    .order('generated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const synthesis = (latestSynthesisRes.data as any) ?? null;
 
   if (!cohortRes.data) notFound();
   const cohort = cohortRes.data as any;
@@ -258,6 +268,28 @@ export default async function CapabilityInvestorReportPage({ params }: { params:
             }))}
             initialClaims={tomsClaims.map(c => ({ toms_code: c.toms_code, quantity: c.quantity, notes: c.notes }))}
           />
+        </CardContent>
+      </Card>
+
+      {/* 3b. Narrative synthesis (AI) */}
+      <Card className="mb-5">
+        <CardHeader>
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Qualitative themes (AI synthesis)</div>
+        </CardHeader>
+        <CardContent>
+          <SynthesizeButton
+            cohortId={params.id}
+            initial={synthesis ? {
+              themes: synthesis.themes ?? [],
+              sentiment_summary: synthesis.sentiment_summary ?? '',
+              notable_patterns: [],
+            } : null}
+          />
+          {synthesis?.generated_at && (
+            <div className="text-[11px] text-ach-navy/50 mt-3">
+              Last generated {new Date(synthesis.generated_at).toLocaleString('en-GB')} from {synthesis.source_count} narrative entries.
+            </div>
+          )}
         </CardContent>
       </Card>
 
