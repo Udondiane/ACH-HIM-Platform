@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Building2, Users, FolderKanban,
-  CircleDollarSign, FileText,
+  PoundSterling, FileText,
   Languages, ScrollText, Calculator, Settings2, BarChart3,
   ChevronsLeft, ChevronsRight,
 } from 'lucide-react';
@@ -19,7 +19,7 @@ const NAV = [
   { href: '/projects',           label: 'Projects',         icon: FolderKanban },
   { section: 'Operations' },
   { href: '/pricing',            label: 'Pricing tool',     icon: Calculator },
-  { href: '/development-fund',   label: 'Development fund', icon: CircleDollarSign },
+  { href: '/development-fund',   label: 'Development fund', icon: PoundSterling },
   { section: 'Reports' },
   { href: '/aggregate',          label: 'Aggregate',        icon: LayoutDashboard },
   { href: '/evidence-pack',      label: 'Evidence packs',   icon: FileText },
