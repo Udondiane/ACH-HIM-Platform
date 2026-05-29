@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
-  LayoutDashboard, Users, FileText, ScrollText,
+  LayoutDashboard, Users, FileText, ScrollText, MessageSquare,
   Building2, GraduationCap, ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -33,6 +33,7 @@ export function PartnerSidebar({ partner }: { partner: Partner | null }) {
   if (types.includes('workforce_partner')) {
     items.push(
       { section: 'Hiring' },
+      { href: '/partner/interviews',    label: 'Interviews',         icon: MessageSquare },
       { href: '/partner/placements',    label: 'Placements',         icon: Users },
       { href: '/partner/milestones',    label: 'Retention milestones', icon: ScrollText },
       { section: 'Impact' },
