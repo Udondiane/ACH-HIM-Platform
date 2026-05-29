@@ -146,6 +146,28 @@ export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save
         </Field>
       </div>
 
+      <div className="pt-3 border-t-[0.5px] border-ach-border rounded-[10px] bg-ach-rose/5 p-3">
+        <label className="flex items-start gap-2.5 text-[13px] cursor-pointer">
+          <input
+            type="checkbox"
+            name="at_risk"
+            defaultChecked={!!initial?.at_risk}
+            className="mt-0.5 h-4 w-4 rounded border-ach-border text-[#8B3A4F] focus:ring-[#8B3A4F]/40"
+          />
+          <span>
+            <span className="text-ach-navy font-medium">Flag as at-risk</span>
+            <span className="block text-ach-navy/70 mt-0.5 text-[12px]">
+              Surfaces this candidate with a rose pill on the candidates list so caseworkers can pull up the flagged set in one click. Use for any safeguarding signal: missed contact, capability decline, housing instability, mental-health concern, training withdrawal, lost contact.
+            </span>
+          </span>
+        </label>
+        <div className="mt-3">
+          <Field label="At-risk reason" error={fe('at_risk_reason')} hint="Plain English. Shown as tooltip on the candidates list pill.">
+            <Input name="at_risk_reason" defaultValue={initial?.at_risk_reason ?? ''} placeholder="e.g. No contact > 3 weeks; declining 3-month assessment" />
+          </Field>
+        </div>
+      </div>
+
       <Field label="Internal notes" error={fe('notes')}>
         <Textarea name="notes" defaultValue={initial?.notes ?? ''} rows={3} />
       </Field>
