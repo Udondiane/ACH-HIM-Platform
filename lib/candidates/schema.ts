@@ -63,6 +63,8 @@ export const candidateSchema = z.object({
   development_plan:    z.string().trim().max(4000).optional().or(z.literal('')),
   notes:             z.string().trim().max(4000).optional().or(z.literal('')),
   is_ach_tenant:     z.preprocess(v => v === 'on' || v === true || v === 'true', z.boolean()).default(false),
+  at_risk:           z.preprocess(v => v === 'on' || v === true || v === 'true', z.boolean()).default(false),
+  at_risk_reason:    z.string().trim().max(500).optional().or(z.literal('')),
   exit_reason:       z.enum(EXIT_REASONS).optional().or(z.literal('')),
   exit_date:         z.string().trim().regex(/^(\d{4}-\d{2}-\d{2})?$/).optional().or(z.literal('')),
   exit_notes:        z.string().trim().max(2000).optional().or(z.literal('')),

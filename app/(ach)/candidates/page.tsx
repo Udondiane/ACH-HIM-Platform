@@ -8,7 +8,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { CANDIDATE_STATUSES, CANDIDATE_STATUS_LABELS, LOCALE_NAMES } from '@/lib/candidates/schema';
 
-type Search = { status?: string };
+type Search = { status?: string; at_risk?: string };
 
 type CandidateRow = {
   id: string;
@@ -50,6 +50,9 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
 
   if (searchParams?.status && (CANDIDATE_STATUSES as readonly string[]).includes(searchParams.status)) {
     q = q.eq('status', searchParams.status);
+  }
+  if (searchParams?.at_risk === 'true') {
+    q = q.eq('at_risk', true);
   }
 
   const { data: candidatesRaw, error } = await q;
@@ -102,10 +105,17 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
       />
 
       <div className="flex items-center gap-2 mb-5 flex-wrap">
-        <FilterPill href="/candidates" label="All statuses" active={!searchParams?.status} />
+        <FilterPill href="/candidates" label="All statuses" active={!searchParams?.status && searchParams?.at_risk !== 'true'} />
         {CANDIDATE_STATUSES.map(s => (
           <FilterPill key={s} href={`/candidates?status=${s}`} label={CANDIDATE_STATUS_LABELS[s]} active={searchParams?.status === s} />
         ))}
+        <div className="w-px h-5 bg-ach-border mx-1" />
+        <FilterPill
+          href="/candidates?at_risk=true"
+          label="At risk"
+          active={searchParams?.at_risk === 'true'}
+          variant="risk"
+        />
       </div>
 
       {error && <ErrorBanner message={error.message} />}
@@ -219,12 +229,18 @@ function Th({ children }: { children: React.ReactNode }) {
 function Td({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return <td className={`px-4 py-3 ${className}`}>{children}</td>;
 }
-function FilterPill({ href, label, active }: { href: string; label: string; active: boolean }) {
+function FilterPill({ href, label, active, variant }: { href: string; label: string; active: boolean; variant?: 'risk' }) {
+  const activeCls = variant === 'risk'
+    ? 'bg-[#8B3A4F] text-white border-[#8B3A4F]'
+    : 'bg-ach-navy text-ach-cream border-ach-navy';
+  const idleCls = variant === 'risk'
+    ? 'bg-ach-rose/10 text-[#8B3A4F] border-ach-rose/30 hover:bg-ach-rose/15'
+    : 'bg-white text-ach-navy/70 border-ach-border hover:bg-ach-page';
   return (
     <Link
       href={href}
       className={`px-3 py-1 rounded-full text-[12px] border-[0.5px] transition-colors ${
-        active ? 'bg-ach-navy text-ach-cream border-ach-navy' : 'bg-white text-ach-navy/70 border-ach-border hover:bg-ach-page'
+        active ? activeCls : idleCls
       }`}
     >
       {label}
