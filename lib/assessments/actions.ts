@@ -68,6 +68,29 @@ export async function saveAssessmentResponseAction(
     } as never, { onConflict: 'assessment_id,indicator_id' });
 }
 
+export async function saveFactorResponseAction(
+  assessmentId: string,
+  factorId: string,
+  responseText: string | null,
+  capturedVia: 'typed' | 'voice' | 'voice_edited' = 'typed',
+  spokenLanguage: string | null = null,
+  audioAttachmentId: string | null = null,
+) {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from('assessment_factor_responses')
+    .upsert({
+      assessment_id: assessmentId,
+      factor_id: factorId,
+      response_text: responseText,
+      captured_via: capturedVia,
+      spoken_language: spokenLanguage,
+      audio_attachment_id: audioAttachmentId,
+    } as never, { onConflict: 'assessment_id,factor_id' });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
 export async function completeAssessmentAction(assessmentId: string, projectId: string) {
   const supabase = createClient();
   await supabase.from('assessments').update({ status: 'completed' } as never).eq('id', assessmentId);
