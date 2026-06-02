@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Building2, Users, FolderKanban,
   PoundSterling, FileText,
-  Languages, ScrollText, Calculator, Settings2, BarChart3,
+  Languages, ScrollText, Calculator, Settings2, BarChart3, BookOpen,
   ChevronsLeft, ChevronsRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -26,6 +26,7 @@ const NAV = [
   { href: '/toms-crosswalk',     label: 'TOMs crosswalk',   icon: BarChart3 },
   { href: '/reports',            label: 'Other reports',    icon: ScrollText },
   { section: 'Admin' },
+  { href: '/admin/framework',    label: 'Framework library', icon: BookOpen },
   { href: '/admin/projects',     label: 'Project admin',    icon: Settings2 },
   { href: '/translations',       label: 'Translations',     icon: Languages },
 ] as const;

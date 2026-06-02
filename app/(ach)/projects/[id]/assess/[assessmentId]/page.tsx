@@ -148,9 +148,6 @@ export default async function AssessmentRunnerPage({
   const tFactor = (id: string, fallback: string) => {
     try { return t(`factors.${id}` as never); } catch { return fallback; }
   };
-  const tMeasurement = (id: string, fallback: string) => {
-    try { return t(`measurements.${id}` as never); } catch { return fallback; }
-  };
   const tPrompt = (id: string, fallback: string | null | undefined) => {
     if (!fallback) return null;
     try { return t(`prompts.${id}` as never); } catch { return fallback; }
@@ -166,6 +163,9 @@ export default async function AssessmentRunnerPage({
         description={`Score each indicator from 0 to 5 (or Yes/No for binary factors). The HIM score on the right updates live as you fill in responses.`}
         actions={
           <div className="flex items-center gap-2">
+            <Link href="/admin/framework" target="_blank" className="text-[11.5px] text-ach-navy/55 hover:text-ach-navy underline underline-offset-2 mr-1">
+              Framework reference
+            </Link>
             {a.status !== 'completed' && !isLocked && (
               <TranscriptModal
                 assessmentId={a.id}
@@ -247,11 +247,8 @@ export default async function AssessmentRunnerPage({
                             {fac.conversion_factor_type}
                           </span>
                         </div>
-                        <div className="text-[11.5px] text-ach-navy/65 mb-2 italic">
-                          {tMeasurement(fac.id, fac.measurement_question ?? '')}
-                        </div>
                         {fac.behavioural_prompt && (
-                          <div className="text-[12px] text-ach-navy bg-ach-page rounded-[8px] px-3 py-2 mb-2 border-l-[2px] border-ach-navy/30">
+                          <div className="text-[12.5px] text-ach-navy bg-ach-page rounded-[8px] px-3 py-2 mb-2 border-l-[2px] border-ach-navy/30">
                             <span className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/55 mr-1.5">Prompt</span>
                             {tPrompt(fac.id, fac.behavioural_prompt)}
                           </div>
