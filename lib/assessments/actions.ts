@@ -18,26 +18,38 @@ export async function startAssessmentAction(
   const supabase = createClient();
   const { data: user } = await supabase.auth.getUser();
 
+  // If an assessment for this (candidate, project, timepoint) already exists,
+  // resume it rather than overwriting assessed_on / status. The previous
+  // upsert behaviour silently reset the date and bumped status back to
+  // in_progress, which corrupted audit trails.
+  const { data: existing } = await supabase
+    .from('assessments')
+    .select('id')
+    .eq('project_id', projectId)
+    .eq('candidate_id', candidateId)
+    .eq('timepoint', timepoint)
+    .maybeSingle();
+  if (existing) {
+    revalidatePath(`/projects/${projectId}`);
+    redirect(`/projects/${projectId}/assess/${(existing as { id: string }).id}`);
+  }
+
   // Look up the candidate's cohort via cohort_candidates → cohort_id
   const { data: cc } = await supabase
     .from('cohort_candidates').select('cohort_id').eq('candidate_id', candidateId).maybeSingle();
   const cohortId = (cc as { cohort_id?: string } | null)?.cohort_id ?? null;
 
-  // Upsert (one assessment per candidate+project+timepoint thanks to the unique constraint)
   const { data, error } = await supabase
     .from('assessments')
-    .upsert(
-      {
-        project_id: projectId,
-        candidate_id: candidateId,
-        cohort_id: cohortId,
-        timepoint,
-        assessed_on: new Date().toISOString().slice(0, 10),
-        assessor_id: user.user?.id ?? null,
-        status: 'in_progress',
-      } as never,
-      { onConflict: 'candidate_id,project_id,timepoint' }
-    )
+    .insert({
+      project_id: projectId,
+      candidate_id: candidateId,
+      cohort_id: cohortId,
+      timepoint,
+      assessed_on: new Date().toISOString().slice(0, 10),
+      assessor_id: user.user?.id ?? null,
+      status: 'in_progress',
+    } as never)
     .select('id')
     .single();
 
@@ -45,6 +57,24 @@ export async function startAssessmentAction(
   const row = data as { id: string } | null;
   revalidatePath(`/projects/${projectId}`);
   redirect(`/projects/${projectId}/assess/${row!.id}`);
+}
+
+export async function startAssessmentForCandidateAction(
+  candidateId: string,
+  timepoint: Timepoint,
+): Promise<StartResult> {
+  const supabase = createClient();
+  // Find the candidate's project via cohort_candidates → cohorts.project_id
+  const { data: cc } = await supabase
+    .from('cohort_candidates')
+    .select('cohort_id, cohorts(project_id)')
+    .eq('candidate_id', candidateId)
+    .maybeSingle();
+  const projectId = (cc as { cohorts?: { project_id?: string } } | null)?.cohorts?.project_id ?? null;
+  if (!projectId) {
+    return { ok: false, error: 'Candidate is not yet linked to a cohort with a project. Add them to a cohort first.' };
+  }
+  return startAssessmentAction(projectId, candidateId, timepoint);
 }
 
 export async function saveAssessmentResponseAction(
