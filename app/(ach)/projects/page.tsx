@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { FolderKanban, Plus, Layers, Users } from 'lucide-react';
+import { FolderKanban, Plus, Layers, Users, AlertCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -23,7 +23,7 @@ function FundingPill({ model }: { model: FundingModel }) {
 
 export default async function ProjectsListPage() {
   const supabase = createClient();
-  const { data: projects } = await supabase
+  const { data: projects, error } = await supabase
     .from('projects')
     .select(`
       id, project_ref, name, description, type, weight_ratio, status, start_date,
@@ -41,7 +41,24 @@ export default async function ProjectsListPage() {
         actions={<Link href="/projects/new"><Button><Plus className="h-4 w-4" />New project</Button></Link>}
       />
 
-      {!projects || projects.length === 0 ? (
+      {error ? (
+        <Card>
+          <div className="p-6 flex items-start gap-2.5">
+            <AlertCircle className="h-5 w-5 text-[#8B3A4F] shrink-0 mt-0.5" />
+            <div className="space-y-2 text-[13px] text-ach-navy/80">
+              <p className="font-medium text-ach-navy">Could not load projects.</p>
+              <p>
+                Supabase returned: <code className="text-[11.5px] bg-ach-page px-1 rounded">{error.message}</code>
+              </p>
+              <p>
+                If <code className="text-[12px] bg-ach-page px-1 rounded">AUTH_DISABLED=true</code> on Vercel,
+                also set <code className="text-[12px] bg-ach-page px-1 rounded">SUPABASE_SERVICE_ROLE_KEY</code>{' '}
+                in Vercel → Settings → Environment Variables, then redeploy.
+              </p>
+            </div>
+          </div>
+        </Card>
+      ) : !projects || projects.length === 0 ? (
         <Card>
           <EmptyState
             icon={<FolderKanban className="h-10 w-10" />}

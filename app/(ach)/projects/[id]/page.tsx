@@ -1,6 +1,5 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { Pencil, ClipboardCheck, Plus, Layers } from 'lucide-react';
+import { Pencil, ClipboardCheck, Plus, Layers, AlertCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
@@ -20,9 +19,52 @@ import { COHORT_STATUS_LABELS } from '@/lib/cohorts/schema';
 
 export default async function ProjectDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
-  const { data: project } = await supabase
+  const { data: project, error: projectError } = await supabase
     .from('projects').select('*').eq('id', params.id).maybeSingle();
-  if (!project) notFound();
+
+  if (projectError || !project) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <PageHeader
+          backHref="/projects"
+          backLabel="Projects"
+          miniLabel={params.id}
+          title="Project not available"
+          description="The project detail page could not load."
+        />
+        <Card>
+          <CardContent className="pt-6 space-y-3">
+            <div className="flex items-start gap-2.5">
+              <AlertCircle className="h-5 w-5 text-[#8B3A4F] shrink-0 mt-0.5" />
+              <div className="space-y-2 text-[13px] text-ach-navy/80">
+                <p className="font-medium text-ach-navy">Likely causes:</p>
+                <ol className="list-decimal pl-5 space-y-1.5">
+                  <li>
+                    <span className="font-medium">Supabase service role key is missing</span> — when
+                    {' '}<code className="text-[12px] bg-ach-page px-1 rounded">AUTH_DISABLED=true</code> and
+                    {' '}<code className="text-[12px] bg-ach-page px-1 rounded">SUPABASE_SERVICE_ROLE_KEY</code> is not set
+                    in the Vercel project env vars, every read silently returns null because RLS blocks the anon key. Set the
+                    service role key under Vercel → Settings → Environment Variables and redeploy.
+                  </li>
+                  <li>
+                    The project with this ID has been deleted from the database.
+                  </li>
+                  {projectError && (
+                    <li>
+                      Supabase returned an error: <code className="text-[11.5px] bg-ach-page px-1 rounded">{projectError.message}</code>
+                    </li>
+                  )}
+                </ol>
+                <p className="pt-2">
+                  <Link href="/projects" className="text-ach-navy underline">← Back to project list</Link>
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   const p = project as any;
 
   const [capabilities, assessments, cohorts, responses, factorsAll, factorDomainsAll] = await Promise.all([
