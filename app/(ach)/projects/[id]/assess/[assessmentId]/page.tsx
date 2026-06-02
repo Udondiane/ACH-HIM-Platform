@@ -40,7 +40,7 @@ export default async function AssessmentRunnerPage({
     supabase.from('assessments').select('*, candidates(candidate_ref, given_name)').eq('id', params.assessmentId).maybeSingle(),
     supabase.from('project_capabilities').select('domain, role').eq('project_id', params.id),
     Promise.all([
-      supabase.from('factors').select('id, name, conversion_factor_type, is_universal, measurement_method, measurement_question'),
+      supabase.from('factors').select('id, name, conversion_factor_type, is_universal, measurement_method, measurement_question, behavioural_prompt'),
       supabase.from('factor_domains').select('factor_id, domain_id'),
       supabase.from('indicators').select('id, factor_id, name, sort_order').order('sort_order'),
     ]),
@@ -138,6 +138,10 @@ export default async function AssessmentRunnerPage({
   const tMeasurement = (id: string, fallback: string) => {
     try { return t(`measurements.${id}` as never); } catch { return fallback; }
   };
+  const tPrompt = (id: string, fallback: string | null | undefined) => {
+    if (!fallback) return null;
+    try { return t(`prompts.${id}` as never); } catch { return fallback; }
+  };
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -220,6 +224,12 @@ export default async function AssessmentRunnerPage({
                         <div className="text-[11.5px] text-ach-navy/65 mb-2 italic">
                           {tMeasurement(fac.id, fac.measurement_question ?? '')}
                         </div>
+                        {fac.behavioural_prompt && (
+                          <div className="text-[12px] text-ach-navy bg-ach-page rounded-[8px] px-3 py-2 mb-2 border-l-[2px] border-ach-navy/30">
+                            <span className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/55 mr-1.5">Prompt</span>
+                            {tPrompt(fac.id, fac.behavioural_prompt)}
+                          </div>
+                        )}
                         <div className="space-y-1">
                           {inds.map(ind => {
                             const r = respMap.get(ind.id);
@@ -287,8 +297,9 @@ export default async function AssessmentRunnerPage({
                 of the field. There&apos;s no &quot;save&quot; button to remember.
               </p>
               <p>
-                Universal factors (digital literacy, self-efficacy, English fluency) are scored
-                once and propagated to every domain they apply to.
+                Each factor shows a measurement question (anchoring the score) and, where the
+                methodology specifies one, a behavioural prompt — read this verbatim to the
+                candidate to elicit the evidence you&apos;re scoring against.
               </p>
               <p>
                 Mark the assessment <span className="font-medium">complete</span> when finished. You can
