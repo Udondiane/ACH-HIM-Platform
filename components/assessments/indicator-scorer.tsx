@@ -10,6 +10,8 @@ interface Indicator {
   measurement_method: string;
 }
 
+type Timepoint = 'baseline' | 'mid_3mo' | 'exit_6mo' | 'followup_12mo';
+
 interface Props {
   assessmentId: string;
   indicator: Indicator;
@@ -18,12 +20,46 @@ interface Props {
   initialObservableChanges?: string | null;
   initialPractices?: string | null;
   locked?: boolean;
+  timepoint?: Timepoint;
 }
+
+const FIELD_LABELS: Record<Timepoint, {
+  observableLabel: string;
+  observableHint: string;
+  practicesLabel: string;
+  practicesHint: string;
+}> = {
+  baseline: {
+    observableLabel: 'Starting context',
+    observableHint: 'Current situation. Why this score, not the next one up or down?',
+    practicesLabel: 'Current practices',
+    practicesHint: 'What is the candidate already doing? What is supporting it today?',
+  },
+  mid_3mo: {
+    observableLabel: 'Observable changes',
+    observableHint: 'What has changed since baseline? (concrete, observable)',
+    practicesLabel: 'Practices / supports',
+    practicesHint: 'What is the candidate doing differently? What is newly supporting it?',
+  },
+  exit_6mo: {
+    observableLabel: 'Observable changes',
+    observableHint: 'What has changed since baseline? (concrete, observable)',
+    practicesLabel: 'Practices / supports',
+    practicesHint: 'What is the candidate doing differently? What is newly supporting it?',
+  },
+  followup_12mo: {
+    observableLabel: 'Observable changes',
+    observableHint: 'What has changed since baseline? Has it held over time?',
+    practicesLabel: 'Practices / supports',
+    practicesHint: 'What is the candidate still doing? What is sustaining it?',
+  },
+};
 
 export function IndicatorScorer({
   assessmentId, indicator, initialValue, initialNarrative,
-  initialObservableChanges, initialPractices, locked,
+  initialObservableChanges, initialPractices, locked, timepoint,
 }: Props) {
+  const labels = FIELD_LABELS[timepoint ?? 'baseline'] ?? FIELD_LABELS.baseline;
   const [value, setValue] = useState<number | null>(initialValue);
   const [narrative, setNarrative] = useState<string>(initialNarrative ?? '');
   const [observable, setObservable] = useState<string>(initialObservableChanges ?? '');
@@ -76,16 +112,16 @@ export function IndicatorScorer({
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         <RichField
-          label="Observable changes"
-          hint="What has changed for the candidate? (concrete, observable)"
+          label={labels.observableLabel}
+          hint={labels.observableHint}
           value={observable}
           onChange={setObservable}
           onBlur={onBlurAll}
           disabled={!!locked}
         />
         <RichField
-          label="Practices / supports"
-          hint="What is the candidate doing differently? What supports it?"
+          label={labels.practicesLabel}
+          hint={labels.practicesHint}
           value={practices}
           onChange={setPractices}
           onBlur={onBlurAll}

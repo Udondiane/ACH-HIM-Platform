@@ -274,6 +274,7 @@ export default async function AssessmentRunnerPage({
                                 initialObservableChanges={r?.observable_changes ?? null}
                                 initialPractices={r?.practices ?? null}
                                 locked={isLocked}
+                                timepoint={a.timepoint as 'baseline' | 'mid_3mo' | 'exit_6mo' | 'followup_12mo'}
                               />
                             );
                           })}
@@ -327,6 +328,19 @@ export default async function AssessmentRunnerPage({
                 methodology specifies one, a behavioural prompt — read this verbatim to the
                 candidate to elicit the evidence you&apos;re scoring against.
               </p>
+              {a.timepoint === 'baseline' ? (
+                <p>
+                  At baseline the narrative fields capture <span className="font-medium">starting context</span> and
+                  <span className="font-medium"> current practices</span> — what is happening now, before the programme begins.
+                  These anchor every later assessment.
+                </p>
+              ) : (
+                <p>
+                  At follow-up timepoints the narrative fields capture <span className="font-medium">observable changes</span>
+                  {' '}and <span className="font-medium">practices that have shifted</span> — measured against the baseline notes
+                  recorded earlier.
+                </p>
+              )}
               <p>
                 Mark the assessment <span className="font-medium">complete</span> when finished. You can
                 still edit responses afterwards.
