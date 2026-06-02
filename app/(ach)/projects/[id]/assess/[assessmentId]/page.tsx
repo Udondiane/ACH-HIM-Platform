@@ -38,7 +38,7 @@ export default async function AssessmentRunnerPage({
   // Load everything in parallel
   const [project, assessment, capabilities, framework, responses, attachments] = await Promise.all([
     supabase.from('projects').select('*').eq('id', params.id).maybeSingle(),
-    supabase.from('assessments').select('*, candidates(candidate_ref, given_name, language)').eq('id', params.assessmentId).maybeSingle(),
+    supabase.from('assessments').select('*, candidates(candidate_ref, given_name, preferred_locale)').eq('id', params.assessmentId).maybeSingle(),
     supabase.from('project_capabilities').select('domain, role, selected_factors').eq('project_id', params.id),
     Promise.all([
       supabase.from('factors').select('id, name, conversion_factor_type, is_universal, measurement_method, measurement_question, behavioural_prompt'),
@@ -282,7 +282,7 @@ export default async function AssessmentRunnerPage({
                           factorId={fac.id}
                           factorName={tFactor(fac.id, fac.name)}
                           initial={factorResponsesMap.get(fac.id) ?? null}
-                          candidateLanguage={a.candidates?.language ?? null}
+                          candidateLanguage={a.candidates?.preferred_locale ?? null}
                           consentToRecord={consentToRecord}
                           locked={isLocked}
                         />
