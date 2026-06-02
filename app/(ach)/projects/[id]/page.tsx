@@ -7,6 +7,7 @@ import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CapabilityPicker } from '@/components/projects/capability-picker';
+import { FactorPicker } from '@/components/projects/factor-picker';
 import { CapabilityRadar } from '@/components/charts/capability-radar';
 import { CapabilityBar } from '@/components/charts/capability-bar';
 import { WordCloud } from '@/components/charts/word-cloud';
@@ -24,8 +25,8 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
   if (!project) notFound();
   const p = project as any;
 
-  const [capabilities, assessments, cohorts, responses] = await Promise.all([
-    supabase.from('project_capabilities').select('domain, role').eq('project_id', params.id),
+  const [capabilities, assessments, cohorts, responses, factorsAll, factorDomainsAll] = await Promise.all([
+    supabase.from('project_capabilities').select('domain, role, selected_factors').eq('project_id', params.id),
     supabase.from('assessments')
       .select('id, timepoint, assessed_on, status, candidate_id, candidates(candidate_ref, given_name)')
       .eq('project_id', params.id).order('assessed_on', { ascending: false }).limit(10),
@@ -40,11 +41,34 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
         assessments!inner(project_id, timepoint)
       `)
       .eq('assessments.project_id', params.id),
+    supabase.from('factors').select('id, name, conversion_factor_type, measurement_question, behavioural_prompt'),
+    supabase.from('factor_domains').select('factor_id, domain_id'),
   ]);
 
   const caps = (capabilities.data as any[]) ?? [];
+  const allFactors = (factorsAll.data as any[]) ?? [];
+  const factorDomainsList = (factorDomainsAll.data as any[]) ?? [];
+  const factorById = new Map(allFactors.map(f => [f.id, f]));
+  const factorsByDomain: Record<string, any[]> = {};
+  for (const fd of factorDomainsList) {
+    if (!factorsByDomain[fd.domain_id]) factorsByDomain[fd.domain_id] = [];
+    const f = factorById.get(fd.factor_id);
+    if (f) factorsByDomain[fd.domain_id].push(f);
+  }
+
+  // A project is "in flight" (factor selection locked) once any cohort linked
+  // to this project has at least one assessment recorded.
+  const assessmentsAny = (assessments.data as any[]) ?? [];
+  const hasAssessments = assessmentsAny.length > 0;
   const cohortRows = (cohorts.data as any[]) ?? [];
   const totalStarts = cohortRows.reduce((s, c) => s + (c.cohort_candidates?.length ?? 0), 0);
+
+  // Per-domain selected-factor filter (empty selection = include all factors)
+  const selectedFactorsByDomain: Record<string, Set<string> | null> = {};
+  for (const c of caps) {
+    const sel: string[] = c.selected_factors ?? [];
+    selectedFactorsByDomain[c.domain] = sel.length === 0 ? null : new Set(sel);
+  }
 
   // Aggregate response scores into per-domain averages for chart rendering
   const allResponses = (responses.data as any[]) ?? [];
@@ -52,8 +76,11 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
   for (const r of allResponses) {
     if (r.numeric_value == null) continue;
     const fds: any[] = r.indicators?.factors?.factor_domains ?? [];
+    const factorId: string | undefined = r.indicators?.factor_id;
     for (const fd of fds) {
       const dom = fd.domain_id;
+      const allowed = selectedFactorsByDomain[dom];
+      if (allowed && (!factorId || !allowed.has(factorId))) continue;
       if (!domainAggregate[dom]) domainAggregate[dom] = { baselineSum: 0, baselineN: 0, exitSum: 0, exitN: 0, currentSum: 0, currentN: 0 };
       const v = Number(r.numeric_value);
       domainAggregate[dom].currentSum += v;
@@ -170,6 +197,28 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
         </CardHeader>
         <CardContent>
           <CapabilityPicker projectId={p.id} initial={caps} />
+        </CardContent>
+      </Card>
+
+      <Card className="mb-4">
+        <CardHeader>
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Factor selection</div>
+          <div className="text-[11.5px] text-ach-navy/55 mt-0.5">
+            Choose which factors within each selected capability are scored. Reduces candidate session length when a project doesn&apos;t need every factor.
+          </div>
+        </CardHeader>
+        <CardContent>
+          <FactorPicker
+            projectId={p.id}
+            capabilities={caps}
+            factorsByDomain={factorsByDomain}
+            locked={hasAssessments}
+          />
+          {hasAssessments && (
+            <div className="mt-3 text-[11.5px] text-ach-slate-deep bg-ach-slate-tint rounded-[8px] px-3 py-2 border-[0.5px] border-ach-slate-blue/30">
+              Factor selection is locked because assessments have been recorded against this project. Any change now would invalidate cross-candidate comparability within the cohort.
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -38,7 +38,7 @@ export default async function AssessmentRunnerPage({
   const [project, assessment, capabilities, framework, responses, attachments] = await Promise.all([
     supabase.from('projects').select('*').eq('id', params.id).maybeSingle(),
     supabase.from('assessments').select('*, candidates(candidate_ref, given_name)').eq('id', params.assessmentId).maybeSingle(),
-    supabase.from('project_capabilities').select('domain, role').eq('project_id', params.id),
+    supabase.from('project_capabilities').select('domain, role, selected_factors').eq('project_id', params.id),
     Promise.all([
       supabase.from('factors').select('id, name, conversion_factor_type, is_universal, measurement_method, measurement_question, behavioural_prompt'),
       supabase.from('factor_domains').select('factor_id, domain_id'),
@@ -53,7 +53,14 @@ export default async function AssessmentRunnerPage({
   const a = assessment.data as any;
   const isLocked = !!p.is_locked || a.status === 'reviewed';
 
-  const caps = ((capabilities.data as any[]) ?? []) as { domain: DomainId; role: 'core'|'optional' }[];
+  const caps = ((capabilities.data as any[]) ?? []) as { domain: DomainId; role: 'core'|'optional'; selected_factors: string[] | null }[];
+  // selected_factors: empty/null = use ALL factors in that domain (default);
+  // populated = restrict to the chosen subset.
+  const selectedFactorsByDomain = new Map<DomainId, Set<string> | null>();
+  for (const c of caps) {
+    const sel = c.selected_factors ?? [];
+    selectedFactorsByDomain.set(c.domain, sel.length === 0 ? null : new Set(sel));
+  }
   const [factorsRes, factorDomainsRes, indicatorsRes] = framework;
   const factors = (factorsRes.data as any[]) ?? [];
   const factorDomains = (factorDomainsRes.data as any[]) ?? [];
@@ -70,13 +77,17 @@ export default async function AssessmentRunnerPage({
     });
   }
 
-  // Group factors by domain for the project's Core + Optional selection
+  // Group factors by domain for the project's Core + Optional selection,
+  // filtered by per-domain selected_factors (empty = all).
   const factorsById = new Map(factors.map(f => [f.id, f]));
   const domainFactors: Record<DomainId, any[]> = {} as Record<DomainId, any[]>;
   for (const fd of factorDomains) {
     const dom = fd.domain_id as DomainId;
+    const selectedSet = selectedFactorsByDomain.get(dom);
+    if (selectedSet && !selectedSet.has(fd.factor_id)) continue;
     if (!domainFactors[dom]) domainFactors[dom] = [];
-    domainFactors[dom].push(factorsById.get(fd.factor_id));
+    const f = factorsById.get(fd.factor_id);
+    if (f) domainFactors[dom].push(f);
   }
 
   // Build IndicatorResponse[] for the live HIM calculation
