@@ -330,9 +330,9 @@ export default async function AssessmentRunnerPage({
               </p>
               {a.timepoint === 'baseline' ? (
                 <p>
-                  At baseline the narrative fields capture <span className="font-medium">starting context</span> and
-                  <span className="font-medium"> current practices</span> — what is happening now, before the programme begins.
-                  These anchor every later assessment.
+                  At baseline each indicator captures the <span className="font-medium">starting context</span> —
+                  what is happening now, before the programme begins, and why this score anchors the level. This is the
+                  reference point every later assessment measures change against.
                 </p>
               ) : (
                 <p>

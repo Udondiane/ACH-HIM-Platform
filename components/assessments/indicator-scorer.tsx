@@ -110,7 +110,7 @@ export function IndicatorScorer({
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+      <div className={`grid grid-cols-1 ${timepoint === 'baseline' ? '' : 'md:grid-cols-2'} gap-2`}>
         <RichField
           label={labels.observableLabel}
           hint={labels.observableHint}
@@ -119,14 +119,16 @@ export function IndicatorScorer({
           onBlur={onBlurAll}
           disabled={!!locked}
         />
-        <RichField
-          label={labels.practicesLabel}
-          hint={labels.practicesHint}
-          value={practices}
-          onChange={setPractices}
-          onBlur={onBlurAll}
-          disabled={!!locked}
-        />
+        {timepoint !== 'baseline' && (
+          <RichField
+            label={labels.practicesLabel}
+            hint={labels.practicesHint}
+            value={practices}
+            onChange={setPractices}
+            onBlur={onBlurAll}
+            disabled={!!locked}
+          />
+        )}
       </div>
 
       {(isNarrative || narrative) && (
