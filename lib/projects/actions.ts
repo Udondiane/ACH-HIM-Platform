@@ -182,14 +182,43 @@ export async function setProjectCapabilitiesAction(
   capabilities: { domain: DomainId; role: 'core' | 'optional' }[],
 ) {
   const supabase = createClient();
-  // Strategy: delete all then re-insert
+  // Preserve existing factor selections when re-saving capability roles —
+  // dropping the row would silently reset custom factor picks.
+  const { data: existing } = await supabase
+    .from('project_capabilities')
+    .select('domain, selected_factors')
+    .eq('project_id', projectId);
+  const factorsByDomain = new Map<string, string[]>(
+    ((existing ?? []) as { domain: string; selected_factors: string[] | null }[])
+      .map(r => [r.domain, r.selected_factors ?? []])
+  );
+
   await supabase.from('project_capabilities').delete().eq('project_id', projectId);
   if (capabilities.length > 0) {
     await supabase.from('project_capabilities').insert(
       capabilities.map(c => ({
-        project_id: projectId, domain: c.domain, role: c.role, selected_factors: [],
+        project_id: projectId,
+        domain: c.domain,
+        role: c.role,
+        selected_factors: factorsByDomain.get(c.domain) ?? [],
       })) as never,
     );
   }
   revalidatePath(`/projects/${projectId}`);
+}
+
+export async function setProjectFactorsAction(
+  projectId: string,
+  domain: DomainId,
+  factorIds: string[],
+) {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from('project_capabilities')
+    .update({ selected_factors: factorIds } as never)
+    .eq('project_id', projectId)
+    .eq('domain', domain);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/projects/${projectId}`);
+  return { ok: true };
 }
