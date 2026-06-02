@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { IndicatorScorer } from '@/components/assessments/indicator-scorer';
+import { FactorResponseField } from '@/components/assessments/factor-response-field';
 import { HimScoreCard } from '@/components/assessments/him-score-card';
 import { TranscriptModal } from '@/components/assessments/transcript-modal';
 import { AttachmentUploader } from '@/components/assessments/attachment-uploader';
@@ -37,7 +38,7 @@ export default async function AssessmentRunnerPage({
   // Load everything in parallel
   const [project, assessment, capabilities, framework, responses, attachments] = await Promise.all([
     supabase.from('projects').select('*').eq('id', params.id).maybeSingle(),
-    supabase.from('assessments').select('*, candidates(candidate_ref, given_name)').eq('id', params.assessmentId).maybeSingle(),
+    supabase.from('assessments').select('*, candidates(candidate_ref, given_name, language, consent_audio_recording)').eq('id', params.assessmentId).maybeSingle(),
     supabase.from('project_capabilities').select('domain, role, selected_factors').eq('project_id', params.id),
     Promise.all([
       supabase.from('factors').select('id, name, conversion_factor_type, is_universal, measurement_method, measurement_question, behavioural_prompt'),
@@ -47,6 +48,20 @@ export default async function AssessmentRunnerPage({
     supabase.from('assessment_responses').select('indicator_id, numeric_value, narrative, observable_changes, practices').eq('assessment_id', params.assessmentId),
     supabase.from('assessment_attachments').select('id, file_name, mime_type, size_bytes, uploaded_at').eq('assessment_id', params.assessmentId).order('uploaded_at', { ascending: false }),
   ]);
+
+  const factorResponsesRes = await supabase
+    .from('assessment_factor_responses')
+    .select('factor_id, response_text, captured_via, spoken_language, audio_attachment_id')
+    .eq('assessment_id', params.assessmentId);
+  const factorResponsesMap = new Map<string, { response_text: string | null; captured_via: 'typed' | 'voice' | 'voice_edited'; spoken_language: string | null; audio_attachment_id: string | null }>();
+  for (const fr of (factorResponsesRes.data as any[]) ?? []) {
+    factorResponsesMap.set(fr.factor_id, {
+      response_text: fr.response_text,
+      captured_via: fr.captured_via,
+      spoken_language: fr.spoken_language,
+      audio_attachment_id: fr.audio_attachment_id,
+    });
+  }
 
   if (!project.data || !assessment.data) notFound();
   const p = project.data as any;
@@ -253,6 +268,15 @@ export default async function AssessmentRunnerPage({
                             {tPrompt(fac.id, fac.behavioural_prompt)}
                           </div>
                         )}
+                        <FactorResponseField
+                          assessmentId={params.assessmentId}
+                          factorId={fac.id}
+                          factorName={tFactor(fac.id, fac.name)}
+                          initial={factorResponsesMap.get(fac.id) ?? null}
+                          candidateLanguage={a.candidates?.language ?? null}
+                          consentToRecord={!!a.candidates?.consent_audio_recording}
+                          locked={isLocked}
+                        />
                         <div className="space-y-1">
                           {inds.map(ind => {
                             const r = respMap.get(ind.id);

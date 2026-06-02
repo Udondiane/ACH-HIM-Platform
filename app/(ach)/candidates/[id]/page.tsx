@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CANDIDATE_STATUS_LABELS, LOCALE_NAMES } from '@/lib/candidates/schema';
 import { ConsentForm } from '@/components/candidates/consent-form';
+import { AudioConsentToggle } from '@/components/candidates/audio-consent-toggle';
 
 export default async function CandidateDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -119,6 +120,11 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
               ) : (
                 <div className="text-ach-navy/60">No consent recorded yet.</div>
               )}
+              <AudioConsentToggle
+                candidateId={c.id}
+                initialConsent={!!c.consent_audio_recording}
+                initialDate={c.consent_audio_recording_date ?? null}
+              />
             </CardContent>
           </Card>
 

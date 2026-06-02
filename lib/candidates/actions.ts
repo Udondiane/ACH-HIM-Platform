@@ -116,6 +116,20 @@ export async function withdrawCandidateAction(id: string) {
   redirect('/candidates');
 }
 
+export async function setAudioConsentAction(candidateId: string, consent: boolean) {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from('candidates')
+    .update({
+      consent_audio_recording: consent,
+      consent_audio_recording_date: consent ? new Date().toISOString().slice(0, 10) : null,
+    } as never)
+    .eq('id', candidateId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/candidates/${candidateId}`);
+  return { ok: true };
+}
+
 export async function recordConsentAction(
   candidateId: string,
   flags: {
