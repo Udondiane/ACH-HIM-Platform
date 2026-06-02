@@ -58,6 +58,8 @@ export default async function AssessmentRunnerPage({
   const factors = (factorsRes.data as any[]) ?? [];
   const factorDomains = (factorDomainsRes.data as any[]) ?? [];
   const indicators = (indicatorsRes.data as any[]) ?? [];
+  const frameworkError = factorsRes.error ?? factorDomainsRes.error ?? indicatorsRes.error;
+  const frameworkEmpty = !frameworkError && factors.length === 0;
   const respMap = new Map<string, { numeric_value: number | null; narrative: string | null; observable_changes: string | null; practices: string | null }>();
   for (const r of (responses.data as any[]) ?? []) {
     respMap.set(r.indicator_id, {
@@ -170,7 +172,20 @@ export default async function AssessmentRunnerPage({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-4">
-          {caps.length === 0 ? (
+          {frameworkError || frameworkEmpty ? (
+            <Card>
+              <CardContent className="pt-6 space-y-2">
+                <p className="text-[13px] font-medium text-[#8B3A4F]">
+                  Capability framework not available.
+                </p>
+                <p className="text-[12.5px] text-ach-navy/70">
+                  {frameworkError
+                    ? `Database error: ${frameworkError.message ?? 'unknown'}. This usually means a pending migration has not been applied yet.`
+                    : 'The factors table is empty. Run migration 029_him_reference_taxonomy.sql in Supabase SQL editor to install the HIM verbatim reference framework, then refresh this page.'}
+                </p>
+              </CardContent>
+            </Card>
+          ) : caps.length === 0 ? (
             <Card>
               <CardContent className="pt-6">
                 <p className="text-[13px] text-ach-navy/70">
