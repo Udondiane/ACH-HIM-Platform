@@ -1,6 +1,19 @@
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { CapabilityRadar } from '@/components/charts/capability-radar';
+import { WordCloud } from '@/components/charts/word-cloud';
+
+const DOMAIN_LABELS: Record<string, string> = {
+  employment: 'Employment',
+  education:  'Education & Skills',
+  social:     'Social Participation',
+  housing:    'Housing',
+  health:     'Health & Wellbeing',
+  belonging:  'Belonging & Identity',
+  rights:     'Rights & Citizenship',
+};
+const DOMAIN_ORDER = ['employment','education','housing','health','belonging','social','rights'];
 
 /* Replacement-cost methodology per the HIM Methodology Specification
    Section 9.1: salary band -> % of salary used as replacement-cost
@@ -39,7 +52,10 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
     supabase.from('assessment_responses')
       .select(`
         numeric_value,
-        assessments!inner(candidate_id, timepoint, candidates!inner(id))
+        observable_changes,
+        practices,
+        indicators!inner(factor_id, factors!inner(factor_domains!inner(domain_id))),
+        assessments!inner(candidate_id, timepoint)
       `),
   ]);
 
@@ -82,17 +98,59 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
   /* Section 9.3 - Candidate Capability Outcomes */
   const partnerResponses = ((assessmentResponses.data as any[]) ?? [])
     .filter(r => placedCandidateIds.has(r.assessments?.candidate_id));
+
+  // Per-candidate baseline + latest mean (overall uplift)
   const baselineByC = new Map<string, number[]>();
   const exitByC = new Map<string, number[]>();
+  // Per-domain aggregates (across all placed candidates)
+  type DomAgg = { baselineSum: number; baselineN: number; exitSum: number; exitN: number };
+  const domainAgg = new Map<string, DomAgg>();
+  // Per-(domain, candidate) — for an honest per-candidate-per-domain uplift mean
+  const domainPerCandidate = new Map<string, { baseline: Map<string, number[]>; exit: Map<string, number[]> }>();
+  // Narrative text for word cloud
+  const narrativeTexts: string[] = [];
+
   for (const r of partnerResponses) {
-    if (r.numeric_value == null) continue;
     const cId = r.assessments?.candidate_id as string;
     const tp = r.assessments?.timepoint as string;
-    const target = tp === 'baseline' ? baselineByC : (tp === 'exit_6mo' || tp === 'followup_12mo' ? exitByC : null);
-    if (!target) continue;
-    if (!target.has(cId)) target.set(cId, []);
-    target.get(cId)!.push(Number(r.numeric_value));
+    const isBaseline = tp === 'baseline';
+    const isExit = tp === 'exit_6mo' || tp === 'followup_12mo';
+    if (!isBaseline && !isExit) continue;
+
+    // overall per-candidate
+    if (r.numeric_value != null) {
+      const target = isBaseline ? baselineByC : exitByC;
+      if (!target.has(cId)) target.set(cId, []);
+      target.get(cId)!.push(Number(r.numeric_value));
+    }
+
+    // per-domain aggregate
+    const fdRaw = r.indicators?.factors?.factor_domains;
+    const fds: Array<{ domain_id: string }> = Array.isArray(fdRaw) ? fdRaw : (fdRaw ? [fdRaw] : []);
+    for (const fd of fds) {
+      const dom = fd.domain_id;
+      if (r.numeric_value != null) {
+        if (!domainAgg.has(dom)) domainAgg.set(dom, { baselineSum: 0, baselineN: 0, exitSum: 0, exitN: 0 });
+        const a = domainAgg.get(dom)!;
+        if (isBaseline) { a.baselineSum += Number(r.numeric_value); a.baselineN += 1; }
+        else            { a.exitSum     += Number(r.numeric_value); a.exitN     += 1; }
+
+        if (!domainPerCandidate.has(dom)) domainPerCandidate.set(dom, { baseline: new Map(), exit: new Map() });
+        const dpc = domainPerCandidate.get(dom)!;
+        const bag = isBaseline ? dpc.baseline : dpc.exit;
+        if (!bag.has(cId)) bag.set(cId, []);
+        bag.get(cId)!.push(Number(r.numeric_value));
+      }
+    }
+
+    // narrative text — only from exit / follow-up so we capture "what changed"
+    if (isExit) {
+      if (typeof r.observable_changes === 'string') narrativeTexts.push(r.observable_changes);
+      if (typeof r.practices === 'string')          narrativeTexts.push(r.practices);
+    }
   }
+
+  // Overall uplift per candidate (mean of all their responses, exit − baseline)
   const upliftValues: number[] = [];
   for (const cId of placedCandidateIds) {
     const b = baselineByC.get(cId);
@@ -106,6 +164,26 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
   const meanUplift = upliftValues.length > 0
     ? upliftValues.reduce((s, v) => s + v, 0) / upliftValues.length
     : null;
+
+  // Per-domain rows for the breakdown table + radar
+  const domainRows = DOMAIN_ORDER
+    .map(dom => {
+      const a = domainAgg.get(dom);
+      if (!a) return null;
+      const baselineMean = a.baselineN > 0 ? a.baselineSum / a.baselineN : null;
+      const exitMean     = a.exitN > 0     ? a.exitSum / a.exitN         : null;
+      const delta        = baselineMean != null && exitMean != null ? exitMean - baselineMean : null;
+      return { domain: dom, baselineMean, exitMean, delta };
+    })
+    .filter((d): d is { domain: string; baselineMean: number | null; exitMean: number | null; delta: number | null } => d !== null);
+
+  const positiveDomains = domainRows.filter(d => (d.delta ?? 0) > 0).length;
+  const radarData = domainRows.map(d => ({
+    domain: d.domain,
+    baseline: d.baselineMean,
+    exit: d.exitMean,
+    current: d.exitMean,
+  }));
 
   return (
     <div>
@@ -222,28 +300,112 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
         </Card>
       )}
 
-      {/* Candidate capability outcomes (no section label) */}
-      <Card className="mb-5 mt-5">
-        <CardContent className="pt-5">
-          {meanUplift == null ? (
+      {/* Candidate capability outcomes — full section */}
+      {meanUplift == null ? (
+        <Card className="mb-5 mt-5">
+          <CardContent className="pt-5">
             <p className="text-[13px] text-ach-navy/65">
-              No baseline + exit HIM assessment data yet for placed candidates. The capability uplift summary appears here once exit assessments are completed.
+              The capability section appears here once any placed candidate has both a baseline and an exit assessment recorded.
             </p>
-          ) : (
-            <>
-              <div className="text-[13px] text-ach-navy/75">
-                Average HIM uplift across {upliftValues.length} assessed candidate{upliftValues.length === 1 ? '' : 's'}:
-              </div>
-              <div className={`text-[28px] font-medium tracking-[-0.5px] mt-1 tabular-nums ${meanUplift > 0 ? 'text-[#5E7A3C]' : 'text-ach-navy'}`}>
-                {meanUplift >= 0 ? '+' : ''}{meanUplift.toFixed(2)}
-              </div>
-              <div className="text-[11.5px] text-ach-navy/55 mt-1">
-                On a 0–5 scale. Per-candidate trajectory (baseline + most recent assessment) is available to ACH staff and to the placed individual; anonymised candidate refs only.
-              </div>
-            </>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="mt-5 space-y-4">
+
+          {/* Capability KPI strip */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <KpiCard
+              label="Average capability uplift"
+              value={`${meanUplift >= 0 ? '+' : ''}${meanUplift.toFixed(2)}`}
+              sub="on a 0–5 scale, per placed candidate"
+            />
+            <KpiCard
+              label="Candidates assessed"
+              value={String(upliftValues.length)}
+              sub="with both baseline + exit"
+            />
+            <KpiCard
+              label="Domains with positive uplift"
+              value={`${positiveDomains} / ${domainRows.length}`}
+              sub="across the HIM framework"
+            />
+          </div>
+
+          {/* Per-domain breakdown + radar side-by-side */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Per-domain breakdown</div>
+                <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Mean scores across placed candidates, baseline vs latest assessment.</div>
+              </CardHeader>
+              <CardContent>
+                <table className="w-full text-[12.5px]">
+                  <thead>
+                    <tr className="border-b-[0.5px] border-ach-border">
+                      <Th>Domain</Th>
+                      <Th className="text-right">Baseline</Th>
+                      <Th className="text-right">Latest</Th>
+                      <Th className="text-right">Δ</Th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {domainRows.map(d => {
+                      const delta = d.delta;
+                      const deltaTone =
+                        delta == null ? 'text-ach-navy/40'
+                        : delta > 0   ? 'text-[#5E7A3C]'
+                        : delta < 0   ? 'text-[#8B3A4F]'
+                                      : 'text-ach-navy/65';
+                      return (
+                        <tr key={d.domain} className="border-b-[0.5px] border-ach-border last:border-0">
+                          <Td className="text-ach-navy">{DOMAIN_LABELS[d.domain] ?? d.domain}</Td>
+                          <Td className="text-right tabular-nums text-ach-navy/70">{d.baselineMean != null ? d.baselineMean.toFixed(2) : '—'}</Td>
+                          <Td className="text-right tabular-nums text-ach-navy">{d.exitMean != null ? d.exitMean.toFixed(2) : '—'}</Td>
+                          <Td className={`text-right tabular-nums font-medium ${deltaTone}`}>
+                            {delta != null ? `${delta >= 0 ? '+' : ''}${delta.toFixed(2)}` : '—'}
+                          </Td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Capability radar</div>
+                <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Baseline (lighter) and latest assessment (darker) per domain.</div>
+              </CardHeader>
+              <CardContent>
+                <CapabilityRadar data={radarData} mode="comparison" />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Themes from candidate narratives */}
+          {narrativeTexts.length > 0 && (
+            <Card>
+              <CardHeader>
+                <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Themes in candidate narratives</div>
+                <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Most frequent words across observable-changes and practices fields at exit / follow-up.</div>
+              </CardHeader>
+              <CardContent>
+                <WordCloud texts={narrativeTexts} />
+              </CardContent>
+            </Card>
           )}
-        </CardContent>
-      </Card>
+
+          {/* Methodology footer for the capability section */}
+          <Card>
+            <CardContent className="pt-4 pb-4">
+              <div className="text-[11px] text-ach-navy/60 max-w-prose">
+                <span className="font-medium text-ach-navy/75">How capability uplift is calculated.</span> Each placed candidate is scored against the 7 HIM capability domains on a 0–5 scale at baseline (before training) and again at exit (6 months) or follow-up (12 months). The figures above show the mean per-domain score across all placed candidates, with Δ = latest − baseline. Per-candidate detail is available to ACH staff and to the individual; the partner view shows aggregates only. Methodology version: HIM v1.0.
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
     </div>
   );
