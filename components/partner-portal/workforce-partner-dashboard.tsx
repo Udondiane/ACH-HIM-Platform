@@ -87,15 +87,6 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   const refugeeMigrantHires = totalPlacements;
 
-  /* Placement role breakdown */
-  const roleCounts = new Map<string, number>();
-  for (const p of allPlacements) {
-    const role = (p.role_title ?? '').trim() || 'Unspecified';
-    roleCounts.set(role, (roleCounts.get(role) ?? 0) + 1);
-  }
-  const roleBreakdown = Array.from(roleCounts.entries())
-    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-
   /* Section 9.3 - Candidate Capability Outcomes */
   const partnerResponses = ((assessmentResponses.data as any[]) ?? [])
     .filter(r => placedCandidateIds.has(r.assessments?.candidate_id));
@@ -196,38 +187,6 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
                       </tr>
                     );
                   })}
-              </tbody>
-            </table>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Placement breakdown by role — added per IKEA-style partner reporting */}
-      {roleBreakdown.length > 0 && (
-        <Card className="mb-5">
-          <CardHeader>
-            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Placements by role</div>
-            <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Roles {partner.name} has hired into through ACH.</div>
-          </CardHeader>
-          <CardContent>
-            <table className="w-full text-[12.5px]">
-              <thead>
-                <tr className="border-b-[0.5px] border-ach-border">
-                  <Th>Role</Th>
-                  <Th className="text-right">Placements</Th>
-                  <Th className="text-right">% of total</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {roleBreakdown.map(([role, count]) => (
-                  <tr key={role} className="border-b-[0.5px] border-ach-border last:border-0">
-                    <Td className="text-ach-navy">{role}</Td>
-                    <Td className="text-right tabular-nums font-medium">{count}</Td>
-                    <Td className="text-right tabular-nums text-ach-navy/70">
-                      {totalPlacements > 0 ? `${((count / totalPlacements) * 100).toFixed(0)}%` : '—'}
-                    </Td>
-                  </tr>
-                ))}
               </tbody>
             </table>
           </CardContent>
