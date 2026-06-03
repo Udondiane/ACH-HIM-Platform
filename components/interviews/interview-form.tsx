@@ -99,7 +99,7 @@ export function InterviewForm({
             </ul>
           </details>
         </Field>
-        <Field label="Fit score (1–5)" hint="Optional. 1 = poor fit · 5 = excellent fit.">
+        <Field label="Fit score (1–5)" hint="Optional. 1 = limited fit · 5 = strong fit.">
           <Input name="fit_score" type="number" min={1} max={5} defaultValue={initial?.fit_score ?? ''} />
         </Field>
       </div>
