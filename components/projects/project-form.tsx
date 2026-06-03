@@ -153,17 +153,38 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
             </label>
           ))}
         </div>
-        {fundingModel && fundingModel !== 'commercial' && (
-          <div className="mt-3">
-            <Field label="Funder" error={fe('funder_name')} hint="The trust, foundation or statutory body funding this work.">
-              <Input
-                name="funder_name"
-                defaultValue={initial?.funder_name ?? ''}
-                placeholder="e.g. Comic Relief, Esmée Fairbairn, Bristol City Council"
-              />
-            </Field>
-          </div>
-        )}
+        {fundingModel && (() => {
+          // Funder field label, placeholder, and hint vary by funding model so
+          // the prompt matches the actual counterparty for the project.
+          const meta = fundingModel === 'commercial'
+            ? {
+                label: 'Commercial buyer',
+                hint: 'The corporate, council procurement team, or other buyer paying for outcomes.',
+                placeholder: 'e.g. IKEA Bristol, Bristol Waste, Visit West',
+              }
+            : fundingModel === 'hybrid'
+            ? {
+                label: 'Funder and commercial buyer',
+                hint: 'Hybrid projects combine grant funding with a commercial buyer. List both: the funder backing the design, and the buyer paying for outcomes.',
+                placeholder: 'e.g. Comic Relief (funder) + IKEA (buyer)',
+              }
+            : {
+                label: 'Funder',
+                hint: 'The trust, foundation, or statutory body funding this work.',
+                placeholder: 'e.g. Comic Relief, Esmée Fairbairn, Bristol City Council',
+              };
+          return (
+            <div className="mt-3">
+              <Field label={meta.label} error={fe('funder_name')} hint={meta.hint}>
+                <Input
+                  name="funder_name"
+                  defaultValue={initial?.funder_name ?? ''}
+                  placeholder={meta.placeholder}
+                />
+              </Field>
+            </div>
+          );
+        })()}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
