@@ -15,14 +15,16 @@ export const COHORT_STATUS_LABELS: Record<typeof COHORT_STATUSES[number], string
   cancelled:   'Cancelled',
 };
 
-export const COHORT_SERVICE_TYPES = ['full_programme', 'iag_only'] as const;
+export const COHORT_SERVICE_TYPES = ['full_programme', 'iag_only', 'training_only'] as const;
 export const COHORT_SERVICE_TYPE_LABELS: Record<typeof COHORT_SERVICE_TYPES[number], string> = {
   full_programme: 'Full programme',
   iag_only:       'IAG only',
+  training_only:  'Training only',
 };
 export const COHORT_SERVICE_TYPE_HINTS: Record<typeof COHORT_SERVICE_TYPES[number], string> = {
   full_programme: 'Standard delivery — assessments, training, placement support, follow-up.',
   iag_only:       'Information, advice and guidance only. Candidates receive support but do not enter the placement pipeline.',
+  training_only:  'Training delivered without ACH placement matching. Candidates exit on completion. Not used by Bridge to Employment.',
 };
 
 const dateOrEmpty = z.string().trim().regex(/^(\d{4}-\d{2}-\d{2})?$/).optional().or(z.literal(''));
