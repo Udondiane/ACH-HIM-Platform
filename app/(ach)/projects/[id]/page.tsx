@@ -11,10 +11,7 @@ import { CapabilityRadar } from '@/components/charts/capability-radar';
 import { CapabilityBar } from '@/components/charts/capability-bar';
 import { WordCloud } from '@/components/charts/word-cloud';
 import { ProjectExportButton } from '@/components/projects/project-export-button';
-import {
-  PROJECT_TYPE_LABELS, WEIGHT_RATIO_LABELS, OPTIONAL_SCHEME_LABELS,
-  FUNDING_MODEL_LABELS, type FundingModel,
-} from '@/lib/projects/schema';
+import { FUNDING_MODEL_LABELS, type FundingModel } from '@/lib/projects/schema';
 import { COHORT_STATUS_LABELS } from '@/lib/cohorts/schema';
 
 export default async function ProjectDetailPage({ params }: { params: { id: string } }) {
@@ -194,12 +191,6 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
                   : <span className="text-ach-navy/45">—</span>}
               </DT>
               <DT label="Funder">{p.funder_name ?? <span className="text-ach-navy/45">—</span>}</DT>
-              <DT label="Type">{PROJECT_TYPE_LABELS[p.type as keyof typeof PROJECT_TYPE_LABELS]}</DT>
-              <DT label="Weight ratio">{WEIGHT_RATIO_LABELS[p.weight_ratio as keyof typeof WEIGHT_RATIO_LABELS]}</DT>
-              <DT label="Hybrid option">{p.hybrid_option ?? '—'}</DT>
-              <DT label="Optional scheme">{OPTIONAL_SCHEME_LABELS[p.optional_scheme as keyof typeof OPTIONAL_SCHEME_LABELS] ?? p.optional_scheme}</DT>
-              <DT label="Stability blend">{Number(p.stability_blend).toFixed(2)}</DT>
-              <DT label="Classification score">{p.classification_total ?? '—'}/8</DT>
               <DT label="Start">{p.start_date ? new Date(p.start_date).toLocaleDateString('en-GB') : '—'}</DT>
               <DT label="End">{p.end_date ? new Date(p.end_date).toLocaleDateString('en-GB') : '—'}</DT>
               <DT label="Status"><Badge>{p.status}</Badge></DT>
