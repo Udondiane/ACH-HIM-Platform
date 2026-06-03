@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Users, Plus, FolderKanban } from 'lucide-react';
+import { Users, Plus, FolderKanban, ArrowLeft, List, ArrowRight, AlertTriangle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +8,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { CANDIDATE_STATUSES, CANDIDATE_STATUS_LABELS, LOCALE_NAMES } from '@/lib/candidates/schema';
 
-type Search = { status?: string; at_risk?: string };
+type Search = { status?: string; at_risk?: string; project?: string; view?: string };
 
 type CandidateRow = {
   id: string;
@@ -70,7 +70,6 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
       unassigned.push(c);
       continue;
     }
-    // Pick the cohort with the latest start_date (or first if none has a date).
     const recent = cohortRows.sort((a, b) => {
       const ad = a.start_date ?? '';
       const bd = b.start_date ?? '';
@@ -91,32 +90,70 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
     (a.project!.project_ref ?? '').localeCompare(b.project!.project_ref ?? '')
   );
 
+  const isAllView = searchParams?.view === 'all';
+  const focusedProjectId = searchParams?.project;
+  const focusedGroup = focusedProjectId
+    ? (focusedProjectId === 'unassigned'
+        ? { project: null, candidates: unassigned }
+        : orderedGroups.find(g => g.project?.id === focusedProjectId) ?? null)
+    : null;
+
+  // Filter pill base href changes based on which view we're in
+  const baseHref =
+    focusedProjectId ? `/candidates?project=${focusedProjectId}`
+    : isAllView ? '/candidates?view=all'
+    : '/candidates';
+
   return (
     <div className="max-w-6xl mx-auto">
       <PageHeader
         miniLabel="Network"
-        title="Candidates"
-        description="Programme participants grouped by the project they are running through. Career goals and development plans are private — never shown to partners without explicit consent."
+        title={
+          focusedGroup
+            ? (focusedGroup.project?.name ?? 'Unassigned candidates')
+            : isAllView
+              ? 'All candidates'
+              : 'Candidates'
+        }
+        backHref={focusedGroup || isAllView ? '/candidates' : undefined}
+        backLabel={focusedGroup || isAllView ? 'Programmes' : undefined}
+        description={
+          focusedGroup
+            ? `Candidates running through ${focusedGroup.project?.name ?? 'no programme'}.`
+            : isAllView
+              ? 'Every candidate across every programme. Use the filters to narrow.'
+              : 'Programme participants grouped by the project they are running through. Pick a programme to see its candidates, or view all candidates flat.'
+        }
         actions={
-          <Link href="/candidates/new">
-            <Button><Plus className="h-4 w-4" />Add candidate</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            {!focusedGroup && !isAllView && (
+              <Link href="/candidates?view=all">
+                <Button variant="secondary"><List className="h-4 w-4" />View all candidates</Button>
+              </Link>
+            )}
+            <Link href="/candidates/new">
+              <Button><Plus className="h-4 w-4" />Add candidate</Button>
+            </Link>
+          </div>
         }
       />
 
-      <div className="flex items-center gap-2 mb-5 flex-wrap">
-        <FilterPill href="/candidates" label="All statuses" active={!searchParams?.status && searchParams?.at_risk !== 'true'} />
-        {CANDIDATE_STATUSES.map(s => (
-          <FilterPill key={s} href={`/candidates?status=${s}`} label={CANDIDATE_STATUS_LABELS[s]} active={searchParams?.status === s} />
-        ))}
-        <div className="w-px h-5 bg-ach-border mx-1" />
-        <FilterPill
-          href="/candidates?at_risk=true"
-          label="At risk"
-          active={searchParams?.at_risk === 'true'}
-          variant="risk"
-        />
-      </div>
+      {/* Filters — shown for inside-project view and all-candidates view, not the programme-cards index */}
+      {(focusedGroup || isAllView) && (
+        <div className="flex items-center gap-2 mb-5 flex-wrap">
+          <FilterPill href={baseHref} label="All statuses" active={!searchParams?.status && searchParams?.at_risk !== 'true'} />
+          {CANDIDATE_STATUSES.map(s => (
+            <FilterPill key={s} href={addParam(baseHref, 'status', s)} label={CANDIDATE_STATUS_LABELS[s]} active={searchParams?.status === s} />
+          ))}
+          <div className="w-px h-5 bg-ach-border mx-1" />
+          <FilterPill
+            href={addParam(baseHref, 'at_risk', 'true')}
+            label="At risk"
+            active={searchParams?.at_risk === 'true'}
+            variant="risk"
+          />
+        </div>
+      )}
 
       {error && <ErrorBanner message={error.message} />}
 
@@ -133,22 +170,41 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
             }
           />
         </Card>
+      ) : focusedGroup ? (
+        /* Single-programme drill-in: just the candidate table for that project */
+        focusedGroup.candidates.length === 0 ? (
+          <Card>
+            <EmptyState
+              icon={<Users className="h-8 w-8" />}
+              title="No candidates match the filter"
+              description="Clear the filter or choose a different programme."
+            />
+          </Card>
+        ) : (
+          <CandidateTable candidates={focusedGroup.candidates} />
+        )
+      ) : isAllView ? (
+        /* Flat all-candidates view */
+        <CandidateTable candidates={candidates} />
       ) : (
-        <div className="space-y-6">
+        /* Default: programme cards index */
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {orderedGroups.map(g => (
-            <GroupSection
+            <ProgrammeCard
               key={g.project!.id}
+              projectId={g.project!.id}
               title={g.project!.name}
-              subtitle={g.project!.project_ref}
-              href={`/projects/${g.project!.id}`}
+              ref_={g.project!.project_ref}
               candidates={g.candidates}
             />
           ))}
           {unassigned.length > 0 && (
-            <GroupSection
+            <ProgrammeCard
+              projectId="unassigned"
               title="Unassigned"
-              subtitle="Not yet enrolled in a cohort"
+              ref_="No cohort yet"
               candidates={unassigned}
+              isUnassigned
             />
           )}
         </div>
@@ -157,70 +213,106 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
   );
 }
 
-function GroupSection({
-  title,
-  subtitle,
-  href,
-  candidates,
+function ProgrammeCard({
+  projectId, title, ref_, candidates, isUnassigned,
 }: {
+  projectId: string;
   title: string;
-  subtitle: string;
-  href?: string;
+  ref_: string;
   candidates: CandidateRow[];
+  isUnassigned?: boolean;
 }) {
-  return (
-    <div>
-      <div className="flex items-baseline justify-between mb-2 px-1">
-        <div className="flex items-baseline gap-2.5">
-          <FolderKanban className="h-3.5 w-3.5 text-ach-navy/55 self-center" />
-          {href ? (
-            <Link href={href} className="text-[14px] font-medium text-ach-navy hover:underline">{title}</Link>
-          ) : (
-            <span className="text-[14px] font-medium text-ach-navy">{title}</span>
-          )}
-          <span className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/55">{subtitle}</span>
-        </div>
-        <span className="text-[11.5px] text-ach-navy/55 tabular-nums">{candidates.length} candidate{candidates.length === 1 ? '' : 's'}</span>
-      </div>
+  const atRiskCount = candidates.filter(c => c.at_risk).length;
+  const inProgrammeCount = candidates.filter(c => c.status === 'in_programme').length;
+  const placedCount = candidates.filter(c => c.status === 'placed').length;
+  const exitedCount = candidates.filter(c => c.status === 'withdrawn' || c.status === 'completed').length;
 
-      <Card className="overflow-hidden">
-        <table className="w-full text-[13px]">
-          <thead className="bg-ach-page border-b-[0.5px] border-ach-border">
-            <tr>
-              <Th>Reference</Th>
-              <Th>Given name</Th>
-              <Th>Country</Th>
-              <Th>Language</Th>
-              <Th>Tenant</Th>
-              <Th>Status</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {candidates.map(c => (
-              <tr key={c.id} className="border-b-[0.5px] border-ach-border last:border-0 hover:bg-ach-page/50 transition-colors">
-                <Td>
-                  <Link href={`/candidates/${c.id}`} className="text-ach-navy font-medium hover:underline">
-                    {c.candidate_ref}
-                  </Link>
-                </Td>
-                <Td>{c.given_name}</Td>
-                <Td className="text-ach-navy/70">{c.country_of_origin ?? '—'}</Td>
-                <Td className="text-ach-navy/70">{LOCALE_NAMES[c.preferred_locale as keyof typeof LOCALE_NAMES] ?? c.preferred_locale}</Td>
-                <Td>
-                  {c.at_risk
-                    ? <span title={c.at_risk_reason ?? 'At risk'} className="inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] uppercase tracking-[1.2px] font-medium border-[0.5px] bg-ach-rose/15 text-[#8B3A4F] border-ach-rose/40">At risk</span>
-                    : c.is_ach_tenant
-                      ? <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] uppercase tracking-[1.2px] font-medium border-[0.5px] bg-ach-slate-tint text-ach-slate-deep border-ach-slate-blue/30">ACH</span>
-                      : <span className="text-ach-navy/40 text-[12px]">—</span>}
-                </Td>
-                <Td><Badge>{CANDIDATE_STATUS_LABELS[c.status as keyof typeof CANDIDATE_STATUS_LABELS] ?? c.status}</Badge></Td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+  return (
+    <Link href={`/candidates?project=${projectId}`} className="block">
+      <Card className="hover:bg-ach-page transition-colors h-full p-5">
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="min-w-0">
+            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/55 mb-1">{ref_}</div>
+            <div className="text-[15px] font-medium text-ach-navy flex items-center gap-1.5">
+              <FolderKanban className="h-3.5 w-3.5 text-ach-navy/55 shrink-0" />
+              {title}
+            </div>
+          </div>
+          <ArrowRight className="h-4 w-4 text-ach-navy/40 shrink-0 mt-1" />
+        </div>
+
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <span className="inline-flex items-center text-[11.5px] text-ach-navy/75">
+            <Users className="h-3 w-3 mr-1 text-ach-navy/55" />
+            <span className="font-medium tabular-nums">{candidates.length}</span>
+            <span className="ml-1 text-ach-navy/55">{candidates.length === 1 ? 'candidate' : 'candidates'}</span>
+          </span>
+          {atRiskCount > 0 && (
+            <span className="inline-flex items-center text-[10.5px] uppercase tracking-[1.2px] font-medium text-[#8B3A4F]">
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              {atRiskCount} at risk
+            </span>
+          )}
+        </div>
+
+        {!isUnassigned && (inProgrammeCount > 0 || placedCount > 0 || exitedCount > 0) && (
+          <div className="flex items-center gap-2.5 mt-3 pt-3 border-t-[0.5px] border-ach-border text-[11px] text-ach-navy/65">
+            {inProgrammeCount > 0 && <span><span className="font-medium text-ach-navy/85">{inProgrammeCount}</span> in programme</span>}
+            {placedCount > 0 && <span><span className="font-medium text-ach-navy/85">{placedCount}</span> placed</span>}
+            {exitedCount > 0 && <span><span className="font-medium text-ach-navy/85">{exitedCount}</span> exited</span>}
+          </div>
+        )}
       </Card>
-    </div>
+    </Link>
   );
+}
+
+function CandidateTable({ candidates }: { candidates: CandidateRow[] }) {
+  return (
+    <Card className="overflow-hidden">
+      <table className="w-full text-[13px]">
+        <thead className="bg-ach-page border-b-[0.5px] border-ach-border">
+          <tr>
+            <Th>Reference</Th>
+            <Th>Given name</Th>
+            <Th>Country</Th>
+            <Th>Language</Th>
+            <Th>Tenant</Th>
+            <Th>Status</Th>
+          </tr>
+        </thead>
+        <tbody>
+          {candidates.map(c => (
+            <tr key={c.id} className="border-b-[0.5px] border-ach-border last:border-0 hover:bg-ach-page/50 transition-colors">
+              <Td>
+                <Link href={`/candidates/${c.id}`} className="text-ach-navy font-medium hover:underline">
+                  {c.candidate_ref}
+                </Link>
+              </Td>
+              <Td>{c.given_name}</Td>
+              <Td className="text-ach-navy/70">{c.country_of_origin ?? '—'}</Td>
+              <Td className="text-ach-navy/70">{LOCALE_NAMES[c.preferred_locale as keyof typeof LOCALE_NAMES] ?? c.preferred_locale}</Td>
+              <Td>
+                {c.at_risk
+                  ? <span title={c.at_risk_reason ?? 'At risk'} className="inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] uppercase tracking-[1.2px] font-medium border-[0.5px] bg-ach-rose/15 text-[#8B3A4F] border-ach-rose/40">At risk</span>
+                  : c.is_ach_tenant
+                    ? <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] uppercase tracking-[1.2px] font-medium border-[0.5px] bg-ach-slate-tint text-ach-slate-deep border-ach-slate-blue/30">ACH</span>
+                    : <span className="text-ach-navy/40 text-[12px]">—</span>}
+              </Td>
+              <Td><Badge>{CANDIDATE_STATUS_LABELS[c.status as keyof typeof CANDIDATE_STATUS_LABELS] ?? c.status}</Badge></Td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Card>
+  );
+}
+
+function addParam(baseHref: string, key: string, value: string): string {
+  const [path, qs] = baseHref.split('?');
+  const params = new URLSearchParams(qs ?? '');
+  params.set(key, value);
+  return `${path}?${params.toString()}`;
 }
 
 function Th({ children }: { children: React.ReactNode }) {
