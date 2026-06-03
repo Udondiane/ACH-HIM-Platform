@@ -155,9 +155,9 @@ export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save
             className="mt-0.5 h-4 w-4 rounded border-ach-border text-[#8B3A4F] focus:ring-[#8B3A4F]/40"
           />
           <span>
-            <span className="text-ach-navy font-medium">Flag as at-risk</span>
+            <span className="text-ach-navy font-medium">Flag as needing attention</span>
             <span className="block text-ach-navy/70 mt-0.5 text-[12px]">
-              Surfaces this candidate with a rose pill on the candidates list so caseworkers can pull up the flagged set in one click. Use for any safeguarding signal: missed contact, capability decline, housing instability, mental-health concern, training withdrawal, lost contact.
+              Surfaces this candidate on the candidates list so caseworkers can pull up the flagged set in one click. Use for any signal worth following up on: missed contact, capability decline, housing instability, mental-health concern, training withdrawal, lost contact.
             </span>
           </span>
         </label>
