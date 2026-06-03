@@ -82,20 +82,6 @@ export function InterviewForm({
               <option key={o} value={o}>{INTERVIEW_OUTCOME_LABELS[o]}</option>
             ))}
           </select>
-          <details className="group mt-1.5">
-            <summary className="text-[11px] text-ach-navy/55 cursor-pointer list-none [&::-webkit-details-marker]:hidden inline-flex items-center gap-1">
-              <span className="group-open:hidden">What does each outcome mean?</span>
-              <span className="hidden group-open:inline">Hide outcome guide</span>
-              <svg className="w-3 h-3 transition-transform group-open:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
-                <path d="M3 5l3 3 3-3" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </summary>
-            <ul className="mt-1.5 text-[11px] text-ach-navy/70 space-y-1 pl-2 border-l-[1.5px] border-ach-border">
-              <li><span className="font-medium text-ach-navy">Selected</span> — Would hire / want this candidate in the role.</li>
-              <li><span className="font-medium text-ach-navy">Not selected</span> — Not the right fit for this role.</li>
-              <li><span className="font-medium text-ach-navy">No show</span> — Candidate did not attend the scheduled interview.</li>
-            </ul>
-          </details>
         </Field>
         <Field label="Fit score (1–5)" hint="Optional. 1 = limited fit · 5 = strong fit.">
           <Input name="fit_score" type="number" min={1} max={5} defaultValue={initial?.fit_score ?? ''} />
