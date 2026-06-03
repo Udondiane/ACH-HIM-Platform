@@ -13,9 +13,14 @@
 do $$ begin
   create type public.cohort_service_type as enum (
     'full_programme',
-    'iag_only'
+    'iag_only',
+    'training_only'
   );
 exception when duplicate_object then null; end $$;
+
+-- Safety net: if the type was previously created with only two values,
+-- add training_only without erroring on duplicates.
+alter type public.cohort_service_type add value if not exists 'training_only';
 
 alter table public.cohorts
   add column if not exists service_type public.cohort_service_type
