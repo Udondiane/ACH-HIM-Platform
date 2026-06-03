@@ -32,7 +32,7 @@ const dateOrEmpty = z.string().trim().regex(/^(\d{4}-\d{2}-\d{2})?$/).optional()
 export const cohortSchema = z.object({
   cohort_ref:      z.string().trim().min(1, 'Reference required').max(60),
   name:            z.string().trim().min(1, 'Name required').max(200),
-  project_id:      z.string().uuid().optional().or(z.literal('')),
+  project_id:      z.string().uuid().optional().or(z.literal('')).or(z.literal('__none__')),
   structure:       z.enum(COHORT_STRUCTURES),
   service_type:    z.enum(COHORT_SERVICE_TYPES).default('full_programme'),
   status:          z.enum(COHORT_STATUSES).default('planned'),
