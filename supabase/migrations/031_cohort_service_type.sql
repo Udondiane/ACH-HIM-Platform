@@ -13,8 +13,7 @@
 do $$ begin
   create type public.cohort_service_type as enum (
     'full_programme',
-    'iag_only',
-    'training_only'
+    'iag_only'
   );
 exception when duplicate_object then null; end $$;
 
