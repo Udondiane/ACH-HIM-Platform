@@ -19,12 +19,40 @@ export default async function PartnerDetailPage({ params }: { params: { id: stri
 
   if (!partner) notFound();
 
+  // Recent placements for the table at the bottom
   const { data: placements } = await supabase
     .from('placements')
     .select('id, role_title, salary_band, start_date, status')
     .eq('partner_id', params.id)
     .order('start_date', { ascending: false })
     .limit(5);
+
+  // ALL placements for the oversight role-breakdown (lifetime view)
+  const { data: allPlacementsRes } = await supabase
+    .from('placements')
+    .select('id, role_title, salary_band, start_date, status, cohort_id, cohorts(cohort_ref, name)')
+    .eq('partner_id', params.id);
+  const allPlacements = (allPlacementsRes as any[]) ?? [];
+
+  // Role × time-bucket pivot. Bucket = cohort_ref if known, otherwise year-of-start_date.
+  type RoleBucket = { bucket: string; counts: Map<string, number> };
+  const bucketMap = new Map<string, RoleBucket>();
+  const roleTotals = new Map<string, number>();
+  for (const pl of allPlacements) {
+    const role = (pl.role_title ?? '').trim() || 'Unspecified';
+    const bucket = pl.cohorts?.cohort_ref
+      || (pl.start_date ? `${new Date(pl.start_date).getFullYear()}` : 'Undated');
+    if (!bucketMap.has(bucket)) bucketMap.set(bucket, { bucket, counts: new Map() });
+    const b = bucketMap.get(bucket)!;
+    b.counts.set(role, (b.counts.get(role) ?? 0) + 1);
+    roleTotals.set(role, (roleTotals.get(role) ?? 0) + 1);
+  }
+  const sortedRoles = Array.from(roleTotals.entries())
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([role]) => role);
+  const sortedBuckets = Array.from(bucketMap.values())
+    .sort((a, b) => a.bucket.localeCompare(b.bucket));
+  const totalPlacements = allPlacements.length;
 
   const p = partner as any;
 
@@ -76,6 +104,70 @@ export default async function PartnerDetailPage({ params }: { params: { id: stri
           </dl>
         </CardContent>
       </Card>
+
+      {/* Role-breakdown oversight — ACH-internal view of the role mix this
+          partner has hired into, with temporal grouping (cohort or year)
+          so trends can be read at a glance. Not exposed to the partner. */}
+      {sortedRoles.length > 0 && (
+        <Card className="mb-4">
+          <CardHeader>
+            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Role mix over time · ACH oversight</div>
+            <div className="text-[11.5px] text-ach-navy/55 mt-0.5">
+              Internal only. Roles {p.name} has hired into across all placements, grouped by cohort (or year where cohort not recorded).
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-[12.5px]">
+                <thead>
+                  <tr className="border-b-[0.5px] border-ach-border">
+                    <th className="text-left py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Role</th>
+                    {sortedBuckets.map(b => (
+                      <th key={b.bucket} className="text-right py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium px-2">
+                        {b.bucket}
+                      </th>
+                    ))}
+                    <th className="text-right py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium pl-3">Total</th>
+                    <th className="text-right py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium pl-2">% of all</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedRoles.map(role => {
+                    const roleTotal = roleTotals.get(role) ?? 0;
+                    const pct = totalPlacements > 0 ? (roleTotal / totalPlacements) * 100 : 0;
+                    return (
+                      <tr key={role} className="border-b-[0.5px] border-ach-border last:border-0">
+                        <td className="py-2 text-ach-navy">{role}</td>
+                        {sortedBuckets.map(b => {
+                          const v = b.counts.get(role) ?? 0;
+                          return (
+                            <td key={b.bucket} className="py-2 text-right tabular-nums px-2 text-ach-navy/80">
+                              {v === 0 ? <span className="text-ach-navy/25">–</span> : v}
+                            </td>
+                          );
+                        })}
+                        <td className="py-2 text-right tabular-nums font-medium pl-3">{roleTotal}</td>
+                        <td className="py-2 text-right tabular-nums text-ach-navy/70 pl-2">{pct.toFixed(0)}%</td>
+                      </tr>
+                    );
+                  })}
+                  <tr className="border-t-[0.5px] border-ach-border bg-ach-page/30">
+                    <td className="py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Cohort/year total</td>
+                    {sortedBuckets.map(b => {
+                      const total = Array.from(b.counts.values()).reduce((s, v) => s + v, 0);
+                      return (
+                        <td key={b.bucket} className="py-2 text-right tabular-nums font-medium px-2">{total}</td>
+                      );
+                    })}
+                    <td className="py-2 text-right tabular-nums font-medium pl-3">{totalPlacements}</td>
+                    <td className="py-2"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
