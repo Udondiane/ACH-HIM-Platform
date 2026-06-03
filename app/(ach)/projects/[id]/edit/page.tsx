@@ -1,5 +1,5 @@
-import { notFound } from 'next/navigation';
-import { Trash2 } from 'lucide-react';
+import Link from 'next/link';
+import { AlertCircle, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,19 +11,56 @@ export default async function EditProjectPage({ params }: { params: { id: string
   const supabase = createClient();
   const projectRes = await supabase
     .from('projects').select('*').eq('id', params.id).maybeSingle();
-  if (projectRes.error) {
-    console.error('[projects/edit] project fetch error', projectRes.error);
-    throw new Error(`Project fetch failed: ${projectRes.error.message}`);
+
+  // Diagnostic surface instead of a server-side throw. Same pattern as the
+  // project detail page so missing service-role key / RLS issues / deleted
+  // projects show a useful message rather than a generic crash.
+  if (projectRes.error || !projectRes.data) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <PageHeader
+          backHref="/projects"
+          backLabel="Projects"
+          miniLabel={params.id}
+          title="Project cannot be edited"
+          description="The edit form could not load this project."
+        />
+        <Card>
+          <CardContent className="pt-6 space-y-3">
+            <div className="flex items-start gap-2.5">
+              <AlertCircle className="h-5 w-5 text-[#8B3A4F] shrink-0 mt-0.5" />
+              <div className="space-y-2 text-[13px] text-ach-navy/80">
+                <p className="font-medium text-ach-navy">Likely causes:</p>
+                <ol className="list-decimal pl-5 space-y-1.5">
+                  <li>
+                    <span className="font-medium">Supabase service role key is missing</span> — when
+                    {' '}<code className="text-[12px] bg-ach-page px-1 rounded">AUTH_DISABLED=true</code> and
+                    {' '}<code className="text-[12px] bg-ach-page px-1 rounded">SUPABASE_SERVICE_ROLE_KEY</code> is not set
+                    in the Vercel project env vars, every read silently returns null because RLS blocks the anon key.
+                  </li>
+                  <li>The project with this ID has been deleted from the database.</li>
+                  {projectRes.error && (
+                    <li>
+                      Supabase returned: <code className="text-[11.5px] bg-ach-page px-1 rounded">{projectRes.error.message}</code>
+                    </li>
+                  )}
+                </ol>
+                <p className="pt-2">
+                  <Link href="/projects" className="text-ach-navy underline">← Back to project list</Link>
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
-  if (!projectRes.data) notFound();
   const p = projectRes.data as any;
 
   const [cohortCountRes, assessmentCountRes] = await Promise.all([
     supabase.from('cohorts').select('id', { count: 'exact', head: true }).eq('project_id', params.id),
     supabase.from('assessments').select('id', { count: 'exact', head: true }).eq('project_id', params.id),
   ]);
-  if (cohortCountRes.error) console.error('[projects/edit] cohort count error', cohortCountRes.error);
-  if (assessmentCountRes.error) console.error('[projects/edit] assessment count error', assessmentCountRes.error);
   const cohortCount = cohortCountRes.count ?? 0;
   const assessmentCount = assessmentCountRes.count ?? 0;
 
