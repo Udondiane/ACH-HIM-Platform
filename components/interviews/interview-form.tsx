@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
   INTERVIEW_KINDS, INTERVIEW_KIND_LABELS,
-  INTERVIEW_OUTCOMES, INTERVIEW_OUTCOME_LABELS,
+  SELECTABLE_OUTCOMES, INTERVIEW_OUTCOME_LABELS,
   type InterviewKind,
 } from '@/lib/interviews/schema';
 import type { InterviewResult } from '@/lib/interviews/actions';
@@ -75,10 +75,10 @@ export function InterviewForm({
         <Field label="Outcome">
           <select
             name="outcome"
-            defaultValue={initial?.outcome ?? 'pending'}
+            defaultValue={initial?.outcome ?? 'proceed'}
             className="w-full rounded-[10px] border-[0.5px] border-ach-border bg-white px-3 py-2 text-[13px] text-ach-navy focus:outline-none focus:ring-1 focus:ring-ach-navy/40"
           >
-            {INTERVIEW_OUTCOMES.map(o => (
+            {SELECTABLE_OUTCOMES.map(o => (
               <option key={o} value={o}>{INTERVIEW_OUTCOME_LABELS[o]}</option>
             ))}
           </select>
@@ -91,10 +91,8 @@ export function InterviewForm({
               </svg>
             </summary>
             <ul className="mt-1.5 text-[11px] text-ach-navy/70 space-y-1 pl-2 border-l-[1.5px] border-ach-border">
-              <li><span className="font-medium text-ach-navy">Pending decision</span> — Interview happened; decision still under review.</li>
-              <li><span className="font-medium text-ach-navy">Proceed</span> — Recommend for placement / would hire if offered.</li>
-              <li><span className="font-medium text-ach-navy">Hold for review</span> — Need to consider further; second-round or wait for other candidates.</li>
-              <li><span className="font-medium text-ach-navy">Do not proceed</span> — Not the right fit for this role / cohort.</li>
+              <li><span className="font-medium text-ach-navy">Selected</span> — Would hire / want this candidate in the role.</li>
+              <li><span className="font-medium text-ach-navy">Not selected</span> — Not the right fit for this role.</li>
               <li><span className="font-medium text-ach-navy">No show</span> — Candidate did not attend the scheduled interview.</li>
             </ul>
           </details>

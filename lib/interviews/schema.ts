@@ -9,15 +9,21 @@ export const INTERVIEW_KIND_LABELS: Record<InterviewKind, string> = {
   follow_up:         'Follow-up',
 };
 
+// Full DB enum — kept wide so any historical rows with 'pending' or 'hold'
+// still render correctly. Dropdowns use SELECTABLE_OUTCOMES instead.
 export const INTERVIEW_OUTCOMES = ['pending', 'proceed', 'hold', 'reject', 'no_show'] as const;
 export type InterviewOutcome = typeof INTERVIEW_OUTCOMES[number];
 
+// What new interviews are allowed to be set to (the simplified 3-state list)
+export const SELECTABLE_OUTCOMES = ['proceed', 'reject', 'no_show'] as const;
+
 export const INTERVIEW_OUTCOME_LABELS: Record<InterviewOutcome, string> = {
-  pending:  'Pending decision',
-  proceed:  'Proceed',
-  hold:     'Hold for review',
-  reject:   'Do not proceed',
+  proceed:  'Selected',
+  reject:   'Not selected',
   no_show:  'No show',
+  // Legacy values — only render for historical rows. Not shown in new dropdowns.
+  pending:  'Pending',
+  hold:     'On hold',
 };
 
 export const JOURNEY_STAGES = [
