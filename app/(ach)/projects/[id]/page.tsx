@@ -6,7 +6,6 @@ import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CapabilityPicker } from '@/components/projects/capability-picker';
-import { FactorPicker } from '@/components/projects/factor-picker';
 import { CapabilityRadar } from '@/components/charts/capability-radar';
 import { CapabilityBar } from '@/components/charts/capability-bar';
 import { WordCloud } from '@/components/charts/word-cloud';
@@ -171,13 +170,6 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
         }
       />
 
-      {p.is_locked && (
-        <div className="mb-4 text-[12.5px] text-ach-slate-deep bg-ach-slate-tint rounded-[10px] px-3 py-2 border-[0.5px] border-ach-slate-blue/30 flex items-center gap-2">
-          <span className="text-[10.5px] uppercase tracking-[1.2px] font-medium">Locked</span>
-          <span>Core/Optional selection is locked because assessments are in flight. Unlock from the Edit page if you need to change the design.</span>
-        </div>
-      )}
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
         <Card className="lg:col-span-2">
           <CardHeader>
@@ -230,28 +222,6 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
         </CardHeader>
         <CardContent>
           <CapabilityPicker projectId={p.id} initial={caps} />
-        </CardContent>
-      </Card>
-
-      <Card className="mb-4">
-        <CardHeader>
-          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Factor selection</div>
-          <div className="text-[11.5px] text-ach-navy/55 mt-0.5">
-            Choose which factors within each selected capability are scored. Reduces candidate session length when a project doesn&apos;t need every factor.
-          </div>
-        </CardHeader>
-        <CardContent>
-          <FactorPicker
-            projectId={p.id}
-            capabilities={caps}
-            factorsByDomain={factorsByDomain}
-            locked={hasAssessments}
-          />
-          {hasAssessments && (
-            <div className="mt-3 text-[11.5px] text-ach-slate-deep bg-ach-slate-tint rounded-[8px] px-3 py-2 border-[0.5px] border-ach-slate-blue/30">
-              Factor selection is locked because assessments have been recorded against this project. Any change now would invalidate cross-candidate comparability within the cohort.
-            </div>
-          )}
         </CardContent>
       </Card>
 
