@@ -66,9 +66,8 @@ export default async function PartnerInterviewsPage({
         <Kpi label="Awaiting interview" value={String(awaitingInterview.length)} />
         <Kpi label="Interviewed" value={String(interviewedIds.size)} sub="feedback recorded" />
         <Kpi
-          label="Proceed-recommended"
+          label="Recommended to proceed"
           value={String(interviews.filter(i => i.outcome === 'proceed').length)}
-          sub="passed your interview"
         />
       </div>
 
