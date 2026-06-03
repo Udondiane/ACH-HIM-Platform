@@ -75,15 +75,26 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
   const devFundContribution = ((devFundCredits.data as any[]) ?? [])
     .reduce((s, c) => s + Number(c.amount ?? 0), 0);
 
-  /* Section 9.2 - D&I Outcomes */
-  const placedCountries = Array.from(new Set(
-    allPlacements
-      .map(p => p.candidates?.country_of_origin)
-      .filter((c): c is string => typeof c === 'string' && c.length > 0)
-  )).sort();
+  /* Section 9.2 - Diversity outcomes (country of origin focused) */
+  const countryCounts = new Map<string, number>();
+  for (const p of allPlacements) {
+    const country = p.candidates?.country_of_origin;
+    if (typeof country === 'string' && country.length > 0) {
+      countryCounts.set(country, (countryCounts.get(country) ?? 0) + 1);
+    }
+  }
+  const countryBreakdown = Array.from(countryCounts.entries())
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   const refugeeMigrantHires = totalPlacements;
-  const employeeCount = Number(partner.employee_count ?? 0);
-  const workforcePct = employeeCount > 0 ? (refugeeMigrantHires / employeeCount) * 100 : null;
+
+  /* Placement role breakdown */
+  const roleCounts = new Map<string, number>();
+  for (const p of allPlacements) {
+    const role = (p.role_title ?? '').trim() || 'Unspecified';
+    roleCounts.set(role, (roleCounts.get(role) ?? 0) + 1);
+  }
+  const roleBreakdown = Array.from(roleCounts.entries())
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
 
   /* Section 9.3 - Candidate Capability Outcomes */
   const partnerResponses = ((assessmentResponses.data as any[]) ?? [])
@@ -191,21 +202,81 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
         </Card>
       )}
 
-      {/* SECTION 9.2 — D&I OUTCOMES */}
-      <div className="mb-2 mt-5 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Section 2 · Diversity & Inclusion outcomes</div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+      {/* Placement breakdown by role — added per IKEA-style partner reporting */}
+      {roleBreakdown.length > 0 && (
+        <Card className="mb-5">
+          <CardHeader>
+            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Placements by role</div>
+            <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Roles {partner.name} has hired into through ACH.</div>
+          </CardHeader>
+          <CardContent>
+            <table className="w-full text-[12.5px]">
+              <thead>
+                <tr className="border-b-[0.5px] border-ach-border">
+                  <Th>Role</Th>
+                  <Th className="text-right">Placements</Th>
+                  <Th className="text-right">% of total</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {roleBreakdown.map(([role, count]) => (
+                  <tr key={role} className="border-b-[0.5px] border-ach-border last:border-0">
+                    <Td className="text-ach-navy">{role}</Td>
+                    <Td className="text-right tabular-nums font-medium">{count}</Td>
+                    <Td className="text-right tabular-nums text-ach-navy/70">
+                      {totalPlacements > 0 ? `${((count / totalPlacements) * 100).toFixed(0)}%` : '—'}
+                    </Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* SECTION 9.2 — DIVERSITY (country of origin) */}
+      <div className="mb-2 mt-5 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Section 2 · Diversity — country of origin</div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
         <KpiCard label="Refugee / migrant hires" value={String(refugeeMigrantHires)} sub="through ACH" />
         <KpiCard
-          label="Countries represented"
-          value={String(placedCountries.length)}
-          sub={placedCountries.length > 0 ? placedCountries.slice(0, 4).join(', ') + (placedCountries.length > 4 ? `, +${placedCountries.length - 4} more` : '') : '—'}
-        />
-        <KpiCard
-          label="% of workforce"
-          value={workforcePct != null ? `${workforcePct.toFixed(2)}%` : '—'}
-          sub={employeeCount > 0 ? `of ${employeeCount.toLocaleString()} employees` : 'employee count not recorded'}
+          label="Countries of origin represented"
+          value={String(countryBreakdown.length)}
+          sub={countryBreakdown.length > 0
+            ? countryBreakdown.slice(0, 3).map(([c]) => c).join(', ') + (countryBreakdown.length > 3 ? `, +${countryBreakdown.length - 3} more` : '')
+            : '—'}
         />
       </div>
+
+      {countryBreakdown.length > 0 && (
+        <Card className="mb-5">
+          <CardHeader>
+            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Country of origin breakdown</div>
+            <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Placements by candidates&apos; country of origin.</div>
+          </CardHeader>
+          <CardContent>
+            <table className="w-full text-[12.5px]">
+              <thead>
+                <tr className="border-b-[0.5px] border-ach-border">
+                  <Th>Country of origin</Th>
+                  <Th className="text-right">Hires</Th>
+                  <Th className="text-right">% of placements</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {countryBreakdown.map(([country, count]) => (
+                  <tr key={country} className="border-b-[0.5px] border-ach-border last:border-0">
+                    <Td className="text-ach-navy">{country}</Td>
+                    <Td className="text-right tabular-nums font-medium">{count}</Td>
+                    <Td className="text-right tabular-nums text-ach-navy/70">
+                      {totalPlacements > 0 ? `${((count / totalPlacements) * 100).toFixed(0)}%` : '—'}
+                    </Td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </CardContent>
+        </Card>
+      )}
 
       {/* SECTION 9.3 — CANDIDATE CAPABILITY OUTCOMES */}
       <div className="mb-2 mt-5 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Section 3 · Candidate capability outcomes</div>
