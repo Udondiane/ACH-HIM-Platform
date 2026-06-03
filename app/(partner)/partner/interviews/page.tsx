@@ -60,11 +60,10 @@ export default async function PartnerInterviewsPage({
       <PageHeader
         miniLabel="Interviews"
         title="Candidates to interview"
-        description="Candidates ACH has shortlisted into a cohort you sponsor. Record your interview feedback once you have met them; ACH uses your input to inform placement decisions."
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-        <Kpi label="Awaiting interview" value={String(awaitingInterview.length)} sub="from your sponsored cohorts" />
+        <Kpi label="Awaiting interview" value={String(awaitingInterview.length)} />
         <Kpi label="Interviewed" value={String(interviewedIds.size)} sub="feedback recorded" />
         <Kpi
           label="Proceed-recommended"
@@ -78,7 +77,7 @@ export default async function PartnerInterviewsPage({
           <EmptyState
             icon={<MessageSquare className="h-10 w-10" />}
             title="No interview activity yet"
-            description="Candidates from your sponsored cohorts will appear here once ACH has shortlisted them. Then you can record interview feedback per candidate."
+            description="Candidates will appear here once ACH has shortlisted them."
           />
         </Card>
       ) : (
