@@ -44,10 +44,12 @@ export function CohortForm({ action, initial, cancelHref, submitLabel = 'Save co
       </div>
 
       <Field label="Project" error={fe('project_id')} hint="The intervention design this cohort runs. Sets the Core/Optional capability mix used in HIM scoring.">
-        <Select name="project_id" defaultValue={initial?.project_id ?? ''}>
+        {/* Radix Select rejects empty-string values, so we use a "__none__"
+            sentinel here and the server action treats it as null. */}
+        <Select name="project_id" defaultValue={initial?.project_id || '__none__'}>
           <SelectTrigger><SelectValue placeholder="Select a project" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="">— None (unlinked) —</SelectItem>
+            <SelectItem value="__none__">— None (unlinked) —</SelectItem>
             {projects.map(p => (
               <SelectItem key={p.id} value={p.id}>{p.project_ref} · {p.name}</SelectItem>
             ))}

@@ -22,7 +22,7 @@ function normalisePayload(input: ReturnType<typeof cohortSchema.parse>) {
   return {
     cohort_ref: input.cohort_ref,
     name: input.name,
-    project_id: input.project_id || null,
+    project_id: (input.project_id && input.project_id !== '__none__') ? input.project_id : null,
     structure: input.structure,
     service_type: input.service_type,
     status: input.status,
