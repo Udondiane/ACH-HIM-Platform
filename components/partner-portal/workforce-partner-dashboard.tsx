@@ -120,8 +120,8 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
         />
       )}
 
-      {/* Commercial outcomes (no section label) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+      {/* Top KPI row — 4 cards (commercial outcomes + diversity headline) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
         <KpiCard label="Total placements" value={String(totalPlacements)} />
         <KpiCard
           label="Retained at 12 months"
@@ -133,6 +133,10 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
         <KpiCard
           label="Estimated retention savings"
           value={`£${Math.round(retentionSavings).toLocaleString()}`}
+        />
+        <KpiCard
+          label="Countries of origin represented"
+          value={String(countryBreakdown.length)}
         />
       </div>
 
@@ -178,15 +182,7 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
         </Card>
       )}
 
-      {/* Diversity — country of origin (no section label, no refugee/migrant card,
-           no country names in the subline, breakdown table collapsed behind toggle) */}
-      <div className="grid grid-cols-1 gap-3 mb-3 mt-5">
-        <KpiCard
-          label="Countries of origin represented"
-          value={String(countryBreakdown.length)}
-        />
-      </div>
-
+      {/* Country of origin breakdown — collapsed behind toggle */}
       {countryBreakdown.length > 0 && (
         <Card className="mb-5">
           <CardContent className="pt-4 pb-4">
@@ -209,7 +205,6 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
                     <tr className="border-b-[0.5px] border-ach-border">
                       <Th>Country of origin</Th>
                       <Th className="text-right">Hires</Th>
-                      <Th className="text-right">% of placements</Th>
                     </tr>
                   </thead>
                   <tbody>
@@ -217,9 +212,6 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
                       <tr key={country} className="border-b-[0.5px] border-ach-border last:border-0">
                         <Td className="text-ach-navy">{country}</Td>
                         <Td className="text-right tabular-nums font-medium">{count}</Td>
-                        <Td className="text-right tabular-nums text-ach-navy/70">
-                          {totalPlacements > 0 ? `${((count / totalPlacements) * 100).toFixed(0)}%` : '—'}
-                        </Td>
                       </tr>
                     ))}
                   </tbody>
