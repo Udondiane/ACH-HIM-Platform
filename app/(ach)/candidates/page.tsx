@@ -148,7 +148,7 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
           <div className="w-px h-5 bg-ach-border mx-1" />
           <FilterPill
             href={addParam(baseHref, 'at_risk', 'true')}
-            label="At risk"
+            label="Needs attention"
             active={searchParams?.at_risk === 'true'}
             variant="risk"
           />
@@ -250,7 +250,7 @@ function ProgrammeCard({
           {atRiskCount > 0 && (
             <span className="inline-flex items-center text-[10.5px] uppercase tracking-[1.2px] font-medium text-[#8B3A4F]">
               <AlertTriangle className="h-3 w-3 mr-1" />
-              {atRiskCount} at risk
+              {atRiskCount} need{atRiskCount === 1 ? 's' : ''} attention
             </span>
           )}
         </div>
@@ -294,7 +294,7 @@ function CandidateTable({ candidates }: { candidates: CandidateRow[] }) {
               <Td className="text-ach-navy/70">{LOCALE_NAMES[c.preferred_locale as keyof typeof LOCALE_NAMES] ?? c.preferred_locale}</Td>
               <Td>
                 {c.at_risk
-                  ? <span title={c.at_risk_reason ?? 'At risk'} className="inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] uppercase tracking-[1.2px] font-medium border-[0.5px] bg-ach-rose/15 text-[#8B3A4F] border-ach-rose/40">At risk</span>
+                  ? <span title={c.at_risk_reason ?? 'Needs attention'} className="inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] uppercase tracking-[1.2px] font-medium border-[0.5px] bg-ach-rose/15 text-[#8B3A4F] border-ach-rose/40">Needs attention</span>
                   : c.is_ach_tenant
                     ? <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] uppercase tracking-[1.2px] font-medium border-[0.5px] bg-ach-slate-tint text-ach-slate-deep border-ach-slate-blue/30">ACH</span>
                     : <span className="text-ach-navy/40 text-[12px]">—</span>}

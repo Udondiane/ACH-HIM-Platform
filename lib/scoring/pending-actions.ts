@@ -32,7 +32,7 @@ const KIND_LABELS: Record<PendingAction['kind'], string> = {
   retention_6mo_due:     '6-month retention check due',
   retention_12mo_due:    '12-month retention check due',
   exit_reason_missing:   'Exit reason missing',
-  at_risk_flagged:       'Flagged at-risk',
+  at_risk_flagged:       'Needs attention',
 };
 
 export function labelFor(kind: PendingAction['kind']): string {

@@ -93,13 +93,13 @@ export default async function AchDashboardPage() {
                 <div>
                   <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 flex items-center gap-1.5"><Bell className="h-3 w-3" />Pending actions</div>
                   <div className="text-[12.5px] text-ach-navy/60 mt-0.5">
-                    Stage transitions ACH staff need to action — assessments due, retention checks due, exits unrecorded, at-risk flags.
+                    Stage transitions ACH staff need to action — assessments due, retention checks due, exits unrecorded, candidates needing attention.
                   </div>
                 </div>
                 <div className="flex items-center gap-2 text-[11.5px]">
                   {atRisk.length > 0 && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-ach-rose/15 text-[#8B3A4F] border-[0.5px] border-ach-rose/30 font-medium">
-                      <AlertTriangle className="h-3 w-3" />{atRisk.length} at risk
+                      <AlertTriangle className="h-3 w-3" />{atRisk.length} need{atRisk.length === 1 ? 's' : ''} attention
                     </span>
                   )}
                   {overdue.length > 0 && <span className="text-ach-navy/65"><span className="font-medium text-ach-navy">{overdue.length}</span> overdue &gt;14d</span>}
