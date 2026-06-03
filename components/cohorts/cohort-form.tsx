@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select';
 import {
   COHORT_STRUCTURES, COHORT_STRUCTURE_LABELS, COHORT_STATUSES, COHORT_STATUS_LABELS,
+  COHORT_SERVICE_TYPES, COHORT_SERVICE_TYPE_LABELS, COHORT_SERVICE_TYPE_HINTS,
 } from '@/lib/cohorts/schema';
 import type { ActionResult } from '@/lib/cohorts/actions';
 
@@ -71,6 +72,19 @@ export function CohortForm({ action, initial, cancelHref, submitLabel = 'Save co
           <Input name="location" defaultValue={initial?.location ?? ''} placeholder="Bristol" />
         </Field>
       </div>
+
+      <Field
+        label="Service type"
+        error={fe('service_type')}
+        hint={COHORT_SERVICE_TYPE_HINTS[(initial?.service_type ?? 'full_programme') as typeof COHORT_SERVICE_TYPES[number]]}
+      >
+        <Select name="service_type" defaultValue={initial?.service_type ?? 'full_programme'}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {COHORT_SERVICE_TYPES.map(s => <SelectItem key={s} value={s}>{COHORT_SERVICE_TYPE_LABELS[s]}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </Field>
 
       <Field label="Sector focus" error={fe('sector_focus')}>
         <Input name="sector_focus" defaultValue={initial?.sector_focus ?? ''} placeholder="Hospitality, Retail, Construction" />

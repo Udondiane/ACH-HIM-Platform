@@ -27,6 +27,7 @@ type CandidateRow = {
       id: string;
       project_id: string | null;
       start_date: string | null;
+      service_type: string | null;
       projects: { id: string; project_ref: string; name: string } | null;
     } | null;
   }[] | null;
@@ -34,6 +35,7 @@ type CandidateRow = {
 
 type ProjectGroup = {
   project: { id: string; project_ref: string; name: string } | null;
+  serviceType: string;
   candidates: CandidateRow[];
 };
 
@@ -44,7 +46,7 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
     .select(`
       id, candidate_ref, given_name, family_name, preferred_locale,
       country_of_origin, status, arrival_year, is_ach_tenant, at_risk, at_risk_reason,
-      cohort_candidates(cohorts(id, project_id, start_date, projects(id, project_ref, name)))
+      cohort_candidates(cohorts(id, project_id, start_date, service_type, projects(id, project_ref, name)))
     `)
     .order('candidate_ref');
 
@@ -58,8 +60,10 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
   const { data: candidatesRaw, error } = await q;
   const candidates = (candidatesRaw ?? []) as unknown as CandidateRow[];
 
-  // Group each candidate under their most recent cohort's project.
-  // Unassigned candidates (no cohort) go into a separate bucket.
+  // Group each candidate under (project, service_type). A candidate's most
+  // recent cohort's project + service_type becomes the bucket. Programmes
+  // with multiple service shapes (e.g. B2E running Full programme AND
+  // IAG only cohorts) appear as separate cards on the index.
   const groups = new Map<string, ProjectGroup>();
   const unassigned: CandidateRow[] = [];
   for (const c of candidates) {
@@ -80,27 +84,40 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
       unassigned.push(c);
       continue;
     }
-    if (!groups.has(project.id)) {
-      groups.set(project.id, { project, candidates: [] });
+    const serviceType = recent.service_type ?? 'full_programme';
+    const key = `${project.id}::${serviceType}`;
+    if (!groups.has(key)) {
+      groups.set(key, { project, serviceType, candidates: [] });
     }
-    groups.get(project.id)!.candidates.push(c);
+    groups.get(key)!.candidates.push(c);
   }
 
-  const orderedGroups = Array.from(groups.values()).sort((a, b) =>
-    (a.project!.project_ref ?? '').localeCompare(b.project!.project_ref ?? '')
-  );
+  const SERVICE_ORDER: Record<string, number> = { full_programme: 1, iag_only: 2, training_only: 3 };
+  const orderedGroups = Array.from(groups.values()).sort((a, b) => {
+    const refCmp = (a.project!.project_ref ?? '').localeCompare(b.project!.project_ref ?? '');
+    if (refCmp !== 0) return refCmp;
+    return (SERVICE_ORDER[a.serviceType] ?? 99) - (SERVICE_ORDER[b.serviceType] ?? 99);
+  });
 
   const isAllView = searchParams?.view === 'all';
-  const focusedProjectId = searchParams?.project;
-  const focusedGroup = focusedProjectId
-    ? (focusedProjectId === 'unassigned'
-        ? { project: null, candidates: unassigned }
-        : orderedGroups.find(g => g.project?.id === focusedProjectId) ?? null)
+  const focusedProjectParam = searchParams?.project;
+  // Focus key is now `<projectId>::<serviceType>` (or 'unassigned'). Old links
+  // with just a projectId fall back to the first matching service type.
+  const [focusedProjectId, focusedServiceType] = focusedProjectParam
+    ? focusedProjectParam.split('::')
+    : [undefined, undefined];
+  const focusedGroup = focusedProjectParam
+    ? (focusedProjectParam === 'unassigned'
+        ? { project: null, serviceType: 'full_programme' as string, candidates: unassigned }
+        : (focusedServiceType
+            ? orderedGroups.find(g => g.project?.id === focusedProjectId && g.serviceType === focusedServiceType)
+            : orderedGroups.find(g => g.project?.id === focusedProjectId)
+          ) ?? null)
     : null;
 
   // Filter pill base href changes based on which view we're in
   const baseHref =
-    focusedProjectId ? `/candidates?project=${focusedProjectId}`
+    focusedProjectParam ? `/candidates?project=${focusedProjectParam}`
     : isAllView ? '/candidates?view=all'
     : '/candidates';
 
@@ -110,7 +127,9 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
         miniLabel="Network"
         title={
           focusedGroup
-            ? (focusedGroup.project?.name ?? 'Unassigned candidates')
+            ? (focusedGroup.project?.name
+                ? `${focusedGroup.project.name} · ${SERVICE_TYPE_LABEL[focusedGroup.serviceType] ?? focusedGroup.serviceType}`
+                : 'Unassigned candidates')
             : isAllView
               ? 'All candidates'
               : 'Candidates'
@@ -119,10 +138,10 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
         backLabel={focusedGroup || isAllView ? 'Programmes' : undefined}
         description={
           focusedGroup
-            ? `Candidates running through ${focusedGroup.project?.name ?? 'no programme'}.`
+            ? `Candidates running through ${focusedGroup.project?.name ?? 'no programme'}${focusedGroup.project ? ` (${SERVICE_TYPE_LABEL[focusedGroup.serviceType] ?? focusedGroup.serviceType})` : ''}.`
             : isAllView
               ? 'Every candidate across every programme. Use the filters to narrow.'
-              : 'Programme participants grouped by the project they are running through. Pick a programme to see its candidates, or view all candidates flat.'
+              : 'Programme participants grouped by the project (and service shape) they are running through. Pick a card to drill in, or view all candidates flat.'
         }
         actions={
           <div className="flex items-center gap-2">
@@ -191,18 +210,20 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {orderedGroups.map(g => (
             <ProgrammeCard
-              key={g.project!.id}
-              projectId={g.project!.id}
+              key={`${g.project!.id}-${g.serviceType}`}
+              focusKey={`${g.project!.id}::${g.serviceType}`}
               title={g.project!.name}
               ref_={g.project!.project_ref}
+              serviceType={g.serviceType}
               candidates={g.candidates}
             />
           ))}
           {unassigned.length > 0 && (
             <ProgrammeCard
-              projectId="unassigned"
+              focusKey="unassigned"
               title="Unassigned"
               ref_="No cohort yet"
+              serviceType="full_programme"
               candidates={unassigned}
               isUnassigned
             />
@@ -213,12 +234,19 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
   );
 }
 
+const SERVICE_TYPE_LABEL: Record<string, string> = {
+  full_programme: 'Full programme',
+  iag_only:       'IAG only',
+  training_only:  'Training only',
+};
+
 function ProgrammeCard({
-  projectId, title, ref_, candidates, isUnassigned,
+  focusKey, title, ref_, serviceType, candidates, isUnassigned,
 }: {
-  projectId: string;
+  focusKey: string;
   title: string;
   ref_: string;
+  serviceType: string;
   candidates: CandidateRow[];
   isUnassigned?: boolean;
 }) {
@@ -227,8 +255,10 @@ function ProgrammeCard({
   const placedCount = candidates.filter(c => c.status === 'placed').length;
   const exitedCount = candidates.filter(c => c.status === 'withdrawn' || c.status === 'completed').length;
 
+  const serviceLabel = SERVICE_TYPE_LABEL[serviceType] ?? serviceType;
+
   return (
-    <Link href={`/candidates?project=${projectId}`} className="block">
+    <Link href={`/candidates?project=${focusKey}`} className="block">
       <Card className="hover:bg-ach-page transition-colors h-full p-5">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="min-w-0">
@@ -237,6 +267,17 @@ function ProgrammeCard({
               <FolderKanban className="h-3.5 w-3.5 text-ach-navy/55 shrink-0" />
               {title}
             </div>
+            {!isUnassigned && (
+              <div className="mt-1.5">
+                <span className={`inline-flex items-center text-[10.5px] uppercase tracking-[1.2px] font-medium rounded-full px-2 py-0.5 border-[0.5px] ${
+                  serviceType === 'iag_only'      ? 'bg-ach-slate-tint text-ach-slate-deep border-ach-slate-blue/30'
+                  : serviceType === 'training_only' ? 'bg-ach-page text-ach-navy/80 border-ach-border'
+                  : 'bg-white text-ach-navy/65 border-ach-border'
+                }`}>
+                  {serviceLabel}
+                </span>
+              </div>
+            )}
           </div>
           <ArrowRight className="h-4 w-4 text-ach-navy/40 shrink-0 mt-1" />
         </div>

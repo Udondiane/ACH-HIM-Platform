@@ -15,6 +15,18 @@ export const COHORT_STATUS_LABELS: Record<typeof COHORT_STATUSES[number], string
   cancelled:   'Cancelled',
 };
 
+export const COHORT_SERVICE_TYPES = ['full_programme', 'iag_only', 'training_only'] as const;
+export const COHORT_SERVICE_TYPE_LABELS: Record<typeof COHORT_SERVICE_TYPES[number], string> = {
+  full_programme: 'Full programme',
+  iag_only:       'IAG only',
+  training_only:  'Training only',
+};
+export const COHORT_SERVICE_TYPE_HINTS: Record<typeof COHORT_SERVICE_TYPES[number], string> = {
+  full_programme: 'Standard delivery — assessments, training, placement support, follow-up.',
+  iag_only:       'Information, advice and guidance only. Candidates receive support but do not enter the placement pipeline.',
+  training_only:  'Training delivered without ACH placement matching. Candidates exit on completion.',
+};
+
 const dateOrEmpty = z.string().trim().regex(/^(\d{4}-\d{2}-\d{2})?$/).optional().or(z.literal(''));
 
 export const cohortSchema = z.object({
@@ -22,6 +34,7 @@ export const cohortSchema = z.object({
   name:            z.string().trim().min(1, 'Name required').max(200),
   project_id:      z.string().uuid().optional().or(z.literal('')),
   structure:       z.enum(COHORT_STRUCTURES),
+  service_type:    z.enum(COHORT_SERVICE_TYPES).default('full_programme'),
   status:          z.enum(COHORT_STATUSES).default('planned'),
   location:        z.string().trim().max(120).optional().or(z.literal('')),
   sector_focus:    z.string().trim().max(200).optional().or(z.literal('')),
