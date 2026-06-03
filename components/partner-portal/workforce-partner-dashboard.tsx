@@ -49,7 +49,6 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
 
   /* Section 9.1 - Commercial Outcomes */
   const totalPlacements = allPlacements.length;
-  const activePlacements = allPlacements.filter(p => p.status === 'active' || p.status === 'started').length;
   const retained12mo = allPlacements.filter(p => p.status === 'completed_12mo').length;
   const eligibleFor12mo = allPlacements.filter(p => {
     const start = new Date(p.start_date);
@@ -57,7 +56,6 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
     return months >= 12 && p.status !== 'active' && p.status !== 'started';
   }).length || totalPlacements;
   const retentionRate = eligibleFor12mo > 0 ? retained12mo / eligibleFor12mo : null;
-  const benchmarkDelta = retentionRate != null ? retentionRate - SECTOR_BENCHMARK_12MO : null;
 
   /* Estimated retention savings: only count placements that exceed the
      industry-expected retention baseline. Conservative per spec. */
@@ -80,7 +78,6 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
   }
   const countryBreakdown = Array.from(countryCounts.entries())
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-  const refugeeMigrantHires = totalPlacements;
 
   /* Section 9.3 - Candidate Capability Outcomes */
   const partnerResponses = ((assessmentResponses.data as any[]) ?? [])
@@ -125,18 +122,17 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
 
       {/* Commercial outcomes (no section label) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
-        <KpiCard label="Total placements" value={String(totalPlacements)} sub={`${activePlacements} currently active`} />
+        <KpiCard label="Total placements" value={String(totalPlacements)} />
         <KpiCard
           label="Retained at 12 months"
           value={String(retained12mo)}
           sub={retentionRate != null
-            ? `${(retentionRate * 100).toFixed(0)}% retention rate` + (benchmarkDelta != null ? ` · ${benchmarkDelta >= 0 ? '+' : ''}${(benchmarkDelta * 100).toFixed(0)}pp vs ${(SECTOR_BENCHMARK_12MO * 100).toFixed(0)}% benchmark` : '')
+            ? `${(retentionRate * 100).toFixed(0)}% retention rate`
             : 'awaiting eligible placements'}
         />
         <KpiCard
           label="Estimated retention savings"
           value={`£${Math.round(retentionSavings).toLocaleString()}`}
-          sub="conservative; counts only placements exceeding the benchmark"
         />
       </div>
 
@@ -182,45 +178,54 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
         </Card>
       )}
 
-      {/* Diversity — country of origin (no section label) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3 mt-5">
-        <KpiCard label="Refugee / migrant hires" value={String(refugeeMigrantHires)} sub="through ACH" />
+      {/* Diversity — country of origin (no section label, no refugee/migrant card,
+           no country names in the subline, breakdown table collapsed behind toggle) */}
+      <div className="grid grid-cols-1 gap-3 mb-3 mt-5">
         <KpiCard
           label="Countries of origin represented"
           value={String(countryBreakdown.length)}
-          sub={countryBreakdown.length > 0
-            ? countryBreakdown.slice(0, 3).map(([c]) => c).join(', ') + (countryBreakdown.length > 3 ? `, +${countryBreakdown.length - 3} more` : '')
-            : '—'}
         />
       </div>
 
       {countryBreakdown.length > 0 && (
         <Card className="mb-5">
-          <CardHeader>
-            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Country of origin breakdown</div>
-            <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Placements by candidates&apos; country of origin.</div>
-          </CardHeader>
-          <CardContent>
-            <table className="w-full text-[12.5px]">
-              <thead>
-                <tr className="border-b-[0.5px] border-ach-border">
-                  <Th>Country of origin</Th>
-                  <Th className="text-right">Hires</Th>
-                  <Th className="text-right">% of placements</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {countryBreakdown.map(([country, count]) => (
-                  <tr key={country} className="border-b-[0.5px] border-ach-border last:border-0">
-                    <Td className="text-ach-navy">{country}</Td>
-                    <Td className="text-right tabular-nums font-medium">{count}</Td>
-                    <Td className="text-right tabular-nums text-ach-navy/70">
-                      {totalPlacements > 0 ? `${((count / totalPlacements) * 100).toFixed(0)}%` : '—'}
-                    </Td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <CardContent className="pt-4 pb-4">
+            <details className="group">
+              <summary className="flex items-center justify-between gap-2 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">
+                  Country of origin breakdown
+                </div>
+                <div className="flex items-center gap-1.5 text-[11.5px] text-ach-navy/55">
+                  <span className="group-open:hidden">Show details</span>
+                  <span className="hidden group-open:inline">Hide details</span>
+                  <svg className="w-3 h-3 transition-transform group-open:rotate-180" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M3 5l3 3 3-3" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              </summary>
+              <div className="mt-3 pt-3 border-t-[0.5px] border-ach-border">
+                <table className="w-full text-[12.5px]">
+                  <thead>
+                    <tr className="border-b-[0.5px] border-ach-border">
+                      <Th>Country of origin</Th>
+                      <Th className="text-right">Hires</Th>
+                      <Th className="text-right">% of placements</Th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {countryBreakdown.map(([country, count]) => (
+                      <tr key={country} className="border-b-[0.5px] border-ach-border last:border-0">
+                        <Td className="text-ach-navy">{country}</Td>
+                        <Td className="text-right tabular-nums font-medium">{count}</Td>
+                        <Td className="text-right tabular-nums text-ach-navy/70">
+                          {totalPlacements > 0 ? `${((count / totalPlacements) * 100).toFixed(0)}%` : '—'}
+                        </Td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </details>
           </CardContent>
         </Card>
       )}
@@ -252,13 +257,13 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
   );
 }
 
-function KpiCard({ label, value, sub }: { label: string; value: string; sub: string }) {
+function KpiCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <Card>
       <CardContent className="pt-5">
         <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">{label}</div>
         <div className="text-[22px] font-medium tracking-[-0.5px] text-ach-navy leading-none mt-2.5 tabular-nums">{value}</div>
-        <div className="text-[11.5px] text-ach-navy/60 mt-1.5">{sub}</div>
+        {sub && <div className="text-[11.5px] text-ach-navy/60 mt-1.5">{sub}</div>}
       </CardContent>
     </Card>
   );
