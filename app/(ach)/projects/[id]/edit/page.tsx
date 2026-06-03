@@ -5,7 +5,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ProjectForm } from '@/components/projects/project-form';
-import { updateProjectAction, deleteProjectAction, type ActionResult } from '@/lib/projects/actions';
+import { updateProjectAction, deleteProjectAction } from '@/lib/projects/actions';
 
 export default async function EditProjectPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -64,8 +64,12 @@ export default async function EditProjectPage({ params }: { params: { id: string
   const cohortCount = cohortCountRes.count ?? 0;
   const assessmentCount = assessmentCountRes.count ?? 0;
 
-  const action = async (prev: ActionResult | null, fd: FormData) => updateProjectAction(params.id, prev, fd);
-  const handleDelete = async () => { 'use server'; await deleteProjectAction(params.id); };
+  // Bind the project ID to the server actions so they remain proper server
+  // actions when passed across the server/client boundary. The previous
+  // arrow-function wrapper without 'use server' was a regular function from
+  // React's POV and crashed the page in server-side render.
+  const action = updateProjectAction.bind(null, params.id);
+  const handleDelete = deleteProjectAction.bind(null, params.id);
 
   return (
     <div className="max-w-3xl mx-auto">
