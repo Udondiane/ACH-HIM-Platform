@@ -30,14 +30,13 @@ const SECTOR_BENCHMARK_12MO = 0.68;
 export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partner: any; hideHeader?: boolean }) {
   const supabase = createClient();
 
-  const [placements, cohortPartners, devFundCredits, assessmentResponses] = await Promise.all([
+  const [placements, cohortPartners, assessmentResponses] = await Promise.all([
     supabase.from('placements')
       .select('id, role_title, salary_band, salary_actual, start_date, status, candidates(id, candidate_ref, given_name, country_of_origin)')
       .eq('partner_id', partner.id).order('start_date', { ascending: false }),
     supabase.from('cohort_partners')
       .select('id, cohorts(id, cohort_ref, name, status)')
       .eq('partner_id', partner.id),
-    supabase.from('dev_fund_credits').select('amount').eq('partner_id', partner.id),
     supabase.from('assessment_responses')
       .select(`
         numeric_value,
@@ -71,9 +70,6 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
       const pct = REPLACEMENT_COST_PCT[p.salary_band as string] ?? 0;
       return s + (Number(p.salary_actual ?? 0) * pct);
     }, 0);
-
-  const devFundContribution = ((devFundCredits.data as any[]) ?? [])
-    .reduce((s, c) => s + Number(c.amount ?? 0), 0);
 
   /* Section 9.2 - Diversity outcomes (country of origin focused) */
   const countryCounts = new Map<string, number>();
@@ -130,7 +126,7 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
 
       {/* SECTION 9.1 — COMMERCIAL OUTCOMES */}
       <div className="mb-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Section 1 · Commercial outcomes</div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
         <KpiCard label="Total placements" value={String(totalPlacements)} sub={`${activePlacements} currently active`} />
         <KpiCard
           label="Retained at 12 months"
@@ -143,11 +139,6 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
           label="Estimated retention savings"
           value={`£${Math.round(retentionSavings).toLocaleString()}`}
           sub="conservative; counts only placements exceeding the benchmark"
-        />
-        <KpiCard
-          label="Development Fund"
-          value={`£${devFundContribution.toLocaleString()}`}
-          sub="invested in candidate progression"
         />
       </div>
 

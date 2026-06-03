@@ -55,8 +55,6 @@ export function PartnerSidebar({ partner }: { partner: Partner | null }) {
       { href: '/partner/interviews',    label: 'Interviews',         icon: MessageSquare },
       { href: '/partner/placements',    label: 'Placements',         icon: Users },
       { href: '/partner/milestones',    label: 'Retention milestones', icon: ScrollText },
-      { section: 'Impact' },
-      { href: '/partner/development-fund', label: 'Development fund', icon: GraduationCap },
     );
   }
   if (types.includes('capability_investor')) {
