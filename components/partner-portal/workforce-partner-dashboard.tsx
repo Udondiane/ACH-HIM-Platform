@@ -44,10 +44,10 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
 
   const [placements, cohortPartners, assessmentResponses] = await Promise.all([
     supabase.from('placements')
-      .select('id, role_title, salary_band, salary_actual, start_date, status, candidates(id, candidate_ref, given_name, country_of_origin)')
+      .select('id, role_title, salary_band, salary_actual, start_date, status, cohort_id, cohorts(project_id), candidates(id, candidate_ref, given_name, country_of_origin)')
       .eq('partner_id', partner.id).order('start_date', { ascending: false }),
     supabase.from('cohort_partners')
-      .select('id, cohorts(id, cohort_ref, name, status)')
+      .select('id, cohorts(id, cohort_ref, name, status, project_id)')
       .eq('partner_id', partner.id),
     supabase.from('assessment_responses')
       .select(`
@@ -55,13 +55,31 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
         observable_changes,
         practices,
         indicators!inner(factor_id, factors!inner(factor_domains!inner(domain_id))),
-        assessments!inner(candidate_id, timepoint)
+        assessments!inner(candidate_id, timepoint, project_id)
       `),
   ]);
 
   const allPlacements = (placements.data as any[]) ?? [];
   const cohortRows = (cohortPartners.data as any[]) ?? [];
   const placedCandidateIds = new Set(allPlacements.map(p => p.candidates?.id).filter(Boolean));
+
+  /* Project-locked domain set. The partner only sees domains that the
+     project(s) running through their cohorts have selected as Core or
+     Optional. Excluded domains do not appear in project_capabilities and
+     therefore never surface to the partner. */
+  const relevantProjectIds = new Set<string>([
+    ...allPlacements.map(p => p.cohorts?.project_id).filter((id): id is string => !!id),
+    ...cohortRows.map(r => r.cohorts?.project_id).filter((id: any): id is string => !!id),
+  ]);
+  let lockedDomains: Set<string> | null = null;
+  if (relevantProjectIds.size > 0) {
+    const pcRes = await supabase
+      .from('project_capabilities')
+      .select('project_id, domain, role')
+      .in('project_id', Array.from(relevantProjectIds));
+    const rows = ((pcRes.data as any[]) ?? []);
+    lockedDomains = new Set(rows.map(r => r.domain as string));
+  }
 
   /* Section 9.1 - Commercial Outcomes */
   const totalPlacements = allPlacements.length;
@@ -165,16 +183,21 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
     ? upliftValues.reduce((s, v) => s + v, 0) / upliftValues.length
     : null;
 
-  // Per-domain rows for the breakdown table + radar. ALWAYS include all 7
-  // domains so the structure renders identically with sparse and complete
-  // data — missing values show as null and render as "—".
-  const domainRows = DOMAIN_ORDER.map(dom => {
-    const a = domainAgg.get(dom);
-    const baselineMean = a && a.baselineN > 0 ? a.baselineSum / a.baselineN : null;
-    const exitMean     = a && a.exitN > 0     ? a.exitSum / a.exitN         : null;
-    const delta        = baselineMean != null && exitMean != null ? exitMean - baselineMean : null;
-    return { domain: dom, baselineMean, exitMean, delta };
-  });
+  // Per-domain rows for the breakdown table + radar.
+  // Scoped to project-locked domains only — if the relevant project(s)
+  // didn't select a domain as Core / Optional, it never surfaces. When
+  // lockedDomains can't be resolved (no cohorts linked) fall back to the
+  // full set so the structure still renders.
+  const visibleDomains = lockedDomains ?? new Set(DOMAIN_ORDER);
+  const domainRows = DOMAIN_ORDER
+    .filter(dom => visibleDomains.has(dom))
+    .map(dom => {
+      const a = domainAgg.get(dom);
+      const baselineMean = a && a.baselineN > 0 ? a.baselineSum / a.baselineN : null;
+      const exitMean     = a && a.exitN > 0     ? a.exitSum / a.exitN         : null;
+      const delta        = baselineMean != null && exitMean != null ? exitMean - baselineMean : null;
+      return { domain: dom, baselineMean, exitMean, delta };
+    });
 
   // Counts that drive the headline KPIs and the data-state note
   const positiveDomains = domainRows.filter(d => (d.delta ?? 0) > 0).length;
@@ -352,7 +375,7 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
             <Card>
               <CardHeader>
                 <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Per-domain breakdown</div>
-                <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Mean scores across placed candidates, baseline vs latest assessment.</div>
+                <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Mean scores across placed candidates, baseline vs latest. Showing the {domainRows.length} capability {domainRows.length === 1 ? 'domain' : 'domains'} this programme measures.</div>
               </CardHeader>
               <CardContent>
                 <table className="w-full text-[12.5px]">
