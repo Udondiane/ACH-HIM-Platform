@@ -62,14 +62,9 @@ export function InterviewForm({
         </Field>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <Field label="Scheduled for">
-          <Input name="scheduled_for" type="date" defaultValue={initial?.scheduled_for ?? ''} />
-        </Field>
-        <Field label="Conducted on">
-          <Input name="conducted_on" type="date" defaultValue={initial?.conducted_on ?? ''} />
-        </Field>
-      </div>
+      <Field label="Date">
+        <Input name="conducted_on" type="date" defaultValue={initial?.conducted_on ?? ''} />
+      </Field>
 
       <div className="grid grid-cols-2 gap-4">
         <Field label="Outcome">
