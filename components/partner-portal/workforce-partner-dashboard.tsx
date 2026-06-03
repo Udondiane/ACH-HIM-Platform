@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 
 /* Replacement-cost methodology per the HIM Methodology Specification
    Section 9.1: salary band -> % of salary used as replacement-cost
@@ -124,8 +123,7 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
         />
       )}
 
-      {/* SECTION 9.1 — COMMERCIAL OUTCOMES */}
-      <div className="mb-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Section 1 · Commercial outcomes</div>
+      {/* Commercial outcomes (no section label) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
         <KpiCard label="Total placements" value={String(totalPlacements)} sub={`${activePlacements} currently active`} />
         <KpiCard
@@ -184,9 +182,8 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
         </Card>
       )}
 
-      {/* SECTION 9.2 — DIVERSITY (country of origin) */}
-      <div className="mb-2 mt-5 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Section 2 · Diversity — country of origin</div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+      {/* Diversity — country of origin (no section label) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3 mt-5">
         <KpiCard label="Refugee / migrant hires" value={String(refugeeMigrantHires)} sub="through ACH" />
         <KpiCard
           label="Countries of origin represented"
@@ -228,9 +225,8 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
         </Card>
       )}
 
-      {/* SECTION 9.3 — CANDIDATE CAPABILITY OUTCOMES */}
-      <div className="mb-2 mt-5 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Section 3 · Candidate capability outcomes</div>
-      <Card className="mb-5">
+      {/* Candidate capability outcomes (no section label) */}
+      <Card className="mb-5 mt-5">
         <CardContent className="pt-5">
           {meanUplift == null ? (
             <p className="text-[13px] text-ach-navy/65">
@@ -252,47 +248,6 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
         </CardContent>
       </Card>
 
-      <Card className="mb-4">
-        <CardHeader>
-          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Recent placements</div>
-        </CardHeader>
-        <CardContent>
-          {allPlacements.length === 0 ? (
-            <p className="text-[13px] text-ach-navy/60">No placements yet.</p>
-          ) : (
-            <table className="w-full text-[13px]">
-              <thead>
-                <tr className="border-b-[0.5px] border-ach-border">
-                  <Th>Reference</Th><Th>Role</Th><Th>Band</Th><Th>Started</Th><Th>Status</Th>
-                </tr>
-              </thead>
-              <tbody>
-                {allPlacements.slice(0, 10).map(p => (
-                  <tr key={p.id} className="border-b-[0.5px] border-ach-border last:border-0">
-                    <Td className="text-ach-navy font-medium">{p.candidates?.candidate_ref}</Td>
-                    <Td>{p.role_title}</Td>
-                    <Td className="capitalize">{p.salary_band}</Td>
-                    <Td className="text-ach-navy/70">{new Date(p.start_date).toLocaleDateString('en-GB')}</Td>
-                    <Td><Badge>{p.status}</Badge></Td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="pt-5">
-          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Methodology notes</div>
-          <ul className="text-[11.5px] text-ach-navy/70 mt-2 space-y-1 list-disc pl-4 max-w-prose">
-            <li>Retention savings are estimated using a replacement-cost methodology (% of salary by band, per Oxford Economics 2014 and CIPD). They are not realised cash savings.</li>
-            <li>Calculations apply only to placements with 12+ months elapsed and only to the count exceeding the industry-expected {(SECTOR_BENCHMARK_12MO * 100).toFixed(0)}% 12-month benchmark.</li>
-            <li>Sector benchmark is an indicative baseline; replace with sector-specific data (Skills for Care, UK Hospitality, NHS Digital, ONS) for high-stakes use.</li>
-            <li>No combined &quot;partner HIM score&quot; is produced. The three sections above are reported separately on incompatible scales.</li>
-          </ul>
-        </CardContent>
-      </Card>
     </div>
   );
 }
