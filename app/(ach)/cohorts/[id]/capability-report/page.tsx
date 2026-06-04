@@ -121,6 +121,68 @@ export default async function CapabilityInvestorReportPage({ params }: { params:
   );
   const counterfactualUplift = computeUplift(nonSelectedResponses, nonSelectedStarterIds, domainsForCohort);
 
+  /* Adaptive programme-type comparison.
+     If sibling cohorts of the OTHER programme type exist under the same
+     project, compute uplift across that sibling group so we can show a
+     within-project Full programme vs IAG only comparison in the report. */
+  const thisServiceType = cohort.service_type ?? 'full_programme';
+  const oppositeServiceType = thisServiceType === 'full_programme' ? 'iag_only' : 'full_programme';
+  const oppositeServiceLabel: Record<string, string> = {
+    full_programme: 'Full programme',
+    iag_only:       'IAG only',
+  };
+  let oppositeUplift: ReturnType<typeof computeUplift> | null = null;
+  let oppositeStarterCount = 0;
+  let oppositeCompletersCount = 0;
+  let oppositeCohortRefs: string[] = [];
+  if (projectId) {
+    const siblingCohortsRes = await supabase
+      .from('cohorts')
+      .select('id, cohort_ref')
+      .eq('project_id', projectId)
+      .eq('service_type', oppositeServiceType)
+      .neq('id', params.id);
+    const siblingCohortRows = (siblingCohortsRes.data as any[]) ?? [];
+    if (siblingCohortRows.length > 0) {
+      oppositeCohortRefs = siblingCohortRows.map((c: any) => c.cohort_ref).filter(Boolean);
+      const siblingIds = siblingCohortRows.map((c: any) => c.id);
+      const [siblingCandidatesRes, siblingResponsesRes] = await Promise.all([
+        supabase.from('cohort_candidates')
+          .select('candidate_id, candidates(id, exit_reason, status)')
+          .in('cohort_id', siblingIds),
+        supabase.from('assessment_responses')
+          .select(`
+            numeric_value,
+            assessments!inner(candidate_id, timepoint, cohort_id),
+            indicators(factors(factor_domains(domain_id)))
+          `)
+          .in('assessments.cohort_id', siblingIds),
+      ]);
+      const siblingCandidates = ((siblingCandidatesRes.data as any[]) ?? [])
+        .map(r => r.candidates).filter(Boolean);
+      const siblingStarterIds = siblingCandidates.map((c: any) => c.id);
+      const siblingResponses = ((siblingResponsesRes.data as any[]) ?? []).flatMap(r => {
+        const domains = r.indicators?.factors?.factor_domains ?? [];
+        return domains.map((fd: any) => ({
+          candidate_id: r.assessments?.candidate_id,
+          assessment_id: undefined,
+          timepoint: r.assessments?.timepoint,
+          domain: fd.domain_id,
+          numeric_value: r.numeric_value,
+        }));
+      }).filter((r: any) => r.candidate_id);
+      oppositeUplift = computeUplift(siblingResponses, siblingStarterIds, domainsForCohort);
+      oppositeStarterCount = siblingStarterIds.length;
+      // Count candidates with at least one exit/followup response (rough completers proxy)
+      const exitCandidatesInSibling = new Set(
+        siblingResponses
+          .filter((r: any) => r.timepoint === 'exit_6mo' || r.timepoint === 'followup_12mo')
+          .map((r: any) => r.candidate_id),
+      );
+      oppositeCompletersCount = exitCandidatesInSibling.size;
+    }
+  }
+
   /* SROI translation */
   const { computeSroi } = await import('@/lib/scoring/sroi');
   const sroi = computeSroi(
@@ -341,6 +403,60 @@ export default async function CapabilityInvestorReportPage({ params }: { params:
             </div>
             <div className="text-[11.5px] text-ach-navy/55 mt-3">
               Comparison cohort size: {nonSelectedStarterIds.length} non-selected applicants with baseline assessment. Not a randomised control (selection is non-random by definition); presented as an observational reference, not a causal estimate.
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 2c. Adaptive programme-type split.
+            Renders only when sibling cohorts of the opposite programme type
+            exist under the same project AND have any uplift data. */}
+      {oppositeUplift && oppositeStarterCount > 0 && oppositeUplift.some(u => u.upliftItt != null || u.upliftCompleters != null) && (
+        <Card className="mb-5">
+          <CardHeader>
+            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">2c. Programme type comparison</div>
+            <div className="text-[12.5px] text-ach-navy/60 mt-0.5">
+              Within-project comparison: this cohort&apos;s <span className="font-medium">{oppositeServiceLabel[thisServiceType]}</span> ({funnel.starters} starters, {funnel.completers} completers) against the other delivery shape <span className="font-medium">{oppositeServiceLabel[oppositeServiceType]}</span> ({oppositeStarterCount} starters, {oppositeCompletersCount} with exit data) across sibling cohort{oppositeCohortRefs.length === 1 ? '' : 's'} {oppositeCohortRefs.join(', ')}.
+              Quasi-experimental: candidates self-select into each shape, so this is suggestive evidence, not a randomised trial.
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-hidden rounded-[12px] border-[0.5px] border-ach-border">
+              <table className="w-full text-[12.5px]">
+                <thead className="bg-ach-page">
+                  <tr>
+                    <th className="text-left px-3 py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Domain</th>
+                    <th className="text-right px-3 py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">{oppositeServiceLabel[thisServiceType]} uplift (ITT)</th>
+                    <th className="text-right px-3 py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">{oppositeServiceLabel[oppositeServiceType]} uplift (ITT)</th>
+                    <th className="text-right px-3 py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Difference</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {uplift.map(u => {
+                    const opp = oppositeUplift!.find(o => o.domain === u.domain);
+                    const thisI = u.upliftItt;
+                    const oppI = opp?.upliftItt ?? null;
+                    const diff = thisI != null && oppI != null ? thisI - oppI : null;
+                    return (
+                      <tr key={u.domain} className="border-t-[0.5px] border-ach-border">
+                        <td className="px-3 py-2 text-ach-navy font-medium">{DOMAIN_LABELS[u.domain] ?? u.domain}</td>
+                        <td className={`px-3 py-2 text-right tabular-nums font-medium ${thisI != null && thisI > 0 ? 'text-[#5E7A3C]' : 'text-ach-navy/75'}`}>
+                          {thisI != null ? (thisI >= 0 ? '+' : '') + thisI.toFixed(2) : '—'}
+                        </td>
+                        <td className={`px-3 py-2 text-right tabular-nums font-medium ${oppI != null && oppI > 0 ? 'text-[#5E7A3C]' : 'text-ach-navy/75'}`}>
+                          {oppI != null ? (oppI >= 0 ? '+' : '') + oppI.toFixed(2) : '—'}
+                        </td>
+                        <td className={`px-3 py-2 text-right tabular-nums font-medium ${diff == null ? 'text-ach-navy/40' : diff > 0 ? 'text-[#5E7A3C]' : diff < 0 ? 'text-[#8B3A4F]' : 'text-ach-navy/65'}`}>
+                          {diff != null ? (diff >= 0 ? '+' : '') + diff.toFixed(2) : '—'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="text-[11px] text-ach-navy/55 mt-3 max-w-prose">
+              Positive <span className="text-[#5E7A3C] font-medium">Difference</span> means this cohort&apos;s programme shape outperformed the other on that domain; negative <span className="text-[#8B3A4F] font-medium">Difference</span> means the other shape did better. Differences should be read as suggestive only — group composition likely varies between programme types.
             </div>
           </CardContent>
         </Card>
