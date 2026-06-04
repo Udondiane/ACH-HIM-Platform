@@ -101,7 +101,7 @@ export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save
           <Input name="given_name" required defaultValue={initial?.given_name} />
         </Field>
         <Field label="Family name" error={fe('family_name')}>
-          <Input name="family_name" required defaultValue={initial?.family_name ?? ''} />
+          <Input name="family_name" required defaultValue={initial?.family_name ?? ''} placeholder="Required" />
         </Field>
       </div>
 
@@ -117,10 +117,18 @@ export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save
           </Select>
         </Field>
         <Field label="Country of origin" error={fe('country_of_origin')}>
-          <Input name="country_of_origin" required defaultValue={initial?.country_of_origin ?? ''} />
+          <Input name="country_of_origin" required defaultValue={initial?.country_of_origin ?? ''} placeholder="Required" />
         </Field>
         <Field label="Arrival year" error={fe('arrival_year')}>
-          <Input name="arrival_year" type="number" min={1980} max={2100} required defaultValue={initial?.arrival_year ?? ''} />
+          <Input
+            name="arrival_year"
+            type="number"
+            min={1980}
+            max={2100}
+            required
+            defaultValue={initial?.arrival_year != null ? String(initial.arrival_year) : ''}
+            placeholder="e.g. 2022"
+          />
         </Field>
       </div>
 

@@ -60,10 +60,9 @@ export function QuoteForm({ partners, cohorts, params }: Props) {
       <div className="space-y-5">
         <div className="grid grid-cols-2 gap-4">
           <Field label="Partner" error={fe('partner_id')}>
-            <Select name="partner_id" defaultValue="">
+            <Select name="partner_id">
               <SelectTrigger><SelectValue placeholder="Select partner (optional)" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">— None —</SelectItem>
                 {partners.map(p => (
                   <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                 ))}
@@ -72,10 +71,9 @@ export function QuoteForm({ partners, cohorts, params }: Props) {
           </Field>
 
           <Field label="Cohort" error={fe('cohort_id')}>
-            <Select name="cohort_id" defaultValue="">
+            <Select name="cohort_id">
               <SelectTrigger><SelectValue placeholder="Select cohort (optional)" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">— None —</SelectItem>
                 {cohorts.map(c => (
                   <SelectItem key={c.id} value={c.id}>{c.cohort_ref} · {c.name}</SelectItem>
                 ))}

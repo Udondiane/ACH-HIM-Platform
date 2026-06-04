@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { CohortForm } from '@/components/cohorts/cohort-form';
-import { updateCohortAction, cancelCohortAction, type ActionResult } from '@/lib/cohorts/actions';
+import { updateCohortAction, cancelCohortAction } from '@/lib/cohorts/actions';
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 
@@ -16,8 +16,8 @@ export default async function EditCohortPage({ params }: { params: { id: string 
   if (!cohort) notFound();
   const c = cohort as any;
 
-  const action = async (prev: ActionResult | null, fd: FormData) => updateCohortAction(params.id, prev, fd);
-  const handleCancel = async () => { 'use server'; await cancelCohortAction(params.id); };
+  const action = updateCohortAction.bind(null, params.id);
+  const handleCancel = cancelCohortAction.bind(null, params.id);
 
   return (
     <div className="max-w-3xl mx-auto">
