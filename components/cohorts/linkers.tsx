@@ -119,25 +119,32 @@ interface LinkCandidateProps {
   cohortId: string;
   availableCandidates: { id: string; candidate_ref: string; given_name: string; status: string }[];
   cohortPartners: { partner_id: string; partners?: { name: string } | null }[];
+  isRolling?: boolean;
 }
 
 export function LinkCandidateToCohort({
-  cohortId, availableCandidates, cohortPartners,
+  cohortId, availableCandidates, cohortPartners, isRolling = false,
 }: LinkCandidateProps) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [candidateId, setCandidateId] = useState<string>('');
   const [sponsorId, setSponsorId] = useState<string>('__none');
+  const [interventionStart, setInterventionStart] = useState<string>(
+    new Date().toISOString().slice(0, 10),
+  );
 
   const submit = () => {
     if (!candidateId) return;
+    if (isRolling && !interventionStart) return;
     startTransition(async () => {
       await linkCandidateToCohortAction(
         cohortId,
         candidateId,
         sponsorId === '__none' ? null : sponsorId,
+        isRolling ? interventionStart : null,
       );
       setCandidateId(''); setSponsorId('__none');
+      setInterventionStart(new Date().toISOString().slice(0, 10));
       setOpen(false);
     });
   };
@@ -186,11 +193,26 @@ export function LinkCandidateToCohort({
               </SelectContent>
             </Select>
           </div>
+
+          {isRolling && (
+            <div className="space-y-1.5">
+              <Label>Intervention start date</Label>
+              <input
+                type="date"
+                value={interventionStart}
+                onChange={e => setInterventionStart(e.target.value)}
+                className="w-full rounded-[10px] border-[0.5px] border-ach-border bg-white px-3 py-2 text-[13px] text-ach-navy focus:outline-none focus:ring-1 focus:ring-ach-navy/40"
+              />
+              <div className="text-[11px] text-ach-navy/55">
+                Rolling cohort — each candidate has their own start date. Baseline window opens here.
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center justify-end gap-2 mt-5">
           <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={submit} disabled={pending || !candidateId}>
+          <Button onClick={submit} disabled={pending || !candidateId || (isRolling && !interventionStart)}>
             {pending ? 'Enrolling…' : 'Enrol candidate'}
           </Button>
         </div>

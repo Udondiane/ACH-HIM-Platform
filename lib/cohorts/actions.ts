@@ -15,6 +15,7 @@ function fdToPlain(fd: FormData): Record<string, unknown> {
   for (const k of ['programme_weeks','target_size','delivery_cost']) {
     if (obj[k] === '') obj[k] = undefined;
   }
+  if (!('is_rolling' in obj)) obj.is_rolling = false;
   return obj;
 }
 
@@ -30,6 +31,8 @@ function normalisePayload(input: ReturnType<typeof cohortSchema.parse>) {
     sector_focus: input.sector_focus || null,
     start_date: input.start_date || null,
     end_date: input.end_date || null,
+    intervention_start_date: input.is_rolling ? null : (input.intervention_start_date || null),
+    is_rolling: input.is_rolling,
     programme_weeks: input.programme_weeks === '' ? null : input.programme_weeks ?? null,
     target_size: input.target_size === '' ? null : input.target_size ?? null,
     delivery_cost: input.delivery_cost === '' ? null : input.delivery_cost ?? null,
@@ -106,13 +109,30 @@ export async function linkCandidateToCohortAction(
   cohortId: string,
   candidateId: string,
   sponsoringPartnerId?: string | null,
+  interventionStartDate?: string | null,
 ) {
   const supabase = createClient();
   await supabase.from('cohort_candidates').upsert({
     cohort_id: cohortId, candidate_id: candidateId,
     sponsoring_partner_id: sponsoringPartnerId ?? null,
+    intervention_start_date: interventionStartDate || null,
   } as never, { onConflict: 'cohort_id,candidate_id' });
   revalidatePath(`/cohorts/${cohortId}`);
+}
+
+export async function setCandidateInterventionStartAction(
+  cohortCandidateRowId: string,
+  cohortId: string,
+  startDate: string | null,
+) {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from('cohort_candidates')
+    .update({ intervention_start_date: startDate || null } as never)
+    .eq('id', cohortCandidateRowId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/cohorts/${cohortId}`);
+  return { ok: true };
 }
 
 export async function unlinkCandidateFromCohortAction(rowId: string, cohortId: string) {

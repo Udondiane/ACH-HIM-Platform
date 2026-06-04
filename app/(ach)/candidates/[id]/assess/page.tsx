@@ -1,12 +1,13 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowRight, CheckCircle2, Circle, Loader2, Lock, AlertTriangle } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Circle, Loader2, Lock, AlertTriangle, Clock } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { startAssessmentForCandidateAction } from '@/lib/assessments/actions';
+import { baselineWindowState } from '@/lib/assessments/intervention';
 
 type Timepoint = 'baseline' | 'mid_3mo' | 'exit_6mo' | 'followup_12mo';
 
@@ -34,14 +35,22 @@ export default async function CandidateAssessChooserPage({ params }: { params: {
   if (!candidate) notFound();
   const c = candidate as any;
 
-  // Find the cohort & project the candidate is linked to.
+  // Find the cohort & project the candidate is linked to, plus the timing
+  // context we need to gate baseline collection.
   const { data: cc } = await supabase
     .from('cohort_candidates')
-    .select('cohort_id, cohorts(id, cohort_ref, name, project_id, projects(id, project_ref, name, is_locked))')
+    .select('cohort_id, intervention_start_date, cohorts(id, cohort_ref, name, project_id, is_rolling, intervention_start_date, projects(id, project_ref, name, is_locked, baseline_window_days))')
     .eq('candidate_id', params.id)
     .maybeSingle();
-  const cohort = (cc as any)?.cohorts ?? null;
+  const ccRow = cc as any;
+  const cohort = ccRow?.cohorts ?? null;
   const project = cohort?.projects ?? null;
+  const windowDays: number = project?.baseline_window_days ?? 14;
+  const window = baselineWindowState({
+    candidateStart: ccRow?.intervention_start_date ?? null,
+    cohortStart: cohort?.intervention_start_date ?? null,
+    windowDays,
+  });
 
   // Pull existing assessments so we can show status against each timepoint.
   const existingMap = new Map<Timepoint, { id: string; status: string; assessed_on: string }>();
@@ -116,10 +125,44 @@ export default async function CandidateAssessChooserPage({ params }: { params: {
             </CardHeader>
           </Card>
 
+          {window.state !== 'no-start' && (
+            <div className={`mb-4 rounded-[10px] px-3 py-2.5 border-[0.5px] flex items-start gap-2 text-[12.5px] ${
+              window.state === 'after-window'
+                ? 'bg-ach-rose/10 border-ach-rose/30 text-ach-navy'
+                : window.state === 'before-start'
+                  ? 'bg-ach-slate-tint/40 border-ach-slate-blue/30 text-ach-navy/80'
+                  : 'bg-emerald-50 border-emerald-200 text-ach-navy/85'
+            }`}>
+              <Clock className="h-4 w-4 shrink-0 mt-0.5" />
+              <div>
+                {window.state === 'before-start' && (
+                  <>Intervention starts <span className="font-medium">{window.start}</span>. Baseline window opens then and runs for {windowDays} days.</>
+                )}
+                {window.state === 'in-window' && (
+                  <>Baseline window open. <span className="font-medium">{window.daysRemaining}</span> day{window.daysRemaining === 1 ? '' : 's'} remaining (closes {window.windowEnd}).</>
+                )}
+                {window.state === 'after-window' && (
+                  <>Baseline window closed on <span className="font-medium">{window.windowEnd}</span>. New baseline cannot be recorded. Later timepoints can still be captured but uplift cannot be computed for this candidate.</>
+                )}
+              </div>
+            </div>
+          )}
+          {window.state === 'no-start' && (
+            <div className="mb-4 rounded-[10px] px-3 py-2.5 border-[0.5px] bg-amber-50 border-amber-200 text-[12.5px] text-ach-navy/85 flex items-start gap-2">
+              <Clock className="h-4 w-4 shrink-0 mt-0.5" />
+              <div>
+                No intervention start date set for this candidate. Set one on the cohort{cohort?.is_rolling ? '’s membership row' : ''} so baseline window enforcement can run.
+              </div>
+            </div>
+          )}
+
           <div className="space-y-3">
             {TIMEPOINTS.map(tp => {
               const existing = existingMap.get(tp.id);
               const isNextDue = nextDue === tp.id;
+              const baselineExists = existingMap.has('baseline');
+              const baselineLocked = tp.id === 'baseline' && window.state === 'after-window' && !existing;
+              const blockedNoBaseline = tp.id !== 'baseline' && !baselineExists && !existing;
               return (
                 <TimepointCard
                   key={tp.id}
@@ -129,7 +172,9 @@ export default async function CandidateAssessChooserPage({ params }: { params: {
                   label={tp.label}
                   description={tp.description}
                   existing={existing ?? null}
-                  isNextDue={isNextDue}
+                  isNextDue={isNextDue && !blockedNoBaseline}
+                  baselineLocked={baselineLocked}
+                  blockedNoBaseline={blockedNoBaseline}
                 />
               );
             })}
@@ -149,6 +194,7 @@ export default async function CandidateAssessChooserPage({ params }: { params: {
 
 function TimepointCard({
   candidateId, projectId, timepoint, label, description, existing, isNextDue,
+  baselineLocked = false, blockedNoBaseline = false,
 }: {
   candidateId: string;
   projectId: string;
@@ -157,12 +203,15 @@ function TimepointCard({
   description: string;
   existing: { id: string; status: string; assessed_on: string } | null;
   isNextDue: boolean;
+  baselineLocked?: boolean;
+  blockedNoBaseline?: boolean;
 }) {
   const startAction = async (formData: FormData) => {
     'use server';
     const tp = formData.get('timepoint') as Timepoint;
     await startAssessmentForCandidateAction(candidateId, tp);
   };
+  const isDisabled = baselineLocked || blockedNoBaseline;
 
   const statusLabel = existing ? STATUS_LABELS[existing.status] ?? existing.status : 'Not started';
   const statusTone = existing?.status === 'completed' || existing?.status === 'reviewed'
@@ -220,6 +269,15 @@ function TimepointCard({
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
               </Link>
+            ) : isDisabled ? (
+              <div className="flex flex-col items-end gap-1">
+                <Button variant="secondary" size="sm" disabled>
+                  <Lock className="h-3.5 w-3.5" /> Locked
+                </Button>
+                <span className="text-[10.5px] text-ach-navy/55 max-w-[180px] text-right">
+                  {baselineLocked ? 'Baseline window closed' : 'Record baseline first'}
+                </span>
+              </div>
             ) : (
               <form action={startAction}>
                 <input type="hidden" name="timepoint" value={timepoint} />
