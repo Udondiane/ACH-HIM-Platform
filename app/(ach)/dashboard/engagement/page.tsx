@@ -87,10 +87,10 @@ export default async function EngagementDashboardPage() {
       <Card className="mb-4">
         <CardHeader>
           <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 flex items-center gap-1.5">
-            <Handshake className="h-3 w-3" />Your partner roster
+            <Handshake className="h-3 w-3" />Workforce partners
           </div>
           <div className="text-[12px] text-ach-navy/60 mt-0.5">
-            Each partner with their YTD placement activity and sponsorship investment. Click &quot;Meeting pack&quot; to open a print-ready summary.
+            YTD placements and partner investment per partner. &quot;Meeting pack&quot; opens a printable summary.
           </div>
         </CardHeader>
         <CardContent>
@@ -146,7 +146,7 @@ export default async function EngagementDashboardPage() {
             <TrendingUp className="h-3 w-3" />Cohorts open for sponsorship
           </div>
           <div className="text-[12px] text-ach-navy/60 mt-0.5">
-            Cohorts currently recruiting or in progress — partner conversations to open or progress.
+            Cohorts currently recruiting or in progress.
           </div>
         </CardHeader>
         <CardContent>

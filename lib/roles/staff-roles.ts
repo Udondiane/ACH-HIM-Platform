@@ -1,11 +1,8 @@
-// Front-of-house staff roles used to drive the role-selector dashboard.
-// This is a UI affordance only — it does NOT enforce permissions. Every
-// authenticated ACH staff user can access every role view; the selector
-// just reshapes which work is surfaced first.
-//
-// Real RBAC will arrive in a later session backed by Supabase RLS and a
-// staff_roles table. Until then, the same demo account can switch between
-// roles to walk through each persona's workflow.
+// Staff role definitions for the role-aware dashboard views. The selector
+// is a UI affordance for navigation — it does NOT enforce permissions.
+// Every authenticated ACH staff user can reach every view; the role pages
+// just reshape which work is surfaced first. RBAC arrives in a later
+// session via Supabase RLS + a staff_roles table.
 
 import type { LucideIcon } from 'lucide-react';
 import {
@@ -33,7 +30,7 @@ export const STAFF_ROLES: StaffRole[] = [
     id: 'adviser',
     label: 'Careers adviser',
     shortLabel: 'Adviser',
-    description: 'IAG sessions, career goals, next actions, advice given this week.',
+    description: 'IAG sessions, career goals, next actions due.',
     href: '/dashboard/adviser',
     icon: Compass,
     accent: 'navy',
@@ -60,7 +57,7 @@ export const STAFF_ROLES: StaffRole[] = [
     id: 'engagement',
     label: 'Employer engagement lead',
     shortLabel: 'Engagement',
-    description: 'Partner relationships, sponsorships, meeting-ready summaries.',
+    description: 'Workforce partners, sponsorships, partner meeting pack.',
     href: '/dashboard/engagement',
     icon: Handshake,
     accent: 'rose',
