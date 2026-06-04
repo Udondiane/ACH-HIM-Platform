@@ -11,7 +11,6 @@ export function ConsentForm({ candidateId }: { candidateId: string }) {
     may_be_named: false,
     may_be_quoted: false,
     may_appear_in_case_study: false,
-    may_share_career_goal_with_partner: false,
   });
   const [notes, setNotes] = useState('');
 
@@ -20,7 +19,7 @@ export function ConsentForm({ candidateId }: { candidateId: string }) {
       await recordConsentAction(candidateId, flags, notes);
       setFlags({
         may_be_named: false, may_be_quoted: false,
-        may_appear_in_case_study: false, may_share_career_goal_with_partner: false,
+        may_appear_in_case_study: false,
       });
       setNotes('');
     });
@@ -49,8 +48,6 @@ export function ConsentForm({ candidateId }: { candidateId: string }) {
         hint="Quotes can appear without personally-identifying detail." />
       <Toggle k="may_appear_in_case_study" label="May appear in a case study"
         hint="Story may be developed into a longer narrative case study." />
-      <Toggle k="may_share_career_goal_with_partner" label="May share career goal with sponsoring partner"
-        hint="Off by default — partner sees only aggregated capability data otherwise." />
 
       <Textarea
         value={notes}

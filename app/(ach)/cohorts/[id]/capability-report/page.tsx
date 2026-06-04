@@ -27,7 +27,6 @@ const EXIT_REASON_LABELS: Record<string, string> = {
   education_training:   'Education / training',
   health:               'Health / personal',
   disengaged:           'Disengaged',
-  followable:           'Followable',
   other:                'Other',
 };
 
@@ -280,11 +279,10 @@ export default async function CapabilityInvestorReportPage({ params }: { params:
             <Stat label="Placed (any)" value={String(funnel.placedWithPartner + funnel.placedElsewhere)} sub={`${funnel.placedWithPartner} with partner, ${funnel.placedElsewhere} elsewhere`} />
             <Stat label="Into education / training" value={String(funnel.intoEducation)} sub="continuing pathway" />
           </div>
-          {(funnel.healthOrPersonal + funnel.disengaged + funnel.followable + funnel.otherExits) > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+          {(funnel.healthOrPersonal + funnel.disengaged + funnel.otherExits) > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
               <Stat label="Health / personal" value={String(funnel.healthOrPersonal)} muted />
               <Stat label="Disengaged" value={String(funnel.disengaged)} muted />
-              <Stat label="Followable" value={String(funnel.followable)} muted />
               <Stat label="Other" value={String(funnel.otherExits)} muted />
             </div>
           )}

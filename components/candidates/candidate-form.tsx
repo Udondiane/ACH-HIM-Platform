@@ -31,6 +31,45 @@ export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save
 
   return (
     <form action={formAction} className="space-y-5 max-w-2xl">
+      {!isEdit && (
+        <div className="rounded-[10px] border-[0.5px] border-ach-navy/30 bg-ach-slate-tint/40 p-4">
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/70 mb-1.5">Data collection consent</div>
+          <p className="text-[12.5px] text-ach-navy/85 leading-relaxed mb-2">
+            Before recording any candidate information, the candidate must be shown what data ACH collects and how it is used.
+            ACH records: name, country of origin, arrival year, preferred language, English level, housing status,
+            career goal and development plan, capability assessments at 4 timepoints, training and interview history,
+            and (where consented) audio recordings of assessment conversations. Data is used to deliver support, report
+            cohort outcomes to funders and partners (anonymised unless separate consent is given), and improve the programme.
+            Candidates can withdraw consent or request deletion at any time.
+          </p>
+          <details className="text-[12px] text-ach-navy/70 mb-3">
+            <summary className="cursor-pointer text-ach-navy font-medium">Full data inventory</summary>
+            <ul className="mt-2 ml-5 list-disc space-y-0.5">
+              <li>Identity: given name, family name, candidate reference</li>
+              <li>Demographics: country of origin, arrival year, preferred language, English level</li>
+              <li>Housing: ACH tenancy status (where applicable)</li>
+              <li>Career: career goal summary, development plan, internal notes</li>
+              <li>Assessments: HIM capability scores across 7 domains × 4 timepoints (baseline, 3-month, exit, 12-month)</li>
+              <li>Programme history: cohort enrolment, training sessions, interviews, placements, support contacts</li>
+              <li>Exit information: reason and notes if candidate leaves the programme</li>
+              <li>Audio recordings of assessment conversations (only with separate consent, retained 90 days)</li>
+              <li>Subsequent consent decisions: may be named, may be quoted, may appear in case study</li>
+            </ul>
+          </details>
+          <label className="flex items-start gap-2.5 text-[13px] cursor-pointer">
+            <input
+              type="checkbox"
+              name="data_collection_consent_confirmed"
+              required
+              className="mt-0.5 h-4 w-4 rounded border-ach-border text-ach-navy focus:ring-ach-navy/40"
+            />
+            <span className="text-ach-navy">
+              I confirm the candidate has been shown the data collection notice above (in their preferred language) and has given consent for ACH to record this information.
+            </span>
+          </label>
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-4">
         <Field label="Candidate reference" error={fe('candidate_ref')} hint={!isEdit ? 'Leave blank to auto-generate (e.g. C-2026-012)' : undefined}>
           <Input
@@ -41,7 +80,7 @@ export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save
             className={refLocked ? 'bg-ach-page text-ach-navy/60 cursor-not-allowed' : undefined}
           />
         </Field>
-        <Field label="Status" error={fe('status')}>
+        <Field label="Status" error={fe('status')} hint="Progressed = moved beyond placement (e.g. promotion, second job, sustained progression).">
           <Select name="status" defaultValue={initial?.status ?? 'applicant'}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -58,7 +97,7 @@ export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save
           <Input name="given_name" required defaultValue={initial?.given_name} />
         </Field>
         <Field label="Family name" error={fe('family_name')}>
-          <Input name="family_name" defaultValue={initial?.family_name ?? ''} />
+          <Input name="family_name" required defaultValue={initial?.family_name ?? ''} />
         </Field>
       </div>
 
@@ -74,10 +113,10 @@ export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save
           </Select>
         </Field>
         <Field label="Country of origin" error={fe('country_of_origin')}>
-          <Input name="country_of_origin" defaultValue={initial?.country_of_origin ?? ''} />
+          <Input name="country_of_origin" required defaultValue={initial?.country_of_origin ?? ''} />
         </Field>
         <Field label="Arrival year" error={fe('arrival_year')}>
-          <Input name="arrival_year" type="number" min={1980} max={2100} defaultValue={initial?.arrival_year ?? ''} />
+          <Input name="arrival_year" type="number" min={1980} max={2100} required defaultValue={initial?.arrival_year ?? ''} />
         </Field>
       </div>
 
@@ -100,23 +139,13 @@ export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save
         </span>
       </label>
 
-      <div className="pt-3 border-t-[0.5px] border-ach-border">
-        <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">
-          Private — staff only
-        </div>
-        <p className="text-[12px] text-ach-navy/60 mb-3">
-          The fields below are visible to ACH staff and to the candidate. They are <span className="font-medium">never</span> shown to partners
-          unless the candidate has explicitly consented (Consent panel on the detail page).
-        </p>
-
-        <div className="space-y-4">
-          <Field label="Career goal summary" error={fe('career_goal_summary')}>
-            <Textarea name="career_goal_summary" defaultValue={initial?.career_goal_summary ?? ''} rows={3} />
-          </Field>
-          <Field label="Development plan" error={fe('development_plan')}>
-            <Textarea name="development_plan" defaultValue={initial?.development_plan ?? ''} rows={4} />
-          </Field>
-        </div>
+      <div className="pt-3 border-t-[0.5px] border-ach-border space-y-4">
+        <Field label="Career goal summary" error={fe('career_goal_summary')}>
+          <Textarea name="career_goal_summary" defaultValue={initial?.career_goal_summary ?? ''} rows={3} />
+        </Field>
+        <Field label="Development plan" error={fe('development_plan')}>
+          <Textarea name="development_plan" defaultValue={initial?.development_plan ?? ''} rows={4} />
+        </Field>
       </div>
 
       <div className="pt-3 border-t-[0.5px] border-ach-border">

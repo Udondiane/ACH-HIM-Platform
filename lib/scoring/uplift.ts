@@ -122,7 +122,6 @@ export interface CohortFunnel {
   intoEducation: number;
   healthOrPersonal: number;
   disengaged: number;
-  followable: number;
   otherExits: number;
   stillInProgramme: number;
 }
@@ -143,7 +142,6 @@ export function computeFunnel(
     intoEducation: 0,
     healthOrPersonal: 0,
     disengaged: 0,
-    followable: 0,
     otherExits: 0,
     stillInProgramme: 0,
   };
@@ -154,8 +152,8 @@ export function computeFunnel(
       case 'education_training':   f.intoEducation      += 1; f.completers += 1; break;
       case 'health':               f.healthOrPersonal   += 1; break;
       case 'disengaged':           f.disengaged         += 1; break;
-      case 'followable':           f.followable         += 1; break;
       case 'other':                f.otherExits         += 1; break;
+      case 'followable':           f.otherExits         += 1; break;
       default:
         if (c.status === 'completed' || c.status === 'placed' || c.status === 'progressed') {
           f.completers += 1;

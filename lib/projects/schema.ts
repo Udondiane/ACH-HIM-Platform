@@ -44,8 +44,8 @@ export const FUNDING_MODEL_LABELS: Record<FundingModel, string> = {
 };
 export const FUNDING_MODEL_HINTS: Record<FundingModel, string> = {
   funded:     'Restricted funding from a trust, foundation, or statutory body covers delivery.',
-  hybrid:     'Combines grant funding with buyer fees.',
-  commercial: 'Buyer pays at or near full cost recovery. Project sustains itself and may generate surplus that supports other work.',
+  hybrid:     'Combines grant funding with fees from corporate partners.',
+  commercial: 'Corporate buyer pays for full delivery. Project sustains itself and may generate surplus that supports other work.',
 };
 
 export const CAP_DOMAINS = ['employment', 'housing', 'education', 'health', 'belonging', 'social', 'rights'] as const;
