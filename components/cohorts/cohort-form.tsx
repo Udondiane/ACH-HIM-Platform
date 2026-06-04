@@ -76,7 +76,7 @@ export function CohortForm({ action, initial, cancelHref, submitLabel = 'Save co
       </div>
 
       <Field
-        label="Service type"
+        label="Programme type"
         error={fe('service_type')}
         hint={COHORT_SERVICE_TYPE_HINTS[(initial?.service_type ?? 'full_programme') as typeof COHORT_SERVICE_TYPES[number]]}
       >
