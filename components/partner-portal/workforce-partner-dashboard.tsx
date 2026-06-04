@@ -1,8 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { CapabilityRadar } from '@/components/charts/capability-radar';
-import { WordCloud } from '@/components/charts/word-cloud';
 
 const DOMAIN_LABELS: Record<string, string> = {
   employment: 'Employment',
@@ -325,140 +323,36 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
         </Card>
       )}
 
-      {/* Candidate capability outcomes — full section, always rendered.
-           The structure is identical regardless of how much data is present;
-           missing values render as "—". This is exactly what the page will
-           look like when real data accumulates over the cohort lifecycle. */}
-      <div className="mt-5 space-y-4">
-
-        {/* Data-state note — honest about what's been measured so far. */}
-        {placedCandidateIds.size === 0 ? (
-          <DataStateNote tone="muted">
-            No placements recorded yet. Capability figures populate as candidates are placed and assessed.
-          </DataStateNote>
-        ) : candidatesWithBaseline === 0 && candidatesWithExit === 0 ? (
-          <DataStateNote tone="muted">
-            {placedCandidateIds.size} placed {placedCandidateIds.size === 1 ? 'candidate' : 'candidates'}. No assessments recorded yet.
-          </DataStateNote>
-        ) : candidatesWithExit === 0 ? (
-          <DataStateNote tone="info">
-            Baseline established for {candidatesWithBaseline} of {placedCandidateIds.size} placed {placedCandidateIds.size === 1 ? 'candidate' : 'candidates'}.
-            Uplift figures populate once exit assessments (6 months) are recorded.
-          </DataStateNote>
-        ) : candidatesWithExit < candidatesWithBaseline ? (
-          <DataStateNote tone="info">
-            Uplift calculated for {upliftValues.length} of {placedCandidateIds.size} placed {placedCandidateIds.size === 1 ? 'candidate' : 'candidates'} with both baseline + exit data. Remaining candidates&apos; figures will fold in as their exit assessments land.
-          </DataStateNote>
-        ) : null}
-
-        {/* Capability KPI strip */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <KpiCard
-            label="Average capability uplift"
-            value={meanUplift != null ? `${meanUplift >= 0 ? '+' : ''}${meanUplift.toFixed(2)}` : '—'}
-            sub="on a 0–5 scale, per placed candidate"
-          />
-          <KpiCard
-            label="Candidates with baseline"
-            value={`${candidatesWithBaseline} / ${placedCandidateIds.size}`}
-            sub={candidatesWithExit > 0 ? `${candidatesWithExit} with exit assessment` : 'awaiting exit assessments'}
-          />
-          <KpiCard
-            label="Domains with positive uplift"
-            value={`${positiveDomains} / ${domainRows.length}`}
-            sub="across the HIM framework"
-          />
-        </div>
-
-          {/* Per-domain breakdown + radar side-by-side */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Per-domain breakdown</div>
-                <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Mean scores across placed candidates, baseline vs latest. Showing the {domainRows.length} capability {domainRows.length === 1 ? 'domain' : 'domains'} this programme measures.</div>
-              </CardHeader>
-              <CardContent>
-                <table className="w-full text-[12.5px]">
-                  <thead>
-                    <tr className="border-b-[0.5px] border-ach-border">
-                      <Th>Domain</Th>
-                      <Th className="text-right">Baseline</Th>
-                      <Th className="text-right">Latest</Th>
-                      <Th className="text-right">Δ</Th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {domainRows.map(d => {
-                      const delta = d.delta;
-                      const deltaTone =
-                        delta == null ? 'text-ach-navy/40'
-                        : delta > 0   ? 'text-[#5E7A3C]'
-                        : delta < 0   ? 'text-[#8B3A4F]'
-                                      : 'text-ach-navy/65';
-                      return (
-                        <tr key={d.domain} className="border-b-[0.5px] border-ach-border last:border-0">
-                          <Td className="text-ach-navy">{DOMAIN_LABELS[d.domain] ?? d.domain}</Td>
-                          <Td className="text-right tabular-nums text-ach-navy/70">{d.baselineMean != null ? d.baselineMean.toFixed(2) : '—'}</Td>
-                          <Td className="text-right tabular-nums text-ach-navy">{d.exitMean != null ? d.exitMean.toFixed(2) : '—'}</Td>
-                          <Td className={`text-right tabular-nums font-medium ${deltaTone}`}>
-                            {delta != null ? `${delta >= 0 ? '+' : ''}${delta.toFixed(2)}` : '—'}
-                          </Td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Capability radar</div>
-                <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Baseline (lighter) and latest assessment (darker) per domain.</div>
-              </CardHeader>
-              <CardContent>
-                <CapabilityRadar data={radarData} mode="comparison" />
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Themes from candidate narratives */}
-          {narrativeTexts.length > 0 && (
-            <Card>
-              <CardHeader>
-                <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Themes in candidate narratives</div>
-                <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Most frequent words across observable-changes and practices fields at exit / follow-up.</div>
-              </CardHeader>
-              <CardContent>
-                <WordCloud texts={narrativeTexts} />
-              </CardContent>
-            </Card>
+      {/* Candidate capability outcomes — simple pre-seed-demo summary.
+           Single mean uplift figure; rich breakdown / radar / themes
+           held in reserve until we revisit the partner-facing capability
+           shape per the Social Value UK attribution discussion. */}
+      <Card className="mb-5 mt-5">
+        <CardContent className="pt-5">
+          {meanUplift == null ? (
+            <p className="text-[13px] text-ach-navy/65">
+              No baseline + exit HIM assessment data yet for placed candidates. The capability uplift summary appears here once exit assessments are completed.
+            </p>
+          ) : (
+            <>
+              <div className="text-[13px] text-ach-navy/75">
+                Average HIM uplift across {upliftValues.length} assessed candidate{upliftValues.length === 1 ? '' : 's'}:
+              </div>
+              <div className={`text-[28px] font-medium tracking-[-0.5px] mt-1 tabular-nums ${meanUplift > 0 ? 'text-[#5E7A3C]' : 'text-ach-navy'}`}>
+                {meanUplift >= 0 ? '+' : ''}{meanUplift.toFixed(2)}
+              </div>
+              <div className="text-[11.5px] text-ach-navy/55 mt-1">
+                On a 0–5 scale. Per-candidate trajectory (baseline + most recent assessment) is available to ACH staff and to the placed individual; anonymised candidate refs only.
+              </div>
+            </>
           )}
-
-          {/* Methodology footer for the capability section */}
-          <Card>
-            <CardContent className="pt-4 pb-4">
-            <div className="text-[11px] text-ach-navy/60 max-w-prose">
-              <span className="font-medium text-ach-navy/75">How capability uplift is calculated.</span> Each placed candidate is scored against the 7 HIM capability domains on a 0–5 scale at baseline (before training) and again at exit (6 months) or follow-up (12 months). The figures above show the mean per-domain score across all placed candidates, with Δ = latest − baseline. Per-candidate detail is available to ACH staff and to the individual; the partner view shows aggregates only. Methodology version: HIM v1.0.
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        </CardContent>
+      </Card>
 
     </div>
   );
 }
 
-function DataStateNote({ tone, children }: { tone: 'muted' | 'info'; children: React.ReactNode }) {
-  const cls = tone === 'info'
-    ? 'bg-ach-slate-tint text-ach-slate-deep border-ach-slate-blue/30'
-    : 'bg-ach-page text-ach-navy/70 border-ach-border';
-  return (
-    <div className={`text-[12.5px] rounded-[10px] px-3 py-2 border-[0.5px] ${cls}`}>
-      {children}
-    </div>
-  );
-}
 
 function KpiCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
