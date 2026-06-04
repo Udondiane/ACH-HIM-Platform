@@ -16,11 +16,12 @@ export default async function CohortDetailPage({ params }: { params: { id: strin
   if (!cohort) notFound();
   const c = cohort as any;
 
-  const [cohortPartners, cohortCandidates, allPartners, allCandidates] = await Promise.all([
+  const [cohortPartners, cohortCandidates, allPartners, allCandidates, assessmentsRes] = await Promise.all([
     supabase.from('cohort_partners').select('id, partner_id, sponsorship_count, engagement_fee, is_lead_partner, partners(id, name, type)').eq('cohort_id', params.id),
     supabase.from('cohort_candidates').select('id, candidate_id, sponsoring_partner_id, candidates(id, candidate_ref, given_name, status), partners:sponsoring_partner_id(name)').eq('cohort_id', params.id),
     supabase.from('partners').select('id, name, type, status').neq('status', 'closed').order('name'),
     supabase.from('candidates').select('id, candidate_ref, given_name, status').order('candidate_ref'),
+    supabase.from('assessments').select('id, candidate_id, timepoint, status, assessed_on, project_id').eq('cohort_id', params.id),
   ]);
 
   const linkedPartnerIds = new Set((cohortPartners.data as any[] | null)?.map(cp => cp.partner_id) ?? []);
@@ -28,6 +29,45 @@ export default async function CohortDetailPage({ params }: { params: { id: strin
 
   const availablePartners = (allPartners.data as any[] | null)?.filter(p => !linkedPartnerIds.has(p.id)) ?? [];
   const availableCandidates = (allCandidates.data as any[] | null)?.filter(cand => !linkedCandidateIds.has(cand.id)) ?? [];
+
+  // Build the per-candidate × per-timepoint assessment grid.
+  type AssessmentCell = {
+    id?: string;
+    status?: 'in_progress' | 'completed' | 'reviewed';
+    assessed_on?: string;
+    project_id?: string;
+  };
+  const TIMEPOINTS = ['baseline', 'mid_3mo', 'exit_6mo', 'followup_12mo'] as const;
+  const TIMEPOINT_LABELS: Record<string, string> = {
+    baseline:      'Baseline',
+    mid_3mo:       '3 months',
+    exit_6mo:      '6 months',
+    followup_12mo: '12 months',
+  };
+  const cellByKey = new Map<string, AssessmentCell>();
+  for (const a of (assessmentsRes.data as any[]) ?? []) {
+    cellByKey.set(`${a.candidate_id}::${a.timepoint}`, {
+      id: a.id,
+      status: a.status,
+      assessed_on: a.assessed_on,
+      project_id: a.project_id,
+    });
+  }
+  // Anchor for "due in N days" calc — cohort start date when available.
+  const cohortStart = c.start_date ? new Date(c.start_date) : null;
+  const dueOffsetDays: Record<string, number> = {
+    baseline:      0,
+    mid_3mo:       90,
+    exit_6mo:      180,
+    followup_12mo: 365,
+  };
+  function dueDateFor(timepoint: string): Date | null {
+    if (!cohortStart) return null;
+    const d = new Date(cohortStart);
+    d.setDate(d.getDate() + (dueOffsetDays[timepoint] ?? 0));
+    return d;
+  }
+  const today = new Date();
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -177,6 +217,100 @@ export default async function CohortDetailPage({ params }: { params: { id: strin
                 ))}
               </tbody>
             </table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Per-candidate assessment grid — replaces flat "Recent assessments"
+           on the project page. Rows = candidate, columns = the 4 timepoints,
+           cells = status with click-through to the assessment runner. */}
+      <Card className="mt-4">
+        <CardHeader>
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Assessment status</div>
+          <div className="text-[11.5px] text-ach-navy/55 mt-0.5">
+            Each row is a candidate; each column is a timepoint. Click any cell to open or start that assessment.
+          </div>
+        </CardHeader>
+        <CardContent>
+          {(!cohortCandidates.data || cohortCandidates.data.length === 0) ? (
+            <p className="text-[13px] text-ach-navy/60">No candidates enrolled yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-[12.5px]">
+                <thead>
+                  <tr className="border-b-[0.5px] border-ach-border">
+                    <th className="text-left py-2 pr-3 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Candidate</th>
+                    {TIMEPOINTS.map(tp => (
+                      <th key={tp} className="text-left py-2 px-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">
+                        {TIMEPOINT_LABELS[tp]}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {(cohortCandidates.data as any[]).map(cc => {
+                    const candId = cc.candidate_id as string;
+                    return (
+                      <tr key={cc.id} className="border-b-[0.5px] border-ach-border last:border-0">
+                        <td className="py-2 pr-3 align-middle">
+                          <Link href={`/candidates/${candId}`} className="text-ach-navy font-medium hover:underline">
+                            {cc.candidates?.candidate_ref}
+                          </Link>
+                          <span className="text-ach-navy/55 ml-1.5">{cc.candidates?.given_name}</span>
+                        </td>
+                        {TIMEPOINTS.map(tp => {
+                          const cell = cellByKey.get(`${candId}::${tp}`);
+                          const due = dueDateFor(tp);
+                          let chip: { text: string; cls: string };
+                          let href: string | null = null;
+                          if (cell && (cell.status === 'completed' || cell.status === 'reviewed')) {
+                            chip = {
+                              text: `✓ ${cell.assessed_on ? new Date(cell.assessed_on).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : 'Done'}`,
+                              cls: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+                            };
+                            if (cell.id && cell.project_id) href = `/projects/${cell.project_id}/assess/${cell.id}`;
+                          } else if (cell && cell.status === 'in_progress') {
+                            chip = {
+                              text: 'In progress',
+                              cls: 'bg-amber-50 text-amber-900 border-amber-200',
+                            };
+                            if (cell.id && cell.project_id) href = `/projects/${cell.project_id}/assess/${cell.id}`;
+                          } else {
+                            const daysFromDue = due ? Math.floor((today.getTime() - due.getTime()) / (1000 * 60 * 60 * 24)) : null;
+                            if (daysFromDue == null) {
+                              chip = { text: 'Not started', cls: 'bg-ach-page text-ach-navy/55 border-ach-border' };
+                            } else if (daysFromDue > 14) {
+                              chip = { text: `Overdue ${daysFromDue}d`, cls: 'bg-ach-rose/15 text-[#8B3A4F] border-ach-rose/40' };
+                            } else if (daysFromDue >= 0) {
+                              chip = { text: `Due ${daysFromDue === 0 ? 'today' : `${daysFromDue}d overdue`}`, cls: 'bg-amber-50 text-amber-900 border-amber-200' };
+                            } else if (daysFromDue >= -30) {
+                              chip = { text: `Due in ${Math.abs(daysFromDue)}d`, cls: 'bg-ach-slate-tint text-ach-slate-deep border-ach-slate-blue/30' };
+                            } else {
+                              chip = { text: 'Not yet due', cls: 'bg-white text-ach-navy/45 border-ach-border' };
+                            }
+                            href = `/candidates/${candId}/assess`;
+                          }
+                          const chipEl = (
+                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] uppercase tracking-[1.2px] font-medium border-[0.5px] tabular-nums whitespace-nowrap ${chip.cls}`}>
+                              {chip.text}
+                            </span>
+                          );
+                          return (
+                            <td key={tp} className="py-2 px-2 align-middle">
+                              {href ? (
+                                <Link href={href} className="inline-block">{chipEl}</Link>
+                              ) : (
+                                chipEl
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </CardContent>
       </Card>

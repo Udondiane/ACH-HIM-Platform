@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Pencil, ClipboardCheck, Plus, Layers, AlertCircle } from 'lucide-react';
+import { Pencil, Plus, Layers, AlertCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
@@ -309,61 +309,8 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Recent assessments</div>
-            <Link href={`/projects/${p.id}/assess`}>
-              <Button size="sm" variant="secondary"><ClipboardCheck className="h-3.5 w-3.5" />Run assessment</Button>
-            </Link>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {!assessments.data || assessments.data.length === 0 ? (
-            <p className="text-[13px] text-ach-navy/60">No assessments yet. Click &quot;Run assessment&quot; to capture a baseline.</p>
-          ) : (
-            <table className="w-full text-[13px]">
-              <thead>
-                <tr className="border-b-[0.5px] border-ach-border">
-                  <th className="text-left py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Candidate</th>
-                  <th className="text-left py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Timepoint</th>
-                  <th className="text-left py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Assessed on</th>
-                  <th className="text-left py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Status</th>
-                  <th className="text-right py-2"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {(assessments.data as any[]).map(a => (
-                  <tr key={a.id} className="border-b-[0.5px] border-ach-border last:border-0">
-                    <td className="py-2">
-                      <Link href={`/candidates/${a.candidate_id}`} className="text-ach-navy font-medium hover:underline">
-                        {a.candidates?.candidate_ref} · {a.candidates?.given_name}
-                      </Link>
-                    </td>
-                    <td className="py-2 text-ach-navy/70">{timepointLabel(a.timepoint)}</td>
-                    <td className="py-2 text-ach-navy/70">{new Date(a.assessed_on).toLocaleDateString('en-GB')}</td>
-                    <td className="py-2"><Badge>{a.status}</Badge></td>
-                    <td className="py-2 text-right">
-                      <Link href={`/projects/${p.id}/assess/${a.id}`} className="text-[12px] underline text-ach-navy">
-                        View
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
-}
-
-function timepointLabel(t: string): string {
-  const map: Record<string, string> = {
-    baseline: 'Baseline', mid_3mo: '3 months', exit_6mo: '6 months', followup_12mo: '12 months',
-  };
-  return map[t] ?? t;
 }
 
 function FundingPill({ model }: { model: FundingModel }) {
