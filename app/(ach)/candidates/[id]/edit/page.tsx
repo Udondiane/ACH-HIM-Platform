@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { CandidateForm } from '@/components/candidates/candidate-form';
-import { updateCandidateAction, withdrawCandidateAction, type ActionResult } from '@/lib/candidates/actions';
+import { updateCandidateAction, withdrawCandidateAction } from '@/lib/candidates/actions';
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 
@@ -14,8 +14,8 @@ export default async function EditCandidatePage({ params }: { params: { id: stri
   if (!candidate) notFound();
   const c = candidate as any;
 
-  const action = async (prev: ActionResult | null, fd: FormData) => updateCandidateAction(params.id, prev, fd);
-  const handleWithdraw = async () => { 'use server'; await withdrawCandidateAction(params.id); };
+  const action = updateCandidateAction.bind(null, params.id);
+  const handleWithdraw = withdrawCandidateAction.bind(null, params.id);
 
   return (
     <div className="max-w-3xl mx-auto">

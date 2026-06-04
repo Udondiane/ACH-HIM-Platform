@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { PartnerForm } from '@/components/partners/partner-form';
-import { updatePartnerAction, deletePartnerAction, type ActionResult } from '@/lib/partners/actions';
+import { updatePartnerAction, deletePartnerAction } from '@/lib/partners/actions';
 import { Button } from '@/components/ui/button';
 import { Trash2 } from 'lucide-react';
 
@@ -14,8 +14,8 @@ export default async function EditPartnerPage({ params }: { params: { id: string
   if (!partner) notFound();
   const p = partner as any;
 
-  const action = async (prev: ActionResult | null, fd: FormData) => updatePartnerAction(params.id, prev, fd);
-  const handleDelete = async () => { 'use server'; await deletePartnerAction(params.id); };
+  const action = updatePartnerAction.bind(null, params.id);
+  const handleDelete = deletePartnerAction.bind(null, params.id);
 
   return (
     <div className="max-w-3xl mx-auto">
