@@ -6,7 +6,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CANDIDATE_STATUS_LABELS, LOCALE_NAMES } from '@/lib/candidates/schema';
+import { CANDIDATE_STATUS_LABELS, LOCALE_NAMES, PROGRESSION_TYPE_LABELS } from '@/lib/candidates/schema';
 import { ConsentForm } from '@/components/candidates/consent-form';
 import { AudioConsentToggle } from '@/components/candidates/audio-consent-toggle';
 
@@ -91,6 +91,20 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
                     <div className="text-[12px] font-medium text-ach-navy mb-1">Development plan</div>
                     <p className="text-[13px] text-ach-navy/80 whitespace-pre-wrap">{c.development_plan}</p>
                   </div>
+                )}
+              </div>
+            )}
+
+            {c.status === 'progressed' && (c.progression_type || c.progression_notes) && (
+              <div className="mt-5 pt-5 border-t-[0.5px] border-ach-border">
+                <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-1.5">Progression</div>
+                {c.progression_type && (
+                  <div className="text-[13px] text-ach-navy">
+                    {PROGRESSION_TYPE_LABELS[c.progression_type as keyof typeof PROGRESSION_TYPE_LABELS] ?? c.progression_type}
+                  </div>
+                )}
+                {c.progression_notes && (
+                  <p className="text-[13px] text-ach-navy/80 whitespace-pre-wrap mt-1">{c.progression_notes}</p>
                 )}
               </div>
             )}

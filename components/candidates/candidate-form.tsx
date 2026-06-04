@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import {
 import {
   CANDIDATE_STATUSES, CANDIDATE_STATUS_LABELS, LOCALES, LOCALE_NAMES,
   EXIT_REASONS, EXIT_REASON_LABELS,
+  PROGRESSION_TYPES, PROGRESSION_TYPE_LABELS,
 } from '@/lib/candidates/schema';
 import type { ActionResult } from '@/lib/candidates/actions';
 
@@ -28,6 +30,8 @@ export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save
   const [state, formAction] = useFormState(action, null);
   const fe = (k: string) => state && !state.ok ? state.fieldErrors?.[k]?.[0] : undefined;
   const isEdit = !!initial?.candidate_ref;
+  const [status, setStatus] = useState<string>(initial?.status ?? 'applicant');
+  const [progressionType, setProgressionType] = useState<string>(initial?.progression_type ?? '');
 
   return (
     <form action={formAction} className="space-y-5 max-w-2xl">
@@ -81,7 +85,7 @@ export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save
           />
         </Field>
         <Field label="Status" error={fe('status')} hint="Progressed = moved beyond placement (e.g. promotion, second job, sustained progression).">
-          <Select name="status" defaultValue={initial?.status ?? 'applicant'}>
+          <Select name="status" value={status} onValueChange={setStatus}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               {CANDIDATE_STATUSES.map(s => (
@@ -174,6 +178,43 @@ export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save
           <Textarea name="exit_notes" defaultValue={initial?.exit_notes ?? ''} rows={2} />
         </Field>
       </div>
+
+      {status === 'progressed' && (
+        <div className="pt-3 border-t-[0.5px] border-ach-border rounded-[10px] bg-ach-slate-tint/40 p-3">
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/70 mb-2">
+            Progression detail
+          </div>
+          <p className="text-[12px] text-ach-navy/65 mb-3">
+            The candidate moved beyond first placement — record how. This is what makes &quot;Progressed&quot; meaningful in outcome reporting.
+          </p>
+          <div className="grid grid-cols-1 gap-3">
+            <Field label="Type of progression" error={fe('progression_type')}>
+              <select
+                name="progression_type"
+                value={progressionType}
+                onChange={e => setProgressionType(e.target.value)}
+                className="w-full rounded-[10px] border-[0.5px] border-ach-border bg-white px-3 py-2 text-[13px] text-ach-navy focus:outline-none focus:ring-1 focus:ring-ach-navy/40"
+              >
+                <option value="">— Select —</option>
+                {PROGRESSION_TYPES.map(p => (
+                  <option key={p} value={p}>{PROGRESSION_TYPE_LABELS[p]}</option>
+                ))}
+              </select>
+            </Field>
+            <Field
+              label={progressionType === 'other' ? 'Describe the progression' : 'Progression notes (optional)'}
+              error={fe('progression_notes')}
+              hint="Job title, employer, salary band change, study programme, business name — whatever makes the progression concrete."
+            >
+              <Textarea
+                name="progression_notes"
+                defaultValue={initial?.progression_notes ?? ''}
+                rows={progressionType === 'other' ? 3 : 2}
+              />
+            </Field>
+          </div>
+        </div>
+      )}
 
       <div className="pt-3 border-t-[0.5px] border-ach-border rounded-[10px] bg-ach-rose/5 p-3">
         <label className="flex items-start gap-2.5 text-[13px] cursor-pointer">

@@ -40,6 +40,8 @@ function normalisePayload(input: ReturnType<typeof candidateSchema.parse>, ref: 
     exit_reason: input.exit_reason || null,
     exit_date: input.exit_date || null,
     exit_notes: input.exit_notes || null,
+    progression_type: input.status === 'progressed' ? (input.progression_type || null) : null,
+    progression_notes: input.status === 'progressed' ? (input.progression_notes || null) : null,
   };
 }
 

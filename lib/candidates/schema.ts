@@ -47,6 +47,24 @@ export const EXIT_REASON_HINTS: Record<typeof EXIT_REASONS[number], string> = {
   other:                'Other reason - capture in exit notes.',
 };
 
+export const PROGRESSION_TYPES = [
+  'promotion',
+  'second_job',
+  'higher_role_elsewhere',
+  'further_study',
+  'self_employment',
+  'other',
+] as const;
+
+export const PROGRESSION_TYPE_LABELS: Record<typeof PROGRESSION_TYPES[number], string> = {
+  promotion:             'Promoted in same role / employer',
+  second_job:            'Took on a second job',
+  higher_role_elsewhere: 'Moved to a higher role at a different employer',
+  further_study:         'Continued into further study while working',
+  self_employment:       'Started own business / self-employment',
+  other:                 'Other (describe)',
+};
+
 export const candidateSchema = z.object({
   candidate_ref:     z.string().trim().max(60).optional().or(z.literal('')),
   given_name:        z.string().trim().min(1, 'Given name required').max(120),
@@ -65,6 +83,23 @@ export const candidateSchema = z.object({
   exit_reason:       z.enum(EXIT_REASONS).optional().or(z.literal('')),
   exit_date:         z.string().trim().regex(/^(\d{4}-\d{2}-\d{2})?$/).optional().or(z.literal('')),
   exit_notes:        z.string().trim().max(2000).optional().or(z.literal('')),
+  progression_type:  z.enum(PROGRESSION_TYPES).optional().or(z.literal('')),
+  progression_notes: z.string().trim().max(2000).optional().or(z.literal('')),
+}).superRefine((val, ctx) => {
+  if (val.status === 'progressed' && !val.progression_type) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['progression_type'],
+      message: 'Please describe how the candidate progressed.',
+    });
+  }
+  if (val.progression_type === 'other' && !val.progression_notes?.trim()) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['progression_notes'],
+      message: 'Required when progression type is Other.',
+    });
+  }
 });
 
 export type CandidateInput = z.infer<typeof candidateSchema>;
