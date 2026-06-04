@@ -78,7 +78,6 @@ export default async function PartnerPlacementsPage({
                 <Th>Role</Th>
                 <Th>Cohort</Th>
                 <Th>Started</Th>
-                <Th>Band</Th>
                 <Th className="text-right">Salary</Th>
                 <Th>Status</Th>
               </tr>
@@ -90,7 +89,6 @@ export default async function PartnerPlacementsPage({
                   <Td>{r.role_title}</Td>
                   <Td className="text-ach-navy/70">{r.cohorts?.cohort_ref ?? '—'}</Td>
                   <Td className="text-ach-navy/70">{new Date(r.start_date).toLocaleDateString('en-GB')}</Td>
-                  <Td className="text-ach-navy/70 capitalize">{SALARY_BAND_LABELS[r.salary_band] ?? r.salary_band}</Td>
                   <Td className="text-right tabular-nums">{r.salary_actual ? `£${Number(r.salary_actual).toLocaleString()}` : '—'}</Td>
                   <Td><Badge>{STATUS_LABELS[r.status] ?? r.status}</Badge></Td>
                 </tr>

@@ -20,6 +20,7 @@ const NAV = [
   { section: 'Operations' },
   { href: '/pricing',            label: 'Pricing tool',     icon: Calculator },
   { href: '/development-fund',   label: 'Development fund', icon: PoundSterling },
+  { href: '/milestones',         label: 'Retention milestones', icon: ScrollText },
   { section: 'Reports' },
   { href: '/aggregate',          label: 'Aggregate',        icon: LayoutDashboard },
   { href: '/evidence-pack',      label: 'Evidence packs',   icon: FileText },

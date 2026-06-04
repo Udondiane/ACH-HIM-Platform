@@ -1,10 +1,10 @@
 import Link from 'next/link';
-import { AlertCircle, Trash2 } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { ProjectForm } from '@/components/projects/project-form';
+import { DeleteProjectButton } from '@/components/projects/delete-project-button';
 import { updateProjectAction, deleteProjectAction } from '@/lib/projects/actions';
 
 export default async function EditProjectPage({ params }: { params: { id: string } }) {
@@ -98,11 +98,13 @@ export default async function EditProjectPage({ params }: { params: { id: string
             ({cohortCount}) and assessments ({assessmentCount}) are preserved but unlinked from
             the project.
           </p>
-          <form action={handleDelete}>
-            <Button variant="danger" type="submit">
-              <Trash2 className="h-3.5 w-3.5" />Delete project
-            </Button>
-          </form>
+          <DeleteProjectButton
+            action={handleDelete}
+            projectName={p.name}
+            projectRef={p.project_ref}
+            cohortCount={cohortCount}
+            assessmentCount={assessmentCount}
+          />
         </CardContent>
       </Card>
     </div>
