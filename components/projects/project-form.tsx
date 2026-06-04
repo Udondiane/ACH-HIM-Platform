@@ -158,18 +158,18 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
           // the prompt matches the actual counterparty for the project.
           const meta = fundingModel === 'commercial'
             ? {
-                label: 'Commercial buyer',
-                hint: 'The corporate, council procurement team, or other buyer paying for outcomes.',
+                label: 'Corporate partner',
+                hint: 'The corporate, council procurement team, or other organisation paying for outcomes.',
                 placeholder: 'e.g. IKEA Bristol, Bristol Waste, Visit West',
               }
             : fundingModel === 'hybrid'
             ? {
-                label: 'Funder and commercial buyer',
-                hint: 'Hybrid projects combine grant funding with a commercial buyer. List both: the funder backing the design, and the buyer paying for outcomes.',
-                placeholder: 'e.g. Comic Relief (funder) + IKEA (buyer)',
+                label: 'Grant funder and corporate partner',
+                hint: 'Hybrid projects combine grant funding with corporate fees. List both: the grant funder backing the design, and the corporate partner paying for outcomes.',
+                placeholder: 'e.g. Comic Relief (grant) + IKEA (corporate)',
               }
             : {
-                label: 'Funder',
+                label: 'Grant funder',
                 hint: 'The trust, foundation, or statutory body funding this work.',
                 placeholder: 'e.g. Comic Relief, Esmée Fairbairn, Bristol City Council',
               };

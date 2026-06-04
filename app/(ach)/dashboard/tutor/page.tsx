@@ -47,9 +47,9 @@ export default async function TutorDashboardPage() {
   return (
     <div className="max-w-6xl mx-auto">
       <PageHeader
-        miniLabel="Workspace · Role view"
+        miniLabel="Dashboard"
         title="Tutor"
-        description="Cohorts you're delivering against, training in progress, and per-cohort training rosters."
+        description="Active cohorts, training records, per-cohort rosters."
         actions={
           <Link href="/cohorts"><Button variant="secondary"><Users className="h-3.5 w-3.5" />All cohorts</Button></Link>
         }

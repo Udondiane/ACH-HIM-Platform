@@ -70,9 +70,9 @@ export default async function SpecialistDashboardPage() {
   return (
     <div className="max-w-6xl mx-auto">
       <PageHeader
-        miniLabel="Workspace · Role view"
+        miniLabel="Dashboard"
         title="Employment specialist"
-        description="Your interview pipeline, active placements, and retention check-ins due."
+        description="Interviews, active placements, retention milestones."
         actions={
           <Link href="/milestones"><Button variant="secondary"><Briefcase className="h-3.5 w-3.5" />All milestones</Button></Link>
         }

@@ -66,9 +66,9 @@ export default async function EngagementDashboardPage() {
   return (
     <div className="max-w-6xl mx-auto">
       <PageHeader
-        miniLabel="Workspace · Role view"
+        miniLabel="Dashboard"
         title="Employer engagement"
-        description="Partner relationships at a glance, sponsorships, and one-click meeting-ready summaries."
+        description="Workforce partners, sponsorships, placements YTD."
         actions={
           <Link href="/partners"><Button variant="secondary"><Building2 className="h-3.5 w-3.5" />All partners</Button></Link>
         }

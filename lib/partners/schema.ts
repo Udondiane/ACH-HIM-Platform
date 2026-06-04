@@ -11,7 +11,7 @@ export const PARTNER_TYPE_LABELS: Record<typeof PARTNER_TYPES[number], string> =
 };
 
 export const PARTNER_TYPE_HINTS: Record<typeof PARTNER_TYPES[number], string> = {
-  capability_investor: 'Corporate buyer of measured social impact. Commercial relationship, outcome-based fee.',
+  capability_investor: 'Corporate partner paying for measured social impact. Commercial relationship, outcome-based fee.',
   workforce_partner:   'Employer that sponsors candidates through programmes and hires from the pipeline. Engagement fee + placement milestones.',
   training_partner:    'Buys cultural-awareness or inclusive-recruitment training for their own staff. Separate ACH product.',
   grant_funder:        'Grant-making body: charitable trusts (Comic Relief, Esmée Fairbairn), statutory funders (DWP, Home Office), Combined Authorities (WMCA), lottery distributors. Funds delivery via restricted grant; receives outcome reports.',
