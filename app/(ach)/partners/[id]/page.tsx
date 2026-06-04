@@ -111,9 +111,9 @@ export default async function PartnerDetailPage({ params }: { params: { id: stri
       {sortedRoles.length > 0 && (
         <Card className="mb-4">
           <CardHeader>
-            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Role mix over time · ACH oversight</div>
+            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Role mix over time</div>
             <div className="text-[11.5px] text-ach-navy/55 mt-0.5">
-              Internal only. Roles {p.name} has hired into across all placements, grouped by cohort (or year where cohort not recorded).
+              Roles {p.name} has hired into across all placements, grouped by cohort (or year where cohort not recorded).
             </div>
           </CardHeader>
           <CardContent>
@@ -181,7 +181,6 @@ export default async function PartnerDetailPage({ params }: { params: { id: stri
               <thead>
                 <tr className="border-b-[0.5px] border-ach-border">
                   <th className="text-left py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Role</th>
-                  <th className="text-left py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Band</th>
                   <th className="text-left py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Start</th>
                   <th className="text-left py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Status</th>
                 </tr>
@@ -190,7 +189,6 @@ export default async function PartnerDetailPage({ params }: { params: { id: stri
                 {(placements as any[]).map(pl => (
                   <tr key={pl.id} className="border-b-[0.5px] border-ach-border last:border-0">
                     <td className="py-2">{pl.role_title}</td>
-                    <td className="py-2 capitalize">{pl.salary_band}</td>
                     <td className="py-2 text-ach-navy/70">{new Date(pl.start_date).toLocaleDateString('en-GB')}</td>
                     <td className="py-2"><Badge>{pl.status}</Badge></td>
                   </tr>
