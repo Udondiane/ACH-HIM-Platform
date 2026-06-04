@@ -39,7 +39,7 @@ export default async function SpecialistDashboardPage() {
     supabase
       .from('placements')
       .select('id, candidate_id, partner_id, role_title, salary_band, start_date, status, candidates(candidate_ref, given_name), partners(name)')
-      .in('status', ['offered', 'started', 'sustained_6mo'])
+      .in('status', ['offered', 'started', 'active'])
       .order('start_date', { ascending: false })
       .limit(20),
     // Candidates with status=placed but no placement row (data gap to surface)
@@ -263,17 +263,19 @@ function OutcomePill({ outcome }: { outcome: string | null }) {
 }
 
 function PlacementStatusPill({ status }: { status: string }) {
-  const map: Record<string, string> = {
-    offered: 'bg-amber-50 text-amber-900 border-amber-200',
-    started: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-    sustained_6mo: 'bg-emerald-50 text-emerald-900 border-emerald-200',
-    sustained_12mo: 'bg-emerald-100 text-emerald-900 border-emerald-300',
-    ended_early: 'bg-ach-rose/10 text-[#8B3A4F] border-ach-rose/30',
+  const map: Record<string, { cls: string; label: string }> = {
+    offered:        { cls: 'bg-amber-50 text-amber-900 border-amber-200',       label: 'Offered' },
+    started:        { cls: 'bg-emerald-50 text-emerald-800 border-emerald-200', label: 'Started' },
+    active:         { cls: 'bg-emerald-50 text-emerald-900 border-emerald-200', label: 'Active' },
+    completed_12mo: { cls: 'bg-emerald-100 text-emerald-900 border-emerald-300', label: 'Sustained 12mo' },
+    left_pre_6mo:   { cls: 'bg-ach-rose/10 text-[#8B3A4F] border-ach-rose/30',  label: 'Left < 6mo' },
+    left_6_to_12mo: { cls: 'bg-ach-rose/10 text-[#8B3A4F] border-ach-rose/30',  label: 'Left 6–12mo' },
+    left_post_12mo: { cls: 'bg-ach-page text-ach-navy/70 border-ach-border',    label: 'Left after 12mo' },
   };
-  const cls = map[status] ?? 'bg-ach-page text-ach-navy/60 border-ach-border';
+  const m = map[status] ?? { cls: 'bg-ach-page text-ach-navy/60 border-ach-border', label: status };
   return (
-    <span className={`inline-flex items-center text-[10.5px] uppercase tracking-[1.2px] font-medium rounded-full px-2 py-0.5 border-[0.5px] ${cls}`}>
-      {status.replace(/_/g, ' ')}
+    <span className={`inline-flex items-center text-[10.5px] uppercase tracking-[1.2px] font-medium rounded-full px-2 py-0.5 border-[0.5px] ${m.cls}`}>
+      {m.label}
     </span>
   );
 }

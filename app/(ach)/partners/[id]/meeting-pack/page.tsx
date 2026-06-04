@@ -42,10 +42,10 @@ export default async function PartnerMeetingPackPage({ params }: { params: { id:
 
   // Status counts
   const statusCount = (status: string) => placements.filter(p => p.status === status).length;
-  const activeCount = ['started', 'sustained_6mo', 'sustained_12mo']
+  const activeCount = ['started', 'active', 'completed_12mo']
     .reduce((s, st) => s + statusCount(st), 0);
-  const sustained6 = statusCount('sustained_6mo') + statusCount('sustained_12mo');
-  const sustained12 = statusCount('sustained_12mo');
+  const sustained6 = statusCount('active') + statusCount('completed_12mo');
+  const sustained12 = statusCount('completed_12mo');
 
   // Average salary
   const salariesWithValue = placements

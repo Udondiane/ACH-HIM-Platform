@@ -16,7 +16,7 @@ export default async function EngagementDashboardPage() {
     supabase
       .from('partners')
       .select('id, name, type, status, sector')
-      .in('type', ['workforce_partner', 'direct_hirer'])
+      .eq('type', 'workforce_partner')
       .neq('status', 'closed')
       .order('name'),
     supabase
@@ -46,8 +46,8 @@ export default async function EngagementDashboardPage() {
   for (const p of ytdPlacements) {
     const cur = placementsByPartner.get(p.partner_id) ?? { count: 0, active: 0, sustained: 0 };
     cur.count += 1;
-    if (['started', 'sustained_6mo', 'sustained_12mo'].includes(p.status)) cur.active += 1;
-    if (['sustained_6mo', 'sustained_12mo'].includes(p.status)) cur.sustained += 1;
+    if (['started', 'active', 'completed_12mo'].includes(p.status)) cur.active += 1;
+    if (['active', 'completed_12mo'].includes(p.status)) cur.sustained += 1;
     placementsByPartner.set(p.partner_id, cur);
   }
 
