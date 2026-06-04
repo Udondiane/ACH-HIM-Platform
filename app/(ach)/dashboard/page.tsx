@@ -3,6 +3,7 @@ import { Building2, Users, Layers, FolderKanban, Bell, AlertTriangle } from 'luc
 import { createClient } from '@/lib/supabase/server';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
+import { RoleSelector } from '@/components/dashboard/role-selector';
 import { computePendingActions, labelFor, type PendingAction } from '@/lib/scoring/pending-actions';
 
 async function loadPendingActions(): Promise<PendingAction[]> {
@@ -61,6 +62,8 @@ export default async function AchDashboardPage() {
         title="ACH staff dashboard"
         description="At-a-glance view of partners, candidates, cohorts, and projects. Click any card to drill in."
       />
+
+      <RoleSelector />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map(c => (
