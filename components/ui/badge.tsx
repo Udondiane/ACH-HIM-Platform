@@ -12,6 +12,7 @@ const badgeVariants = cva(
         capability_investor: 'bg-[#B5A4D8]/15 text-ach-navy border-[#B5A4D8]/30',
         workforce_partner:   'bg-[#E89968]/15 text-ach-navy border-[#E89968]/30',
         training_partner:    'bg-[#7DA8C9]/15 text-ach-navy border-[#7DA8C9]/30',
+        grant_funder:        'bg-[#3C6B47]/12 text-[#3C6B47] border-[#3C6B47]/25',
         // status
         active:    'bg-[#95B670]/15 text-ach-navy border-[#95B670]/30',
         prospect:  'bg-ach-page text-ach-navy/70 border-ach-border',

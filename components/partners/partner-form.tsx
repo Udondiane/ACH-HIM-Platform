@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { PARTNER_TYPES, PARTNER_TYPE_LABELS, PARTNER_STATUSES, PARTNER_STATUS_LABELS, type PartnerType } from '@/lib/partners/schema';
+import { PARTNER_TYPES, PARTNER_TYPE_LABELS, PARTNER_TYPE_HINTS, PARTNER_STATUSES, PARTNER_STATUS_LABELS, type PartnerType } from '@/lib/partners/schema';
 import type { ActionResult } from '@/lib/partners/actions';
 
 interface Props {
@@ -27,11 +27,7 @@ interface Props {
   submitLabel?: string;
 }
 
-const TYPE_HINTS: Record<PartnerType, string> = {
-  workforce_partner:   'Hires candidates into roles. Pays placement fees.',
-  capability_investor: 'Sponsors cohorts financially. Receives capability uplift reporting.',
-  training_partner:    'Pays ACH to deliver ED&I or cultural-awareness training to their staff.',
-};
+const TYPE_HINTS = PARTNER_TYPE_HINTS;
 
 export function PartnerForm({ action, initial, cancelHref, submitLabel = 'Save partner' }: Props) {
   const [state, formAction] = useFormState(action, null);

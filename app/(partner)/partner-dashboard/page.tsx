@@ -60,11 +60,23 @@ export default async function PartnerDashboardPage({
         {types.includes('training_partner') && (
           <TrainingPartnerDashboard partner={partner} hideHeader={isMulti} />
         )}
+        {types.includes('grant_funder') && !types.includes('workforce_partner') && !types.includes('capability_investor') && !types.includes('training_partner') && (
+          <Card>
+            <CardContent className="pt-6 text-[13px] text-ach-navy/80 space-y-2">
+              <p className="font-medium text-ach-navy">Grant funder relationship</p>
+              <p>
+                Grant funders receive outcome reports from ACH directly rather than logging into a portal. If you&apos;re
+                looking for a recent report, please contact your ACH programme manager — they&apos;ll send the most
+                current capability and outcomes pack.
+              </p>
+            </CardContent>
+          </Card>
+        )}
         {types.length === 0 && (
           <Card>
             <CardContent className="pt-6 text-[13px] text-ach-navy/70">
               No partner type is set on this partner. An ACH admin needs to assign at least one type
-              (Workforce Partner, Capability Investor, or Training Partner) for the dashboard to populate.
+              for the dashboard to populate.
             </CardContent>
           </Card>
         )}
