@@ -18,7 +18,7 @@ export default async function NewCohortPage() {
         backLabel="Cohorts"
         miniLabel="Network"
         title="New cohort"
-        description="Once the cohort is created, you'll be able to link partners (sponsorships, engagement fees) and candidates from the cohort's detail page."
+        description="Once the cohort is created, you'll be able to link partners (sponsorships, corporate fees or grant amounts) and candidates from the cohort's detail page."
       />
       <Card>
         <CardContent className="pt-6">

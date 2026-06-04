@@ -153,7 +153,7 @@ export default async function CohortDetailPage({ params }: { params: { id: strin
                   <th className="text-left py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Partner</th>
                   <th className="text-left py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Type</th>
                   <th className="text-right py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Sponsorships</th>
-                  <th className="text-right py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Fee</th>
+                  <th className="text-right py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Contribution</th>
                   <th className="py-2 w-12"></th>
                 </tr>
               </thead>

@@ -48,7 +48,7 @@ export default async function PartnerSponsorshipsPage({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">
         <Kpi label="Cohorts sponsored" value={String(cohortRows.length)} />
         <Kpi label="Candidates sponsored" value={String(sponsoredRows.length)} sub={`${totalSponsorships} commissioned`} />
-        <Kpi label="Engagement fees paid" value={`£${totalEngagement.toLocaleString()}`} sub="across all cohorts" />
+        <Kpi label="Corporate fees paid" value={`£${totalEngagement.toLocaleString()}`} sub="across all cohorts" />
       </div>
 
       <Card className="mb-5">

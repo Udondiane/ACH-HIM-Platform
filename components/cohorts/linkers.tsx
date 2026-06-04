@@ -34,11 +34,11 @@ export function LinkPartnerToCohort({ cohortId, availablePartners }: LinkPartner
   const selected = availablePartners.find(p => p.id === partnerId);
   const isGrantFunder = selected?.type === 'grant_funder';
   // Funding label adapts to partner kind: grant funders receive a grant award,
-  // commercial partners pay an engagement fee. Underlying column is the same.
-  const feeLabel = isGrantFunder ? 'Grant amount (£)' : 'Engagement fee (£)';
+  // corporate partners pay a corporate fee. Underlying column is the same.
+  const feeLabel = isGrantFunder ? 'Grant amount (£)' : 'Corporate fee (£)';
   const feeHint = isGrantFunder
     ? 'Total grant award for this cohort. Restricted to delivery.'
-    : null;
+    : 'Commercial fee paid by this corporate partner for this cohort.';
 
   const reset = () => {
     setPartnerId(''); setSponsorshipCount(0); setEngagementFee(0); setIsLead(false);
@@ -99,7 +99,7 @@ export function LinkPartnerToCohort({ cohortId, availablePartners }: LinkPartner
                 type="number" min={0} step="0.01" value={engagementFee}
                 onChange={e => setEngagementFee(Number(e.target.value))}
               />
-              {feeHint && <div className="text-[11px] text-ach-navy/55">{feeHint}</div>}
+              <div className="text-[11px] text-ach-navy/55">{feeHint}</div>
             </div>
           </div>
 

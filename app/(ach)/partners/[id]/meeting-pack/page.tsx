@@ -117,7 +117,7 @@ export default async function PartnerMeetingPackPage({ params }: { params: { id:
         <div className="grid grid-cols-3 gap-3 mb-6">
           <SmallStat label="Cohorts sponsored" value={String(sponsorships.length)} />
           <SmallStat label="Candidates sponsored" value={String(totalSponsorships)} />
-          <SmallStat label="Engagement fees" value={`£${totalFee.toLocaleString('en-GB', { maximumFractionDigits: 0 })}`} />
+          <SmallStat label="Corporate fees" value={`£${totalFee.toLocaleString('en-GB', { maximumFractionDigits: 0 })}`} />
         </div>
 
         {sponsorships.length > 0 && (
