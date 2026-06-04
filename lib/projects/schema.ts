@@ -118,6 +118,7 @@ export const projectSchema = z.object({
   cap_rights:     capAnswerSchema,
   start_date: dateOrEmpty,
   end_date: dateOrEmpty,
+  baseline_window_days: z.coerce.number().int().min(1).max(180).default(14),
   status: z.string().default('active'),
 });
 

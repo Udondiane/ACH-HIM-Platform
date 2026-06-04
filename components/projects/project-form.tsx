@@ -187,12 +187,26 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
         })()}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <Field label="Start date" error={fe('start_date')}>
           <Input name="start_date" type="date" defaultValue={initial?.start_date ?? ''} />
         </Field>
         <Field label="End date" error={fe('end_date')}>
           <Input name="end_date" type="date" defaultValue={initial?.end_date ?? ''} />
+        </Field>
+        <Field
+          label="Baseline window (days)"
+          error={fe('baseline_window_days')}
+          hint="How long after a candidate's intervention starts can their baseline still be recorded? Past the window the baseline locks."
+        >
+          <Input
+            name="baseline_window_days"
+            type="number"
+            min={1}
+            max={180}
+            defaultValue={initial?.baseline_window_days ?? 14}
+            placeholder="14"
+          />
         </Field>
       </div>
 

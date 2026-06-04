@@ -38,10 +38,22 @@ export const cohortSchema = z.object({
   sector_focus:    z.string().trim().max(200).optional().or(z.literal('')),
   start_date:      dateOrEmpty,
   end_date:        dateOrEmpty,
+  intervention_start_date: dateOrEmpty,
+  is_rolling:      z.preprocess(v => v === 'on' || v === true || v === 'true', z.boolean()).default(false),
   programme_weeks: z.coerce.number().int().min(0).max(104).optional().or(z.literal('')),
   target_size:     z.coerce.number().int().min(0).max(200).optional().or(z.literal('')),
   delivery_cost:   z.coerce.number().min(0).max(1_000_000).optional().or(z.literal('')),
   notes:           z.string().trim().max(4000).optional().or(z.literal('')),
+}).superRefine((val, ctx) => {
+  // A non-rolling (cohorted) intake should anchor to a known start. Without it
+  // baseline gating can't be enforced, so flag it.
+  if (!val.is_rolling && !val.intervention_start_date) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['intervention_start_date'],
+      message: 'Required for cohorted intakes. Tick "Rolling enrolment" if candidates start on different dates.',
+    });
+  }
 });
 
 export type CohortInput = z.infer<typeof cohortSchema>;

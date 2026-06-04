@@ -53,8 +53,11 @@ export default async function CohortDetailPage({ params }: { params: { id: strin
       project_id: a.project_id,
     });
   }
-  // Anchor for "due in N days" calc — cohort start date when available.
-  const cohortStart = c.start_date ? new Date(c.start_date) : null;
+  // Anchor for "due in N days" calc — intervention start (if set) wins over
+  // the planning start_date because timepoints are measured from when the
+  // candidate's intervention actually begins.
+  const anchorIso = c.intervention_start_date || c.start_date || null;
+  const cohortStart = anchorIso ? new Date(anchorIso) : null;
   const dueOffsetDays: Record<string, number> = {
     baseline:      0,
     mid_3mo:       90,
@@ -182,6 +185,7 @@ export default async function CohortDetailPage({ params }: { params: { id: strin
               cohortId={c.id}
               availableCandidates={availableCandidates}
               cohortPartners={(cohortPartners.data as any[]) ?? []}
+              isRolling={!!c.is_rolling}
             />
           </div>
         </CardHeader>

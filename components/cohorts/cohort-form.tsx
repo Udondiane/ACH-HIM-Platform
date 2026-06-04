@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,7 @@ interface Props {
 export function CohortForm({ action, initial, cancelHref, submitLabel = 'Save cohort', projects = [] }: Props) {
   const [state, formAction] = useFormState(action, null);
   const fe = (k: string) => state && !state.ok ? state.fieldErrors?.[k]?.[0] : undefined;
+  const [isRolling, setIsRolling] = useState<boolean>(!!initial?.is_rolling);
 
   return (
     <form action={formAction} className="space-y-5 max-w-2xl">
@@ -102,6 +104,45 @@ export function CohortForm({ action, initial, cancelHref, submitLabel = 'Save co
         <Field label="Programme weeks" error={fe('programme_weeks')}>
           <Input name="programme_weeks" type="number" min={0} max={104} defaultValue={initial?.programme_weeks ?? ''} placeholder="12" />
         </Field>
+      </div>
+
+      <div className="rounded-[10px] border-[0.5px] border-ach-border bg-ach-slate-tint/30 p-3 space-y-3">
+        <div>
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/70 mb-1">Intervention timing</div>
+          <p className="text-[11.5px] text-ach-navy/65">
+            When does the intervention actually begin for the candidates? Baselines must be collected within the project&apos;s baseline window after this date.
+          </p>
+        </div>
+
+        <label className="flex items-start gap-2.5 text-[13px] cursor-pointer">
+          <input
+            type="checkbox"
+            name="is_rolling"
+            checked={isRolling}
+            onChange={e => setIsRolling(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-ach-border text-ach-navy focus:ring-ach-navy/40"
+          />
+          <span>
+            <span className="text-ach-navy font-medium">Rolling enrolment</span>
+            <span className="block text-ach-navy/60 mt-0.5 text-[12px]">
+              Tick if candidates start on different dates (IAG, training, support strands). Each candidate&apos;s start date is captured when they&apos;re enrolled.
+            </span>
+          </span>
+        </label>
+
+        {!isRolling && (
+          <Field
+            label="Intervention start date"
+            error={fe('intervention_start_date')}
+            hint="The shared date the cohort's intervention begins. Anchors baseline window for everyone."
+          >
+            <Input
+              name="intervention_start_date"
+              type="date"
+              defaultValue={initial?.intervention_start_date ?? initial?.start_date ?? ''}
+            />
+          </Field>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
