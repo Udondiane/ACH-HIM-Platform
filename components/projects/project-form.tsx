@@ -165,7 +165,7 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
             : fundingModel === 'hybrid'
             ? {
                 label: 'Grant funder and corporate partner',
-                hint: 'Hybrid projects combine grant funding with corporate fees. List both: the grant funder backing the design, and the corporate partner paying for outcomes.',
+                hint: 'Hybrid projects combine grant funding with investment from a corporate partner. List both: the grant funder backing the design, and the corporate partner paying for outcomes.',
                 placeholder: 'e.g. Comic Relief (grant) + IKEA (corporate)',
               }
             : {

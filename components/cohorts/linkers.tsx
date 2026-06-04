@@ -34,11 +34,11 @@ export function LinkPartnerToCohort({ cohortId, availablePartners }: LinkPartner
   const selected = availablePartners.find(p => p.id === partnerId);
   const isGrantFunder = selected?.type === 'grant_funder';
   // Funding label adapts to partner kind: grant funders receive a grant award,
-  // corporate partners pay a corporate fee. Underlying column is the same.
-  const feeLabel = isGrantFunder ? 'Grant amount (£)' : 'Corporate fee (£)';
+  // corporate partners invest in the cohort. Underlying column is the same.
+  const feeLabel = isGrantFunder ? 'Grant amount (£)' : 'Partner investment (£)';
   const feeHint = isGrantFunder
     ? 'Total grant award for this cohort. Restricted to delivery.'
-    : 'Commercial fee paid by this corporate partner for this cohort.';
+    : 'Investment from this corporate partner for this cohort.';
 
   const reset = () => {
     setPartnerId(''); setSponsorshipCount(0); setEngagementFee(0); setIsLead(false);
