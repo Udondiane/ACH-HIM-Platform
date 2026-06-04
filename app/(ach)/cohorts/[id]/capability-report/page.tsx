@@ -490,7 +490,7 @@ export default async function CapabilityInvestorReportPage({ params }: { params:
           <CardHeader>
             <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">3a. SROI translation (£ social value, capability-uplift based)</div>
             <div className="text-[12.5px] text-ach-navy/60 mt-0.5">
-              For non-procurement corporate ESG reporting where a £-denominated anchor is expected. Computed from per-domain HIM uplift × SROI proxy value per capability achievement, proportional to the 0–5 capability scale. Indicative; verify proxies against the buyer&apos;s preferred SROI version.
+              For non-procurement corporate ESG reporting where a £-denominated anchor is expected. Computed from per-domain HIM uplift × SROI proxy value per capability achievement, proportional to the 0–5 capability scale. Indicative; verify proxies against the corporate partner&apos;s preferred SROI version.
             </div>
           </CardHeader>
           <CardContent>
@@ -532,7 +532,7 @@ export default async function CapabilityInvestorReportPage({ params }: { params:
               </table>
             </div>
             <div className="text-[11px] text-ach-navy/55 mt-3 max-w-prose">
-              Methodology: per-candidate uplift on 0–5 scale × (uplift / 5) × proxy_value × candidate count. ITT denominator = starters; completers denominator = candidates with both baseline + exit assessments. The SROI figure is a translation for buyers expecting £ anchors and does NOT replace the capability-uplift evidence above.
+              Methodology: per-candidate uplift on 0–5 scale × (uplift / 5) × proxy_value × candidate count. ITT denominator = starters; completers denominator = candidates with both baseline + exit assessments. The SROI figure is a translation for corporate partners expecting £ anchors and does NOT replace the capability-uplift evidence above.
             </div>
           </CardContent>
         </Card>

@@ -31,6 +31,15 @@ export function LinkPartnerToCohort({ cohortId, availablePartners }: LinkPartner
   const [engagementFee, setEngagementFee] = useState<number>(0);
   const [isLead, setIsLead] = useState(false);
 
+  const selected = availablePartners.find(p => p.id === partnerId);
+  const isGrantFunder = selected?.type === 'grant_funder';
+  // Funding label adapts to partner kind: grant funders receive a grant award,
+  // commercial partners pay an engagement fee. Underlying column is the same.
+  const feeLabel = isGrantFunder ? 'Grant amount (£)' : 'Engagement fee (£)';
+  const feeHint = isGrantFunder
+    ? 'Total grant award for this cohort. Restricted to delivery.'
+    : null;
+
   const reset = () => {
     setPartnerId(''); setSponsorshipCount(0); setEngagementFee(0); setIsLead(false);
   };
@@ -57,7 +66,7 @@ export function LinkPartnerToCohort({ cohortId, availablePartners }: LinkPartner
         <DialogHeader>
           <DialogTitle>Link a partner to this cohort</DialogTitle>
           <DialogDescription>
-            Capture the sponsorship commitment and engagement fee. You can edit these later.
+            Capture the sponsorship commitment and the financial contribution. You can edit these later.
           </DialogDescription>
         </DialogHeader>
 
@@ -78,18 +87,19 @@ export function LinkPartnerToCohort({ cohortId, availablePartners }: LinkPartner
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Sponsorships</Label>
+              <Label>{isGrantFunder ? 'Beneficiaries funded' : 'Sponsorships'}</Label>
               <Input
                 type="number" min={0} value={sponsorshipCount}
                 onChange={e => setSponsorshipCount(Number(e.target.value))}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Engagement fee (£)</Label>
+              <Label>{feeLabel}</Label>
               <Input
                 type="number" min={0} step="0.01" value={engagementFee}
                 onChange={e => setEngagementFee(Number(e.target.value))}
               />
+              {feeHint && <div className="text-[11px] text-ach-navy/55">{feeHint}</div>}
             </div>
           </div>
 

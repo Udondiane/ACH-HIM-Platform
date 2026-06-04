@@ -19,7 +19,7 @@ export function RoleSelector({ activeRole }: { activeRole?: StaffRoleId }) {
   return (
     <div className="mb-5">
       <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">
-        Working as today
+        Role views
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {STAFF_ROLES.map(role => {

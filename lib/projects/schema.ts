@@ -45,7 +45,7 @@ export const FUNDING_MODEL_LABELS: Record<FundingModel, string> = {
 export const FUNDING_MODEL_HINTS: Record<FundingModel, string> = {
   funded:     'Restricted funding from a trust, foundation, or statutory body covers delivery.',
   hybrid:     'Combines grant funding with fees from corporate partners.',
-  commercial: 'Corporate buyer pays for full delivery. Project sustains itself and may generate surplus that supports other work.',
+  commercial: 'Corporate partner pays for full delivery. Project sustains itself and may generate surplus that supports other work.',
 };
 
 export const CAP_DOMAINS = ['employment', 'housing', 'education', 'health', 'belonging', 'social', 'rights'] as const;
@@ -177,15 +177,15 @@ export const FUNDING_QUESTION_LABELS: Record<FundingModel | 'unset', { core: str
     optionalHint:'Pick any additional impacts that strengthen the funder narrative without being the headline ask.',
   },
   hybrid: {
-    core:        'What outcomes do you commit to demonstrating to the buyer and the funder?',
+    core:        'What outcomes do you commit to demonstrating to the corporate partner and the grant funder?',
     coreHint:    'Pick 1–3. These are the outcomes you stand behind in both commercial and grant reporting.',
     optional:    'What additional impacts strengthen the case for sustained investment?',
     optionalHint:'Pick any further outcomes the project also touches — useful for moving fully commercial later.',
   },
   commercial: {
-    core:        'What outcomes does the buyer specifically pay for?',
-    coreHint:    'Pick 1–3. The outcomes the buyer expects to see in their reporting line.',
-    optional:    'What additional value does the project deliver beyond the buyer ask?',
+    core:        'What outcomes does the corporate partner specifically pay for?',
+    coreHint:    'Pick 1–3. The outcomes the corporate partner expects to see in their reporting line.',
+    optional:    'What additional value does the project deliver beyond the corporate ask?',
     optionalHint:'Pick any further impacts — useful for ED&I, social value, or wider ESG narratives.',
   },
   unset: {
