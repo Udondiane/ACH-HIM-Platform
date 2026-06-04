@@ -115,7 +115,6 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
                   <ConsentLine label="May be named" v={latestConsent.may_be_named} />
                   <ConsentLine label="May be quoted" v={latestConsent.may_be_quoted} />
                   <ConsentLine label="In case study" v={latestConsent.may_appear_in_case_study} />
-                  <ConsentLine label="Career goal shared w/ partner" v={latestConsent.may_share_career_goal_with_partner} />
                   <div className="text-ach-navy/60 mt-2 pt-2 border-t-[0.5px] border-ach-border">
                     Given {new Date(latestConsent.given_at).toLocaleDateString('en-GB')}
                   </div>

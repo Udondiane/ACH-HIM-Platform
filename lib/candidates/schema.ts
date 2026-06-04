@@ -26,7 +26,6 @@ export const EXIT_REASONS = [
   'education_training',
   'health',
   'disengaged',
-  'followable',
   'other',
 ] as const;
 
@@ -36,7 +35,6 @@ export const EXIT_REASON_LABELS: Record<typeof EXIT_REASONS[number], string> = {
   education_training:   'Education / further training',
   health:               'Health / personal circumstances',
   disengaged:           'Disengaged',
-  followable:           'Followable - can recontact',
   other:                'Other',
 };
 
@@ -46,17 +44,16 @@ export const EXIT_REASON_HINTS: Record<typeof EXIT_REASONS[number], string> = {
   education_training:   'WIN. Moved into further education or vocational training.',
   health:               'Left due to health, caring or other personal circumstances.',
   disengaged:           'Stopped engaging without explanation.',
-  followable:           'Lost contact but follow-up possible.',
   other:                'Other reason - capture in exit notes.',
 };
 
 export const candidateSchema = z.object({
   candidate_ref:     z.string().trim().max(60).optional().or(z.literal('')),
   given_name:        z.string().trim().min(1, 'Given name required').max(120),
-  family_name:       z.string().trim().max(120).optional().or(z.literal('')),
+  family_name:       z.string().trim().min(1, 'Family name required').max(120),
   preferred_locale:  z.enum(LOCALES).default('en'),
-  country_of_origin: z.string().trim().max(120).optional().or(z.literal('')),
-  arrival_year:      z.coerce.number().int().min(1980).max(2100).optional().or(z.literal('')),
+  country_of_origin: z.string().trim().min(1, 'Country of origin required').max(120),
+  arrival_year:      z.coerce.number().int().min(1980).max(2100),
   english_level:     z.string().trim().max(20).optional().or(z.literal('')),
   status:            z.enum(CANDIDATE_STATUSES).default('applicant'),
   career_goal_summary: z.string().trim().max(2000).optional().or(z.literal('')),

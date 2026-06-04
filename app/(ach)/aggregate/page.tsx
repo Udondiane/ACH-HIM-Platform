@@ -162,7 +162,7 @@ export default async function AggregateDashboardPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <FunnelStat label="Health / personal" value={funnel.healthOrPersonal} muted />
             <FunnelStat label="Disengaged" value={funnel.disengaged} muted />
-            <FunnelStat label="Followable" value={funnel.followable} muted />
+            <FunnelStat label="Other" value={funnel.otherExits} muted />
             <FunnelStat label="Still in programme" value={funnel.stillInProgramme} muted />
           </div>
         </CardContent>

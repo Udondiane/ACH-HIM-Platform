@@ -12,10 +12,12 @@ export type ActionResult =
 function fdToPlain(fd: FormData): Record<string, unknown> {
   const obj: Record<string, unknown> = {};
   for (const [k, v] of fd.entries()) obj[k] = v;
-  if (obj.arrival_year === '') obj.arrival_year = undefined;
   // Unchecked checkboxes are absent from FormData entirely.
   if (!('is_ach_tenant' in obj)) obj.is_ach_tenant = false;
   if (!('at_risk' in obj)) obj.at_risk = false;
+  // The data_collection_consent_confirmed field is a UI-only gate (HTML required).
+  // It is not persisted — drop it before parsing so Zod doesn't reject the unknown key.
+  delete obj.data_collection_consent_confirmed;
   return obj;
 }
 
@@ -23,10 +25,10 @@ function normalisePayload(input: ReturnType<typeof candidateSchema.parse>, ref: 
   return {
     candidate_ref: ref,
     given_name: input.given_name,
-    family_name: input.family_name || null,
+    family_name: input.family_name,
     preferred_locale: input.preferred_locale,
-    country_of_origin: input.country_of_origin || null,
-    arrival_year: input.arrival_year === '' ? null : input.arrival_year ?? null,
+    country_of_origin: input.country_of_origin,
+    arrival_year: input.arrival_year,
     english_level: input.english_level || null,
     status: input.status,
     career_goal_summary: input.career_goal_summary || null,
@@ -136,7 +138,6 @@ export async function recordConsentAction(
     may_be_named?: boolean;
     may_be_quoted?: boolean;
     may_appear_in_case_study?: boolean;
-    may_share_career_goal_with_partner?: boolean;
   },
   notes?: string,
 ) {
@@ -147,7 +148,7 @@ export async function recordConsentAction(
     may_be_named: !!flags.may_be_named,
     may_be_quoted: !!flags.may_be_quoted,
     may_appear_in_case_study: !!flags.may_appear_in_case_study,
-    may_share_career_goal_with_partner: !!flags.may_share_career_goal_with_partner,
+    may_share_career_goal_with_partner: false,
     recorded_by: user.user?.id ?? null,
     notes: notes ?? null,
   } as never);
