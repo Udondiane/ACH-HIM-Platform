@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Pencil } from 'lucide-react';
+import { Pencil, GraduationCap } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
@@ -86,6 +86,9 @@ export default async function CohortDetailPage({ params }: { params: { id: strin
         ].filter(Boolean).join(' · ')}
         actions={
           <div className="flex items-center gap-2">
+            <Link href={`/cohorts/${c.id}/training`}>
+              <Button variant="secondary"><GraduationCap className="h-3.5 w-3.5" />Training roster</Button>
+            </Link>
             <Link href={`/cohorts/${c.id}/capability-report`}>
               <Button variant="secondary">Capability Investor Report</Button>
             </Link>

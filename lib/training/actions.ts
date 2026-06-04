@@ -70,3 +70,52 @@ export async function deleteTrainingAction(id: string, candidateId: string) {
   revalidatePath(`/candidates/${candidateId}`);
   revalidatePath(`/candidates/${candidateId}/training`);
 }
+
+/**
+ * Bulk-record a single training session against a list of attendees in a
+ * cohort. One candidate_training row is created per attendee, all carrying
+ * the same training_name / trainer / dates / topic / cohort_id. Used by the
+ * tutor cohort roster page so a session can be logged in one form submit
+ * rather than per-candidate.
+ */
+export async function bulkLogTrainingSessionAction(input: {
+  cohortId: string;
+  candidateIds: string[];
+  trainingName: string;
+  trainer: string | null;
+  sessionDate: string;
+  topic: string | null;
+  completionStatus: 'not_started' | 'in_progress' | 'completed';
+}): Promise<{ ok: true; count: number } | { ok: false; error: string }> {
+  if (!input.candidateIds.length) return { ok: false, error: 'No attendees selected.' };
+  if (!input.trainingName.trim()) return { ok: false, error: 'Training name is required.' };
+  if (!input.sessionDate) return { ok: false, error: 'Session date is required.' };
+
+  const supabase = createClient();
+  const { data: user } = await supabase.auth.getUser();
+
+  const rows = input.candidateIds.map(cid => ({
+    candidate_id: cid,
+    cohort_id: input.cohortId,
+    training_name: input.trainingName.trim(),
+    trainer: input.trainer?.trim() || null,
+    scheduled_start: input.sessionDate,
+    scheduled_end: input.sessionDate,
+    attended_sessions: 1,
+    total_sessions: 1,
+    completion_status: input.completionStatus,
+    completion_date: input.completionStatus === 'completed' ? input.sessionDate : null,
+    notes: input.topic?.trim() || null,
+    recorded_by: user.user?.id ?? null,
+  }));
+
+  const { error } = await supabase.from('candidate_training').insert(rows as never);
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath(`/cohorts/${input.cohortId}/training`);
+  for (const cid of input.candidateIds) {
+    revalidatePath(`/candidates/${cid}`);
+    revalidatePath(`/candidates/${cid}/training`);
+  }
+  return { ok: true, count: rows.length };
+}
