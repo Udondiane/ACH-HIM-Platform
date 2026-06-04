@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/ui/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
-import { PROJECT_TYPE_LABELS, WEIGHT_RATIO_LABELS, FUNDING_MODEL_LABELS, type FundingModel } from '@/lib/projects/schema';
+import { FUNDING_MODEL_LABELS, type FundingModel } from '@/lib/projects/schema';
 
 function FundingPill({ model }: { model: FundingModel }) {
   const cls = model === 'commercial'
@@ -90,14 +90,6 @@ export default async function ProjectsListPage() {
                     {p.funder_name && (
                       <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Funded by {p.funder_name}</div>
                     )}
-                    {p.description && (
-                      <p className="text-[12.5px] text-ach-navy/70 mt-1.5 line-clamp-2">{p.description}</p>
-                    )}
-                    <div className="text-[11.5px] text-ach-navy/55 mt-3">
-                      {PROJECT_TYPE_LABELS[p.type as keyof typeof PROJECT_TYPE_LABELS]}
-                      {' · '}
-                      {WEIGHT_RATIO_LABELS[p.weight_ratio as keyof typeof WEIGHT_RATIO_LABELS]?.split(' — ')[0]}
-                    </div>
                     <div className="flex items-center gap-4 mt-3 pt-3 border-t-[0.5px] border-ach-border text-[12px] text-ach-navy/70">
                       <span className="inline-flex items-center gap-1.5">
                         <Layers className="h-3.5 w-3.5" />
