@@ -61,7 +61,7 @@ export default async function CohortTrainingPage({ params }: { params: { id: str
             <GraduationCap className="h-3 w-3" />Log a training session
           </div>
           <div className="text-[12px] text-ach-navy/60 mt-0.5">
-            One session, multiple attendees. Tick who showed up — a training record is created for each. Use this for short workshops; use the per-candidate training page for multi-week courses.
+            One session, multiple attendees. Tick who attended — a training record is created for each.
           </div>
         </CardHeader>
         <CardContent>
@@ -86,7 +86,7 @@ export default async function CohortTrainingPage({ params }: { params: { id: str
         <CardHeader>
           <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Cohort roster</div>
           <div className="text-[12px] text-ach-navy/60 mt-0.5">
-            Every candidate in this cohort and their training history. Click a name to open their detail page.
+            Every candidate in this cohort with their training history.
           </div>
         </CardHeader>
         <CardContent className="p-0">
