@@ -79,7 +79,7 @@ export default async function EngagementDashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         <StatCard label="Workforce partners" value={partners.length} />
         <StatCard label="Placements YTD" value={ytdPlacements.length} />
-        <StatCard label="Partner investment" value={`£${totalEngagementFees.toLocaleString('en-GB', { maximumFractionDigits: 0 })}`} />
+        <StatCard label="Corporate partner investment" value={`£${totalEngagementFees.toLocaleString('en-GB', { maximumFractionDigits: 0 })}`} />
         <StatCard label="Active cohorts" value={recentCohorts.length} />
       </div>
 
