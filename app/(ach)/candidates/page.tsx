@@ -92,7 +92,7 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
     groups.get(key)!.candidates.push(c);
   }
 
-  const SERVICE_ORDER: Record<string, number> = { full_programme: 1, iag_only: 2, training_only: 3 };
+  const SERVICE_ORDER: Record<string, number> = { full_programme: 1, iag_only: 2 };
   const orderedGroups = Array.from(groups.values()).sort((a, b) => {
     const refCmp = (a.project!.project_ref ?? '').localeCompare(b.project!.project_ref ?? '');
     if (refCmp !== 0) return refCmp;
@@ -237,7 +237,6 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
 const SERVICE_TYPE_LABEL: Record<string, string> = {
   full_programme: 'Full programme',
   iag_only:       'IAG only',
-  training_only:  'Training only',
 };
 
 function ProgrammeCard({
@@ -270,9 +269,9 @@ function ProgrammeCard({
             {!isUnassigned && (
               <div className="mt-1.5">
                 <span className={`inline-flex items-center text-[10.5px] uppercase tracking-[1.2px] font-medium rounded-full px-2 py-0.5 border-[0.5px] ${
-                  serviceType === 'iag_only'        ? 'bg-ach-slate-tint text-ach-slate-deep border-ach-slate-blue/30'
-                  : serviceType === 'training_only' ? 'bg-ach-page text-ach-navy/80 border-ach-border'
-                  : 'bg-white text-ach-navy/65 border-ach-border'
+                  serviceType === 'iag_only'
+                    ? 'bg-ach-slate-tint text-ach-slate-deep border-ach-slate-blue/30'
+                    : 'bg-white text-ach-navy/65 border-ach-border'
                 }`}>
                   {serviceLabel}
                 </span>
