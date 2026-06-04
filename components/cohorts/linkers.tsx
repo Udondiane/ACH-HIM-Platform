@@ -35,7 +35,7 @@ export function LinkPartnerToCohort({ cohortId, availablePartners }: LinkPartner
   const isGrantFunder = selected?.type === 'grant_funder';
   // Funding label adapts to partner kind: grant funders receive a grant award,
   // corporate partners invest in the cohort. Underlying column is the same.
-  const feeLabel = isGrantFunder ? 'Grant amount (£)' : 'Partner investment (£)';
+  const feeLabel = isGrantFunder ? 'Grant amount (£)' : 'Corporate partner investment (£)';
   const feeHint = isGrantFunder
     ? 'Total grant award for this cohort. Restricted to delivery.'
     : 'Investment from this corporate partner for this cohort.';
