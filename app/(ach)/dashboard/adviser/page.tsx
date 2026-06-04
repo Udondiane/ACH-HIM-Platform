@@ -53,7 +53,7 @@ export default async function AdviserDashboardPage() {
     supabase
       .from('candidates')
       .select('id, candidate_ref, given_name, career_goal_summary, status')
-      .or('career_goal_summary.is.null,career_goal_summary.eq.')
+      .is('career_goal_summary', null)
       .in('status', ['applicant', 'enrolled', 'in_programme'])
       .limit(20),
   ]);
