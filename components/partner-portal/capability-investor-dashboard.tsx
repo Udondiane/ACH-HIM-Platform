@@ -38,7 +38,7 @@ export async function CapabilityInvestorDashboard({ partner, hideHeader }: { par
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
         <KpiCard label="Sponsorships" value={String(totalSponsorships)} sub="committed" />
         <KpiCard label="Cohorts engaged" value={String(cps.length)} sub={`${activeCohorts} active`} />
-        <KpiCard label="Engagement fees" value={`£${totalEngagementFee.toLocaleString()}`} sub="paid to date" />
+        <KpiCard label="Corporate fees" value={`£${totalEngagementFee.toLocaleString()}`} sub="paid to date" />
         <KpiCard label="Candidates supported" value={String(sponsored.length)} sub="across cohorts" />
       </div>
 
