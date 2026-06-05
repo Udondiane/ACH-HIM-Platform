@@ -108,15 +108,6 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
         <Textarea name="description" defaultValue={initial?.description ?? ''} rows={2} />
       </Field>
 
-      <div className="grid grid-cols-2 gap-4">
-        <Field label="Focus area">
-          <Input name="focus_area" defaultValue={initial?.focus_area ?? ''} placeholder="e.g. Refugee employment, Bristol" />
-        </Field>
-        <Field label="Personnel / team">
-          <Input name="personnel" defaultValue={initial?.personnel ?? ''} placeholder="e.g. ACH IAG team, IKEA HR" />
-        </Field>
-      </div>
-
       <div className="pt-5 border-t-[0.5px] border-ach-border">
         <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-3">Funding model</div>
         <div className="grid grid-cols-1 gap-2">

@@ -82,7 +82,6 @@ function normalisePayload(input: ReturnType<typeof projectSchema.parse>, ref: st
     capability_questionnaire: capabilityQuestionnaire,
     start_date: input.start_date || null,
     end_date: input.end_date || null,
-    baseline_window_days: input.baseline_window_days,
     status: input.status,
   };
 }
