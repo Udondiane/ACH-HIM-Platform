@@ -11,7 +11,7 @@ export default function NewProjectPage() {
         backLabel="Projects"
         miniLabel="Network"
         title="New project"
-        description="A project is the intervention design. Once created, you'll pick which capability domains are Core, Optional, or Excluded - then run cohorts under this project and assess each candidate against the same design."
+        description="A project is an intervention design. Cohorts of candidates run under a project."
       />
       <Card>
         <CardContent className="pt-6">

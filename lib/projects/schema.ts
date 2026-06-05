@@ -172,27 +172,27 @@ export function deriveTypeAndWeight(coreCount: number, optionalCount: number): {
 export const FUNDING_QUESTION_LABELS: Record<FundingModel | 'unset', { core: string; optional: string; coreHint: string; optionalHint: string }> = {
   funded: {
     core:        'What outcomes did the funder commission this project to achieve?',
-    coreHint:    'Pick 1–3. These are the outcomes the funder expects the project to deliver and report on.',
-    optional:    'What broader social value does the project also create?',
-    optionalHint:'Pick any additional impacts that strengthen the funder narrative without being the headline ask.',
+    coreHint:    'Pick maximum of 3.',
+    optional:    'What other impacts will this project create?',
+    optionalHint:'Select a maximum of 2.',
   },
   hybrid: {
     core:        'What outcomes do you commit to demonstrating to the corporate partner and the grant funder?',
-    coreHint:    'Pick 1–3. These are the outcomes you stand behind in both commercial and grant reporting.',
-    optional:    'What additional impacts strengthen the case for sustained investment?',
-    optionalHint:'Pick any further outcomes the project also touches — useful for moving fully commercial later.',
+    coreHint:    'Pick maximum of 3.',
+    optional:    'What other impacts will this project create?',
+    optionalHint:'Select a maximum of 2.',
   },
   commercial: {
     core:        'What outcomes does the corporate partner specifically pay for?',
-    coreHint:    'Pick 1–3. The outcomes the corporate partner expects to see in their reporting line.',
-    optional:    'What additional value does the project deliver beyond the corporate ask?',
-    optionalHint:'Pick any further impacts — useful for ED&I, social value, or wider ESG narratives.',
+    coreHint:    'Pick maximum of 3.',
+    optional:    'What other impacts will this project create?',
+    optionalHint:'Select a maximum of 2.',
   },
   unset: {
     core:        'What outcomes is this project designed to achieve?',
-    coreHint:    'Pick 1–3 capability areas that the project actively works to improve.',
-    optional:    'What other impacts might the project generate?',
-    optionalHint:'Pick any further capability areas the project touches, even if they are not the headline outcome.',
+    coreHint:    'Pick maximum of 3.',
+    optional:    'What other impacts will this project create?',
+    optionalHint:'Select a maximum of 2.',
   },
 };
 

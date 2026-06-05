@@ -11,7 +11,6 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
-  PROJECT_TYPE_LABELS, WEIGHT_RATIO_LABELS,
   FUNDING_MODELS, FUNDING_MODEL_LABELS, FUNDING_MODEL_HINTS,
   FUNDING_QUESTION_LABELS,
   CAP_DOMAINS, CAP_DOMAIN_LABELS, CAP_DOMAIN_HINTS,
@@ -74,7 +73,12 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
   function toggleOptional(d: CapDomain) {
     if (coreSet.has(d)) return; // can't be both
     const next = new Set(optionalSet);
-    if (next.has(d)) next.delete(d); else next.add(d);
+    if (next.has(d)) {
+      next.delete(d);
+    } else {
+      if (next.size >= 2) return; // hard cap at 2 supporting
+      next.add(d);
+    }
     setOptionalSet(next);
   }
 
@@ -113,23 +117,8 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
         </Field>
       </div>
 
-      <Field label="Evaluation approach">
-        <select
-          name="evaluation_type"
-          defaultValue={initial?.evaluation_type ?? ''}
-          className="w-full rounded-[10px] border-[0.5px] border-ach-border bg-white px-3 py-2 text-[13px] text-ach-navy focus:outline-none focus:ring-1 focus:ring-ach-navy/40"
-        >
-          <option value="">Not specified</option>
-          <option value="formative">Formative — during project</option>
-          <option value="summative">Summative — post project</option>
-        </select>
-      </Field>
-
       <div className="pt-5 border-t-[0.5px] border-ach-border">
-        <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">Funding model</div>
-        <p className="text-[12px] text-ach-navy/60 mb-4">
-          How is this project paid for? Drives sustainability reporting and the transition narrative for funders.
-        </p>
+        <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-3">Funding model</div>
         <div className="grid grid-cols-1 gap-2">
           {FUNDING_MODELS.map(fm => (
             <label
@@ -187,26 +176,12 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
         })()}
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <Field label="Start date" error={fe('start_date')}>
           <Input name="start_date" type="date" defaultValue={initial?.start_date ?? ''} />
         </Field>
         <Field label="End date" error={fe('end_date')}>
           <Input name="end_date" type="date" defaultValue={initial?.end_date ?? ''} />
-        </Field>
-        <Field
-          label="Baseline window (days)"
-          error={fe('baseline_window_days')}
-          hint="How long after a candidate's intervention starts can their baseline still be recorded? Past the window the baseline locks."
-        >
-          <Input
-            name="baseline_window_days"
-            type="number"
-            min={1}
-            max={180}
-            defaultValue={initial?.baseline_window_days ?? 14}
-            placeholder="14"
-          />
         </Field>
       </div>
 
@@ -282,24 +257,10 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
               );
             })}
           </div>
-        </div>
-
-        {(coreSet.size > 0 || optionalSet.size > 0) && (
-          <div className="mt-5 rounded-[12px] bg-ach-slate-tint/40 p-4 border-[0.5px] border-ach-slate-blue/30">
-            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-slate-deep">Auto-derived</div>
-            <div className="text-[14.5px] font-medium text-ach-navy mt-1.5">
-              {PROJECT_TYPE_LABELS[derived.type]} · {WEIGHT_RATIO_LABELS[derived.weight_ratio].split(' — ')[0]}
-            </div>
-            <div className="text-[12px] text-ach-navy/65 mt-1">
-              Core ({coreSet.size}): {coreSet.size === 0 ? '—' : Array.from(coreSet).map(d => CAP_DOMAIN_LABELS[d]).join(', ')}
-              {' · '}
-              Optional ({optionalSet.size}): {optionalSet.size === 0 ? '—' : Array.from(optionalSet).map(d => CAP_DOMAIN_LABELS[d]).join(', ')}
-            </div>
-            <div className="text-[11px] text-ach-navy/50 mt-1.5">
-              The capability mix and weight ratio above are auto-set from your picks. Open Admin below to override.
-            </div>
+          <div className="text-[11px] text-ach-navy/55 mt-2">
+            {optionalSet.size}/2 selected
           </div>
-        )}
+        </div>
 
         {CAP_DOMAINS.map(d => {
           const v = coreSet.has(d) ? 'primary' : optionalSet.has(d) ? 'supporting' : 'not_addressed';
