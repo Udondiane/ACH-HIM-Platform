@@ -24,9 +24,12 @@ interface Props {
   submitLabel?: string;
   /** When true, the candidate_ref field is read-only (edit mode). */
   refLocked?: boolean;
+  /** When set, a hidden enrol_cohort_id field is submitted with the form so
+   *  the create action can auto-enrol the new candidate into that cohort. */
+  enrolCohortId?: string | null;
 }
 
-export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save candidate', refLocked = false }: Props) {
+export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save candidate', refLocked = false, enrolCohortId }: Props) {
   const [state, formAction] = useFormState(action, null);
   const fe = (k: string) => state && !state.ok ? state.fieldErrors?.[k]?.[0] : undefined;
   const isEdit = !!initial?.candidate_ref;
@@ -35,6 +38,7 @@ export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save
 
   return (
     <form action={formAction} className="space-y-5 max-w-2xl">
+      {enrolCohortId && <input type="hidden" name="enrol_cohort_id" value={enrolCohortId} />}
       {!isEdit && (
         <div className="rounded-[10px] border-[0.5px] border-ach-navy/30 bg-ach-slate-tint/40 p-4">
           <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/70 mb-1.5">Data collection consent</div>
@@ -160,32 +164,34 @@ export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save
         </Field>
       </div>
 
-      <div className="pt-3 border-t-[0.5px] border-ach-border">
-        <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">
-          Exit (if applicable)
-        </div>
-        <p className="text-[12px] text-ach-navy/60 mb-3">
-          When a candidate leaves the programme, capture WHY. The platform reports cohort outcomes both ways — completers basis AND intention-to-treat (dropouts held at baseline) — so leavers stay in the analysis. &quot;Got a job&quot; is a programme WIN, not a loss.
-        </p>
-        <div className="grid grid-cols-2 gap-4 mb-3">
-          <Field label="Exit reason" error={fe('exit_reason')}>
-            <select
-              name="exit_reason"
-              defaultValue={initial?.exit_reason ?? ''}
-              className="w-full rounded-[10px] border-[0.5px] border-ach-border bg-white px-3 py-2 text-[13px] text-ach-navy focus:outline-none focus:ring-1 focus:ring-ach-navy/40"
-            >
-              <option value="">— Not exited —</option>
-              {EXIT_REASONS.map(r => <option key={r} value={r}>{EXIT_REASON_LABELS[r]}</option>)}
-            </select>
+      {isEdit && (
+        <div className="pt-3 border-t-[0.5px] border-ach-border">
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">
+            Exit (if applicable)
+          </div>
+          <p className="text-[12px] text-ach-navy/60 mb-3">
+            When a candidate leaves the programme, capture WHY. The platform reports cohort outcomes both ways — completers basis AND intention-to-treat (dropouts held at baseline) — so leavers stay in the analysis. &quot;Got a job&quot; is a programme WIN, not a loss.
+          </p>
+          <div className="grid grid-cols-2 gap-4 mb-3">
+            <Field label="Exit reason" error={fe('exit_reason')}>
+              <select
+                name="exit_reason"
+                defaultValue={initial?.exit_reason ?? ''}
+                className="w-full rounded-[10px] border-[0.5px] border-ach-border bg-white px-3 py-2 text-[13px] text-ach-navy focus:outline-none focus:ring-1 focus:ring-ach-navy/40"
+              >
+                <option value="">— Not exited —</option>
+                {EXIT_REASONS.map(r => <option key={r} value={r}>{EXIT_REASON_LABELS[r]}</option>)}
+              </select>
+            </Field>
+            <Field label="Exit date" error={fe('exit_date')}>
+              <Input name="exit_date" type="date" defaultValue={initial?.exit_date ?? ''} />
+            </Field>
+          </div>
+          <Field label="Exit notes" error={fe('exit_notes')} hint="Concrete detail for the cohort funnel — name of employer, course title, follow-up plan, etc.">
+            <Textarea name="exit_notes" defaultValue={initial?.exit_notes ?? ''} rows={2} />
           </Field>
-          <Field label="Exit date" error={fe('exit_date')}>
-            <Input name="exit_date" type="date" defaultValue={initial?.exit_date ?? ''} />
-          </Field>
         </div>
-        <Field label="Exit notes" error={fe('exit_notes')} hint="Concrete detail for the cohort funnel — name of employer, course title, follow-up plan, etc.">
-          <Textarea name="exit_notes" defaultValue={initial?.exit_notes ?? ''} rows={2} />
-        </Field>
-      </div>
+      )}
 
       {status === 'progressed' && (
         <div className="pt-3 border-t-[0.5px] border-ach-border rounded-[10px] bg-ach-slate-tint/40 p-3">
@@ -224,27 +230,29 @@ export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save
         </div>
       )}
 
-      <div className="pt-3 border-t-[0.5px] border-ach-border rounded-[10px] bg-ach-rose/5 p-3">
-        <label className="flex items-start gap-2.5 text-[13px] cursor-pointer">
-          <input
-            type="checkbox"
-            name="at_risk"
-            defaultChecked={!!initial?.at_risk}
-            className="mt-0.5 h-4 w-4 rounded border-ach-border text-[#8B3A4F] focus:ring-[#8B3A4F]/40"
-          />
-          <span>
-            <span className="text-ach-navy font-medium">Flag as needing attention</span>
-            <span className="block text-ach-navy/70 mt-0.5 text-[12px]">
-              Surfaces this candidate on the candidates list so caseworkers can pull up the flagged set in one click. Use for any signal worth following up on: missed contact, capability decline, housing instability, mental-health concern, training withdrawal, lost contact.
+      {isEdit && (
+        <div className="pt-3 border-t-[0.5px] border-ach-border rounded-[10px] bg-ach-rose/5 p-3">
+          <label className="flex items-start gap-2.5 text-[13px] cursor-pointer">
+            <input
+              type="checkbox"
+              name="at_risk"
+              defaultChecked={!!initial?.at_risk}
+              className="mt-0.5 h-4 w-4 rounded border-ach-border text-[#8B3A4F] focus:ring-[#8B3A4F]/40"
+            />
+            <span>
+              <span className="text-ach-navy font-medium">Flag as needing attention</span>
+              <span className="block text-ach-navy/70 mt-0.5 text-[12px]">
+                Surfaces this candidate on the candidates list so caseworkers can pull up the flagged set in one click. Use for any signal worth following up on: missed contact, capability decline, housing instability, mental-health concern, training withdrawal, lost contact.
+              </span>
             </span>
-          </span>
-        </label>
-        <div className="mt-3">
-          <Field label="At-risk reason" error={fe('at_risk_reason')} hint="Plain English. Shown as tooltip on the candidates list pill.">
-            <Input name="at_risk_reason" defaultValue={initial?.at_risk_reason ?? ''} placeholder="e.g. No contact > 3 weeks; declining 3-month assessment" />
-          </Field>
+          </label>
+          <div className="mt-3">
+            <Field label="At-risk reason" error={fe('at_risk_reason')} hint="Plain English. Shown as tooltip on the candidates list pill.">
+              <Input name="at_risk_reason" defaultValue={initial?.at_risk_reason ?? ''} placeholder="e.g. No contact > 3 weeks; declining 3-month assessment" />
+            </Field>
+          </div>
         </div>
-      </div>
+      )}
 
       <Field label="Internal notes" error={fe('notes')}>
         <Textarea name="notes" defaultValue={initial?.notes ?? ''} rows={3} />
