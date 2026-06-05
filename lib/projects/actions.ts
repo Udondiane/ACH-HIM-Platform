@@ -114,6 +114,79 @@ async function syncCapabilitiesFromAnswers(
   }
 }
 
+/**
+ * Parse the free-text funder_name field into individual partner names and
+ * upsert each one into the partners table with a sensible type. Run after a
+ * project is created/updated so the partners list stays in sync with what
+ * staff typed when scoping the project.
+ *
+ * - Funded model: every name becomes a grant_funder.
+ * - Commercial model: every name becomes a workforce_partner.
+ * - Hybrid model: names matching grant-side keywords become grant_funder;
+ *   the rest default to workforce_partner. Hybrid still wins clarity from
+ *   a single field, even if it isn't perfect.
+ *
+ * Existing partners are matched case-insensitively by name and left
+ * untouched (we never overwrite their type or status).
+ */
+const GRANT_KEYWORDS = [
+  'trust', 'foundation', 'lottery', 'relief', 'council', 'authority',
+  'charity', 'fund', 'government', 'ministry', 'wmca', 'gmca', 'dwp',
+  'home office', 'nhs', 'esf', 'uksfp', 'ukspf',
+];
+
+function inferPartnerType(name: string, fundingModel: string | null | undefined): 'grant_funder' | 'workforce_partner' {
+  if (fundingModel === 'funded') return 'grant_funder';
+  if (fundingModel === 'commercial') return 'workforce_partner';
+  // hybrid (or unset) — smart match on name
+  const lower = name.toLowerCase();
+  for (const kw of GRANT_KEYWORDS) {
+    if (lower.includes(kw)) return 'grant_funder';
+  }
+  return 'workforce_partner';
+}
+
+async function syncPartnersFromFunderName(
+  supabase: ReturnType<typeof createClient>,
+  funderName: string | null | undefined,
+  fundingModel: string | null | undefined,
+): Promise<void> {
+  if (!funderName) return;
+  // Split on commas, ampersands, plus signs, " and ", " + " — typical
+  // separators staff use when listing multiple funders.
+  const names = funderName
+    .split(/[,&+]|\s+and\s+/i)
+    .map(n => n.replace(/\([^)]*\)/g, '').trim()) // strip "(grant)" / "(corporate)" hints
+    .filter(n => n.length > 1);
+
+  if (names.length === 0) return;
+
+  // Pull existing partner names so we don't duplicate.
+  const { data: existingRows } = await supabase
+    .from('partners')
+    .select('name');
+  const existingLower = new Set(
+    ((existingRows as { name: string }[] | null) ?? []).map(p => p.name.trim().toLowerCase()),
+  );
+
+  const toInsert = names
+    .filter(n => !existingLower.has(n.toLowerCase()))
+    .map(name => {
+      const t = inferPartnerType(name, fundingModel);
+      // partners has both `type` (legacy) and `types[]` columns (mig 021)
+      // — populate both so triggers and reports stay consistent.
+      return {
+        name,
+        type: t,
+        types: [t],
+        status: 'active',
+      };
+    });
+
+  if (toInsert.length === 0) return;
+  await supabase.from('partners').insert(toInsert as never);
+}
+
 export async function createProjectAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
   const parsed = projectSchema.safeParse(fdToPlain(fd));
   if (!parsed.success) {
@@ -137,7 +210,9 @@ export async function createProjectAction(_prev: ActionResult | null, fd: FormDa
     cap_social:     parsed.data.cap_social,
     cap_rights:     parsed.data.cap_rights,
   });
+  await syncPartnersFromFunderName(supabase, parsed.data.funder_name, parsed.data.funding_model);
   revalidatePath('/projects');
+  revalidatePath('/partners');
   revalidatePath('/dashboard');
   redirect(`/projects/${row!.id}`);
 }
@@ -164,7 +239,9 @@ export async function updateProjectAction(
     cap_social:     parsed.data.cap_social,
     cap_rights:     parsed.data.cap_rights,
   });
+  await syncPartnersFromFunderName(supabase, parsed.data.funder_name, parsed.data.funding_model);
   revalidatePath('/projects');
+  revalidatePath('/partners');
   revalidatePath(`/projects/${id}`);
   return { ok: true, id };
 }
