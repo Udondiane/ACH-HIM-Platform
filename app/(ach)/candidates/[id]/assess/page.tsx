@@ -6,8 +6,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { startAssessmentForCandidateAction } from '@/lib/assessments/actions';
-import { baselineWindowState } from '@/lib/assessments/intervention';
+import { startAssessmentAction } from '@/lib/assessments/actions';
 
 type Timepoint = 'baseline' | 'mid_3mo' | 'exit_6mo' | 'followup_12mo';
 
@@ -24,7 +23,12 @@ const STATUS_LABELS: Record<string, string> = {
   reviewed:    'Reviewed',
 };
 
-export default async function CandidateAssessChooserPage({ params }: { params: { id: string } }) {
+export default async function CandidateAssessChooserPage({
+  params, searchParams,
+}: {
+  params: { id: string };
+  searchParams?: { project?: string };
+}) {
   const supabase = createClient();
 
   const { data: candidate } = await supabase
@@ -35,22 +39,28 @@ export default async function CandidateAssessChooserPage({ params }: { params: {
   if (!candidate) notFound();
   const c = candidate as any;
 
-  // Find the cohort & project the candidate is linked to, plus the timing
-  // context we need to gate baseline collection.
+  // Cohort linkage if any.
   const { data: cc } = await supabase
     .from('cohort_candidates')
-    .select('cohort_id, intervention_start_date, cohorts(id, cohort_ref, name, project_id, is_rolling, intervention_start_date, projects(id, project_ref, name, is_locked, baseline_window_days))')
+    .select('cohort_id, cohorts(id, cohort_ref, name, project_id, projects(id, project_ref, name))')
     .eq('candidate_id', params.id)
     .maybeSingle();
   const ccRow = cc as any;
   const cohort = ccRow?.cohorts ?? null;
-  const project = cohort?.projects ?? null;
-  const windowDays: number = project?.baseline_window_days ?? 14;
-  const window = baselineWindowState({
-    candidateStart: ccRow?.intervention_start_date ?? null,
-    cohortStart: cohort?.intervention_start_date ?? null,
-    windowDays,
-  });
+  const cohortProject = cohort?.projects ?? null;
+
+  // Always pull the full project list so the user can pick one even if the
+  // candidate isn't in a cohort. The querystring ?project=<id> overrides the
+  // cohort-derived project, and is the only source when there is no cohort.
+  const { data: allProjects } = await supabase
+    .from('projects').select('id, project_ref, name').order('name');
+  const projects = ((allProjects as any[]) ?? []);
+
+  // Resolve which project to run the assessment against.
+  const overrideId = searchParams?.project?.trim() || null;
+  const project = overrideId
+    ? projects.find(p => p.id === overrideId) ?? cohortProject ?? projects[0] ?? null
+    : cohortProject ?? projects[0] ?? null;
 
   // Pull existing assessments so we can show status against each timepoint.
   const existingMap = new Map<Timepoint, { id: string; status: string; assessed_on: string }>();
@@ -82,43 +92,40 @@ export default async function CandidateAssessChooserPage({ params }: { params: {
         title="Run an assessment"
       />
 
-      {!project ? (
+      {projects.length === 0 ? (
         <Card>
           <CardContent className="pt-6 space-y-3">
-            <div className="flex items-start gap-2.5">
-              <AlertTriangle className="h-5 w-5 text-[#8B3A4F] shrink-0 mt-0.5" />
-              <div className="space-y-2 text-[13px] text-ach-navy/80">
-                <p className="font-medium text-ach-navy">No project linked.</p>
-                <p>
-                  {c.given_name} is not yet linked to a cohort with a project. Add the candidate to a cohort first, then come back here.
-                </p>
-                <p>
-                  <Link href="/cohorts" className="text-ach-navy underline">Choose a cohort to enrol them in →</Link>
-                </p>
-              </div>
+            <div className="space-y-2 text-[13px] text-ach-navy/80">
+              <p className="font-medium text-ach-navy">No projects yet.</p>
+              <p>Create a project first — an assessment needs a project to score against.</p>
+              <p>
+                <Link href="/projects/new" className="text-ach-navy underline">Create a project →</Link>
+              </p>
             </div>
           </CardContent>
         </Card>
-      ) : (
+      ) : !project ? null : (
         <>
           <Card className="mb-4">
             <CardHeader>
-              <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Project</div>
-              <div className="flex items-center justify-between mt-1">
-                <div>
-                  <Link href={`/projects/${project.id}`} className="text-[14px] font-medium text-ach-navy hover:underline">
-                    {project.project_ref} · {project.name}
-                  </Link>
-                  {cohort && (
-                    <div className="text-[12px] text-ach-navy/60 mt-0.5">
-                      Cohort: <Link href={`/cohorts/${cohort.id}`} className="hover:underline">{cohort.cohort_ref}</Link>
-                    </div>
-                  )}
-                </div>
-                {project.is_locked && (
-                  <span className="inline-flex items-center gap-1 text-[10.5px] uppercase tracking-[1.2px] text-ach-slate-deep bg-ach-slate-tint rounded-full px-2 py-0.5 border-[0.5px] border-ach-slate-blue/30">
-                    <Lock className="h-3 w-3" /> Locked
-                  </span>
+              <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Assess against</div>
+              <div className="mt-1 space-y-2">
+                <form method="get" className="flex items-center gap-2">
+                  <select
+                    name="project"
+                    defaultValue={project.id}
+                    className="rounded-[10px] border-[0.5px] border-ach-border bg-white px-3 py-2 text-[13px] text-ach-navy"
+                  >
+                    {projects.map(p => (
+                      <option key={p.id} value={p.id}>{p.project_ref} · {p.name}</option>
+                    ))}
+                  </select>
+                  <button type="submit" className="text-[12.5px] text-ach-navy underline">Switch</button>
+                </form>
+                {cohort && (
+                  <div className="text-[12px] text-ach-navy/60">
+                    Cohort: <Link href={`/cohorts/${cohort.id}`} className="hover:underline">{cohort.cohort_ref}</Link>
+                  </div>
                 )}
               </div>
             </CardHeader>
@@ -169,7 +176,7 @@ function TimepointCard({
   const startAction = async (formData: FormData) => {
     'use server';
     const tp = formData.get('timepoint') as Timepoint;
-    await startAssessmentForCandidateAction(candidateId, tp);
+    await startAssessmentAction(projectId, candidateId, tp);
   };
 
   const statusLabel = existing ? STATUS_LABELS[existing.status] ?? existing.status : 'Not started';
