@@ -49,12 +49,6 @@ export function CapabilityPicker({ projectId, initial }: Props) {
 
   return (
     <div>
-      <div className="text-[12px] text-ach-navy/60 mb-4">
-        Auto-derived from the project&apos;s Outcomes questionnaire. Adjust below if you need to override the auto-selection.
-        Core capabilities are the project&apos;s primary objectives; Optional capabilities are tracked but contribute via β;
-        Excluded capabilities don&apos;t feed into the score.
-      </div>
-
       <div className="space-y-2 mb-4">
         {ALL_DOMAINS.map(d => (
           <div

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
-  COHORT_STRUCTURES, COHORT_STRUCTURE_LABELS, COHORT_STATUSES, COHORT_STATUS_LABELS,
+  COHORT_STRUCTURES, COHORT_STRUCTURE_LABELS,
   COHORT_SERVICE_TYPES, COHORT_SERVICE_TYPE_LABELS, COHORT_SERVICE_TYPE_HINTS,
 } from '@/lib/cohorts/schema';
 import type { ActionResult } from '@/lib/cohorts/actions';
@@ -24,31 +24,88 @@ interface Props {
   projects?: { id: string; name: string; project_ref: string }[];
 }
 
+/** Project name fragment that toggles the IAG / Full-programme picker on.
+ *  Service type is only meaningful for Bridge to Employment cohorts where
+ *  someone might enrol IAG-only without entering the full pipeline. Other
+ *  projects don't have that distinction.
+ */
+const BRIDGE_TO_EMPLOYMENT_MARKER = /bridge.+employment/i;
+
+/** Cohort ref slug from a project name — first three uppercase initials of
+ *  the project name's words, falling back to first three letters if needed. */
+function projectSlug(name: string): string {
+  const words = name.split(/\s+/).filter(Boolean);
+  if (words.length === 0) return 'PRJ';
+  const initials = words.map(w => w[0]).join('').toUpperCase().replace(/[^A-Z]/g, '');
+  if (initials.length >= 3) return initials.slice(0, 3);
+  return name.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase().padEnd(3, 'X');
+}
+
+/** Generate a sensible cohort_ref client-side. Server reconciles uniqueness
+ *  on save by appending an incrementing tail if a collision is detected. */
+function generateCohortRef(projectName: string | null, today: Date = new Date()): string {
+  const slug = projectName ? projectSlug(projectName) : 'COH';
+  const year = today.getFullYear();
+  const month = today.getMonth() + 1;
+  const quarter = Math.ceil(month / 3);
+  return `${slug}-${year}-Q${quarter}`;
+}
+
+/** Auto-derived display name from project + quarter. */
+function generateCohortName(projectName: string | null, today: Date = new Date()): string {
+  if (!projectName) return '';
+  const year = today.getFullYear();
+  const quarter = Math.ceil((today.getMonth() + 1) / 3);
+  return `${projectName} — Q${quarter} ${year}`;
+}
+
+function weeksBetween(startIso: string, endIso: string): number | '' {
+  if (!startIso || !endIso) return '';
+  const start = new Date(`${startIso}T00:00:00`);
+  const end = new Date(`${endIso}T00:00:00`);
+  const diff = end.getTime() - start.getTime();
+  if (diff <= 0) return '';
+  return Math.round(diff / (1000 * 60 * 60 * 24 * 7));
+}
+
 export function CohortForm({ action, initial, cancelHref, submitLabel = 'Save cohort', projects = [] }: Props) {
   const [state, formAction] = useFormState(action, null);
   const fe = (k: string) => state && !state.ok ? state.fieldErrors?.[k]?.[0] : undefined;
-  const [isRolling, setIsRolling] = useState<boolean>(!!initial?.is_rolling);
+
+  const [projectId, setProjectId] = useState<string>(initial?.project_id ?? '__none__');
+  const selectedProject = useMemo(
+    () => projects.find(p => p.id === projectId) ?? null,
+    [projects, projectId],
+  );
+  const isBridgeToEmployment = !!selectedProject && BRIDGE_TO_EMPLOYMENT_MARKER.test(selectedProject.name);
+
+  const [startDate, setStartDate] = useState<string>(initial?.start_date ?? '');
+  const [endDate, setEndDate] = useState<string>(initial?.end_date ?? '');
+  const autoWeeks = weeksBetween(startDate, endDate);
+  const [serviceType, setServiceType] = useState<string>(initial?.service_type ?? 'full_programme');
+
+  // Auto-derived ref + name update when project changes (unless we're editing
+  // an existing cohort, where the saved ref/name win).
+  const [cohortRef, setCohortRef] = useState<string>(
+    initial?.cohort_ref ?? generateCohortRef(null),
+  );
+  const [cohortName, setCohortName] = useState<string>(
+    initial?.name ?? '',
+  );
+  useEffect(() => {
+    if (initial?.cohort_ref || initial?.name) return; // edit mode — leave saved values
+    if (!selectedProject) return;
+    setCohortRef(generateCohortRef(selectedProject.name));
+    setCohortName(generateCohortName(selectedProject.name));
+  }, [selectedProject, initial?.cohort_ref, initial?.name]);
 
   return (
     <form action={formAction} className="space-y-5 max-w-2xl">
-      <div className="grid grid-cols-2 gap-4">
-        <Field label="Reference" error={fe('cohort_ref')}>
-          <Input name="cohort_ref" required defaultValue={initial?.cohort_ref} placeholder="BRI-2026-Q3" />
-        </Field>
-        <Field label="Status" error={fe('status')}>
-          <Select name="status" defaultValue={initial?.status ?? 'planned'}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {COHORT_STATUSES.map(s => <SelectItem key={s} value={s}>{COHORT_STATUS_LABELS[s]}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </Field>
-      </div>
+      {/* status auto-set to 'planned' on create — no field required */}
+      <input type="hidden" name="status" value={initial?.status ?? 'planned'} />
 
-      <Field label="Project" error={fe('project_id')} hint="The intervention design this cohort runs. Sets the Core/Optional capability mix used in HIM scoring.">
-        {/* Radix Select rejects empty-string values, so we use a "__none__"
-            sentinel here and the server action treats it as null. */}
-        <Select name="project_id" defaultValue={initial?.project_id || '__none__'}>
+      <Field label="Project" error={fe('project_id')}>
+        <Select name="project_id" value={projectId} onValueChange={setProjectId}>
           <SelectTrigger><SelectValue placeholder="Select a project" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="__none__">— None (unlinked) —</SelectItem>
@@ -59,9 +116,25 @@ export function CohortForm({ action, initial, cancelHref, submitLabel = 'Save co
         </Select>
       </Field>
 
-      <Field label="Name" error={fe('name')}>
-        <Input name="name" required defaultValue={initial?.name} placeholder="Bridge to Employment — Bristol Q3 2026" />
-      </Field>
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="Reference" error={fe('cohort_ref')} hint="Auto-generated from project + quarter.">
+          <Input
+            name="cohort_ref"
+            required
+            value={cohortRef}
+            onChange={e => setCohortRef(e.target.value)}
+          />
+        </Field>
+        <Field label="Name" error={fe('name')} hint="Auto-filled from project.">
+          <Input
+            name="name"
+            required
+            value={cohortName}
+            onChange={e => setCohortName(e.target.value)}
+            placeholder="Auto"
+          />
+        </Field>
+      </div>
 
       <div className="grid grid-cols-2 gap-4">
         <Field label="Structure" error={fe('structure')}>
@@ -77,18 +150,22 @@ export function CohortForm({ action, initial, cancelHref, submitLabel = 'Save co
         </Field>
       </div>
 
-      <Field
-        label="Programme type"
-        error={fe('service_type')}
-        hint={COHORT_SERVICE_TYPE_HINTS[(initial?.service_type ?? 'full_programme') as typeof COHORT_SERVICE_TYPES[number]]}
-      >
-        <Select name="service_type" defaultValue={initial?.service_type ?? 'full_programme'}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {COHORT_SERVICE_TYPES.map(s => <SelectItem key={s} value={s}>{COHORT_SERVICE_TYPE_LABELS[s]}</SelectItem>)}
-          </SelectContent>
-        </Select>
-      </Field>
+      {isBridgeToEmployment ? (
+        <Field
+          label="Programme type"
+          error={fe('service_type')}
+          hint={COHORT_SERVICE_TYPE_HINTS[serviceType as typeof COHORT_SERVICE_TYPES[number]]}
+        >
+          <Select name="service_type" value={serviceType} onValueChange={setServiceType}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {COHORT_SERVICE_TYPES.map(s => <SelectItem key={s} value={s}>{COHORT_SERVICE_TYPE_LABELS[s]}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </Field>
+      ) : (
+        <input type="hidden" name="service_type" value="full_programme" />
+      )}
 
       <Field label="Sector focus" error={fe('sector_focus')}>
         <Input name="sector_focus" defaultValue={initial?.sector_focus ?? ''} placeholder="Hospitality, Retail, Construction" />
@@ -96,53 +173,32 @@ export function CohortForm({ action, initial, cancelHref, submitLabel = 'Save co
 
       <div className="grid grid-cols-3 gap-4">
         <Field label="Start date" error={fe('start_date')}>
-          <Input name="start_date" type="date" defaultValue={initial?.start_date ?? ''} />
+          <Input
+            name="start_date"
+            type="date"
+            value={startDate}
+            onChange={e => setStartDate(e.target.value)}
+          />
         </Field>
         <Field label="End date" error={fe('end_date')}>
-          <Input name="end_date" type="date" defaultValue={initial?.end_date ?? ''} />
-        </Field>
-        <Field label="Programme weeks" error={fe('programme_weeks')}>
-          <Input name="programme_weeks" type="number" min={0} max={104} defaultValue={initial?.programme_weeks ?? ''} placeholder="12" />
-        </Field>
-      </div>
-
-      <div className="rounded-[10px] border-[0.5px] border-ach-border bg-ach-slate-tint/30 p-3 space-y-3">
-        <div>
-          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/70 mb-1">Intervention timing</div>
-          <p className="text-[11.5px] text-ach-navy/65">
-            When does the intervention actually begin for the candidates? Baselines must be collected within the project&apos;s baseline window after this date.
-          </p>
-        </div>
-
-        <label className="flex items-start gap-2.5 text-[13px] cursor-pointer">
-          <input
-            type="checkbox"
-            name="is_rolling"
-            checked={isRolling}
-            onChange={e => setIsRolling(e.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded border-ach-border text-ach-navy focus:ring-ach-navy/40"
+          <Input
+            name="end_date"
+            type="date"
+            value={endDate}
+            onChange={e => setEndDate(e.target.value)}
           />
-          <span>
-            <span className="text-ach-navy font-medium">Rolling enrolment</span>
-            <span className="block text-ach-navy/60 mt-0.5 text-[12px]">
-              Tick if candidates start on different dates (IAG, training, support strands). Each candidate&apos;s start date is captured when they&apos;re enrolled.
-            </span>
-          </span>
-        </label>
-
-        {!isRolling && (
-          <Field
-            label="Intervention start date"
-            error={fe('intervention_start_date')}
-            hint="The shared date the cohort's intervention begins. Anchors baseline window for everyone."
-          >
-            <Input
-              name="intervention_start_date"
-              type="date"
-              defaultValue={initial?.intervention_start_date ?? initial?.start_date ?? ''}
-            />
-          </Field>
-        )}
+        </Field>
+        <Field label="Programme weeks" error={fe('programme_weeks')} hint="Auto from dates.">
+          <Input
+            name="programme_weeks"
+            type="number"
+            min={0}
+            max={104}
+            value={autoWeeks === '' ? '' : autoWeeks}
+            readOnly
+            className="bg-ach-page text-ach-navy/70 cursor-not-allowed"
+          />
+        </Field>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
