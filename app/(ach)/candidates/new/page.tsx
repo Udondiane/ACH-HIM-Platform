@@ -11,7 +11,6 @@ export default function NewCandidatePage() {
         backLabel="Candidates"
         miniLabel="Network"
         title="Add candidate"
-        description="Capture identity, language, and the candidate's career direction. You can record consent decisions after the candidate is created."
       />
       <Card>
         <CardContent className="pt-6">

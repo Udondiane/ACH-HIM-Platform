@@ -80,7 +80,6 @@ export default async function CandidateAssessChooserPage({ params }: { params: {
         backLabel={`${c.candidate_ref} · ${c.given_name}`}
         miniLabel="Candidate · Assessments"
         title="Run an assessment"
-        description="Pick a timepoint. Existing assessments resume in place — they don't get reset. Locked / completed timepoints stay editable but show a warning."
       />
 
       {!project ? (
@@ -94,7 +93,7 @@ export default async function CandidateAssessChooserPage({ params }: { params: {
                   {c.given_name} is not yet linked to a cohort with a project. Add the candidate to a cohort first, then come back here.
                 </p>
                 <p>
-                  <Link href={`/candidates/${params.id}/edit`} className="text-ach-navy underline">Edit candidate</Link>
+                  <Link href="/cohorts" className="text-ach-navy underline">Choose a cohort to enrol them in →</Link>
                 </p>
               </div>
             </div>

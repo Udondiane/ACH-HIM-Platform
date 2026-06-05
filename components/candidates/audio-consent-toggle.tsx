@@ -38,7 +38,7 @@ export function AudioConsentToggle({ candidateId, initialConsent, initialDate }:
           </div>
           <div className="text-[11.5px] text-ach-navy/60 mt-0.5">
             {consent
-              ? `Consented ${date ? `on ${new Date(date).toLocaleDateString('en-GB')}` : ''}. Recordings stored securely in UK; used only to support caseworker notes; withdrawable any time.`
+              ? `Consented ${date ? `on ${new Date(date).toLocaleDateString('en-GB')}` : ''}. Recordings stored securely; used only to support programme evaluation; beneficiary can withdraw at any time.`
               : 'Off. Caseworker must type candidate responses. Toggle on after confirming verbal consent with the candidate.'}
           </div>
         </div>
