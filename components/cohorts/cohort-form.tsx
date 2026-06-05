@@ -48,7 +48,8 @@ function generateCohortRef(projectName: string | null, today: Date = new Date())
   const year = today.getFullYear();
   const month = today.getMonth() + 1;
   const quarter = Math.ceil(month / 3);
-  return `${slug}-${year}-Q${quarter}`;
+  const tail = Math.floor(Math.random() * 9000) + 1000;
+  return `${slug}-${year}-Q${quarter}-${tail}`;
 }
 
 /** Auto-derived display name from project + quarter. */
