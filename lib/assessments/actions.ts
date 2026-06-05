@@ -131,9 +131,8 @@ export async function saveFactorResponseAction(
 export async function completeAssessmentAction(assessmentId: string, projectId: string) {
   const supabase = createClient();
   await supabase.from('assessments').update({ status: 'completed' } as never).eq('id', assessmentId);
-  /* Once any assessment is completed, lock the project so its Core/Optional
-     selection cannot drift mid-flight (Eval Surface methodology guard). */
-  await supabase.from('projects').update({ is_locked: true } as never).eq('id', projectId);
+  /* Project lock on first-assessment-completed disabled for the training
+     session so the assessor can edit freely. */
   revalidatePath(`/projects/${projectId}/assess/${assessmentId}`);
   revalidatePath(`/projects/${projectId}`);
 }

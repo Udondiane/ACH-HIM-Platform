@@ -75,7 +75,9 @@ export default async function AssessmentRunnerPage({
   const consentToRecord = !!(audioConsentRes.data as { consent_audio_recording?: boolean } | null)?.consent_audio_recording;
   const p = project.data as any;
   const a = assessment.data as any;
-  const isLocked = !!p.is_locked || a.status === 'reviewed';
+  // Demo mode: project-level lock and assessment 'reviewed' lock are both
+  // disabled so every textarea stays editable during the training session.
+  const isLocked = false;
 
   const caps = ((capabilities.data as any[]) ?? []) as { domain: DomainId; role: 'core'|'optional'; selected_factors: string[] | null }[];
   // selected_factors: empty/null = use ALL factors in that domain (default);
@@ -321,7 +323,7 @@ export default async function AssessmentRunnerPage({
               <AttachmentUploader
                 assessmentId={params.assessmentId}
                 initialAttachments={(attachments.data as any[]) ?? []}
-                locked={isLocked || a.status === 'completed'}
+                locked={false}
               />
             </CardContent>
           </Card>
