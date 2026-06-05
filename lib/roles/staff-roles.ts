@@ -57,7 +57,7 @@ export const STAFF_ROLES: StaffRole[] = [
     id: 'engagement',
     label: 'Employer engagement lead',
     shortLabel: 'Engagement',
-    description: 'Workforce partners, sponsorships, partner meeting pack.',
+    description: 'Workforce partners, sponsorships, placements YTD.',
     href: '/dashboard/engagement',
     icon: Handshake,
     accent: 'rose',
