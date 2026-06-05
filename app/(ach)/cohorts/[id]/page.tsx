@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Pencil, GraduationCap } from 'lucide-react';
+import { Pencil, GraduationCap, Plus } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
@@ -184,12 +184,17 @@ export default async function CohortDetailPage({ params }: { params: { id: strin
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Enrolled candidates</div>
-            <LinkCandidateToCohort
-              cohortId={c.id}
-              availableCandidates={availableCandidates}
-              cohortPartners={(cohortPartners.data as any[]) ?? []}
-              isRolling={!!c.is_rolling}
-            />
+            <div className="flex items-center gap-2">
+              <Link href={`/candidates/new?cohort=${c.id}`}>
+                <Button variant="secondary" size="sm"><Plus className="h-3.5 w-3.5" />New candidate</Button>
+              </Link>
+              <LinkCandidateToCohort
+                cohortId={c.id}
+                availableCandidates={availableCandidates}
+                cohortPartners={(cohortPartners.data as any[]) ?? []}
+                isRolling={!!c.is_rolling}
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent>

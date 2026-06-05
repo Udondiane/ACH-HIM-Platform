@@ -85,6 +85,23 @@ export async function createCandidateAction(_prev: ActionResult | null, fd: Form
     .single();
   if (error) return { ok: false, error: error.message };
   const row = data as { id: string } | null;
+
+  // If the form was opened from a cohort page (hidden 'enrol_cohort_id'
+  // field), auto-enrol the new candidate into that cohort and route them
+  // back to the cohort.
+  const enrolCohortId = (fd.get('enrol_cohort_id') as string | null)?.trim() || null;
+  if (enrolCohortId && row?.id) {
+    await supabase.from('cohort_candidates').upsert({
+      cohort_id: enrolCohortId,
+      candidate_id: row.id,
+      sponsoring_partner_id: null,
+    } as never, { onConflict: 'cohort_id,candidate_id' });
+    revalidatePath(`/cohorts/${enrolCohortId}`);
+    revalidatePath('/candidates');
+    revalidatePath('/dashboard');
+    redirect(`/cohorts/${enrolCohortId}`);
+  }
+
   revalidatePath('/candidates');
   revalidatePath('/dashboard');
   redirect(`/candidates/${row!.id}`);
