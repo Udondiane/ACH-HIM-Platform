@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
-  LayoutDashboard, Users, FileText, ScrollText, MessageSquare,
+  LayoutDashboard, Users, ScrollText, MessageSquare,
   Building2, GraduationCap, ShieldCheck,
   ChevronsLeft, ChevronsRight,
 } from 'lucide-react';
@@ -70,11 +70,6 @@ export function PartnerSidebar({ partner }: { partner: Partner | null }) {
       { href: '/partner/inclusion',     label: 'Inclusion assessment', icon: GraduationCap },
     );
   }
-
-  items.push(
-    { section: 'Reports' },
-    { href: '/partner/reports', label: 'Reports', icon: FileText },
-  );
 
   return (
     <aside
