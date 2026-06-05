@@ -64,17 +64,37 @@ export async function createCohortAction(_prev: ActionResult | null, fd: FormDat
     return { ok: false, error: 'Please fix the highlighted fields.', fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
   }
   const supabase = createClient();
-  const safeRef = await uniqueCohortRef(supabase, parsed.data.cohort_ref);
-  const payload = { ...normalisePayload(parsed.data), cohort_ref: safeRef };
-  const { data, error } = await supabase
-    .from('cohorts')
-    .insert(payload as never)
-    .select('id').single();
-  if (error) return { ok: false, error: error.message };
-  const row = data as { id: string } | null;
-  revalidatePath('/cohorts');
-  revalidatePath('/dashboard');
-  redirect(`/cohorts/${row!.id}`);
+
+  // Try the desired ref first, then escalate to numbered suffixes, then a
+  // hard timestamp fallback. Retry the insert itself if a race-condition
+  // duplicate still slips through (PostgREST error code 23505).
+  const baseRef = parsed.data.cohort_ref;
+  const candidates: string[] = [baseRef];
+  for (let n = 2; n <= 50; n++) candidates.push(`${baseRef}-${n}`);
+  candidates.push(`${baseRef}-${Date.now()}`);
+
+  for (const ref of candidates) {
+    const payload = { ...normalisePayload(parsed.data), cohort_ref: ref };
+    const { data, error } = await supabase
+      .from('cohorts')
+      .insert(payload as never)
+      .select('id').single();
+
+    if (!error) {
+      const row = data as { id: string };
+      revalidatePath('/cohorts');
+      revalidatePath('/dashboard');
+      redirect(`/cohorts/${row.id}`);
+    }
+    // 23505 = unique violation. Anything else, bail.
+    const isDup = typeof error?.message === 'string' && (
+      error.message.includes('cohorts_cohort_ref_key') ||
+      error.message.includes('duplicate key value')
+    );
+    if (!isDup) return { ok: false, error: error.message };
+  }
+
+  return { ok: false, error: 'Could not allocate a unique cohort reference. Please try a different name.' };
 }
 
 export async function updateCohortAction(
