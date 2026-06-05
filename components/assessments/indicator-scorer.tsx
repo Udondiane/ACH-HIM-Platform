@@ -100,17 +100,22 @@ export function IndicatorScorer({
       )}
 
       {!isNarrative && (
-        <div className="flex items-center gap-1.5 mb-2">
-          {isYesNo ? (
-            <>
-              <ScoreBtn active={value === 0} disabled={locked} onClick={() => onScore(0)}>No</ScoreBtn>
-              <ScoreBtn active={value === 5} disabled={locked} onClick={() => onScore(5)}>Yes</ScoreBtn>
-            </>
-          ) : (
-            [0,1,2,3,4,5].map(n => (
-              <ScoreBtn key={n} active={value === n} disabled={locked} onClick={() => onScore(n)}>{n}</ScoreBtn>
-            ))
-          )}
+        <div className="mb-2">
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/55 mb-1">
+            Assessor&apos;s score
+          </div>
+          <div className="flex items-center gap-1.5">
+            {isYesNo ? (
+              <>
+                <ScoreBtn active={value === 0} disabled={locked} onClick={() => onScore(0)}>No</ScoreBtn>
+                <ScoreBtn active={value === 5} disabled={locked} onClick={() => onScore(5)}>Yes</ScoreBtn>
+              </>
+            ) : (
+              [0,1,2,3,4,5].map(n => (
+                <ScoreBtn key={n} active={value === n} disabled={locked} onClick={() => onScore(n)}>{n}</ScoreBtn>
+              ))
+            )}
+          </div>
         </div>
       )}
 
