@@ -36,7 +36,7 @@ export default async function CandidateSupportPage({ params }: { params: { id: s
         backLabel={c.candidate_ref}
         miniLabel="Support log"
         title="Ongoing support"
-        description="Every IAG session, casework call, follow-up, or referral. Applies to candidates both before and after placement, hired and unhired alike - the wraparound support that defines ACH's offer."
+        description="Wraparound support. Applies to all enrolled candidates."
       />
 
       <div className="space-y-3 mb-5">

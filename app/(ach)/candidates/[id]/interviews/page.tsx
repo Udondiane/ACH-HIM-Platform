@@ -30,7 +30,7 @@ export default async function CandidateInterviewsPage({ params }: { params: { id
         backLabel={c.candidate_ref}
         miniLabel="Interviews"
         title={`Interview history`}
-        description={`Selection interviews held by ACH and partner-side interviews held by employers, with structured feedback.`}
+        description="Selection interviews held by ACH."
         actions={
           <Link href={`/candidates/${params.id}/interviews/new`}>
             <Button><Plus className="h-3.5 w-3.5" />Record interview</Button>

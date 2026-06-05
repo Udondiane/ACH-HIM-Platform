@@ -152,13 +152,6 @@ export default async function PartnerMeetingPackPage({ params }: { params: { id:
           </Card>
         )}
 
-        {/* Role mix */}
-        <SectionHeading>Role mix</SectionHeading>
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          <SmallStat label="Volume (£20–23k)" value={String(bandCount.volume)} />
-          <SmallStat label="Standard (£23–28k)" value={String(bandCount.standard)} />
-          <SmallStat label="Premium (£28k+)" value={String(bandCount.premium)} />
-        </div>
 
         {/* Recent placements */}
         {placements.length > 0 && (
@@ -171,7 +164,6 @@ export default async function PartnerMeetingPackPage({ params }: { params: { id:
                     <tr className="text-left text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/55 border-b-[0.5px] border-ach-border">
                       <th className="px-3 py-2 font-normal">Candidate</th>
                       <th className="px-3 py-2 font-normal">Role</th>
-                      <th className="px-3 py-2 font-normal">Band</th>
                       <th className="px-3 py-2 font-normal">Start</th>
                       <th className="px-3 py-2 font-normal">Status</th>
                     </tr>
@@ -184,7 +176,6 @@ export default async function PartnerMeetingPackPage({ params }: { params: { id:
                           <div className="text-[11px] text-ach-navy/55">{p.candidates?.given_name}</div>
                         </td>
                         <td className="px-3 py-2 text-ach-navy/85">{p.role_title}</td>
-                        <td className="px-3 py-2 text-ach-navy/70">{p.salary_band}</td>
                         <td className="px-3 py-2 text-ach-navy/70 tabular-nums">{p.start_date}</td>
                         <td className="px-3 py-2 text-ach-navy/70">{p.status.replace(/_/g, ' ')}</td>
                       </tr>

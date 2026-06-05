@@ -205,13 +205,9 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
 
       <Card className="mt-4">
         <CardHeader>
-          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Record new consent</div>
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Record consent</div>
         </CardHeader>
         <CardContent>
-          <p className="text-[12px] text-ach-navy/60 mb-3">
-            Capture a new consent decision. Consents are stored as dated rows — withdrawing a previously-granted consent
-            is done by recording a new consent decision with the relevant flag set to off.
-          </p>
           <ConsentForm candidateId={c.id} />
         </CardContent>
       </Card>

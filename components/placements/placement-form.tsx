@@ -36,11 +36,6 @@ export function PlacementForm({
     <form action={formAction} className="space-y-5 max-w-2xl">
       <input type="hidden" name="candidate_id" value={candidateId} />
 
-      <div className="rounded-[10px] bg-ach-page border-[0.5px] border-ach-border px-3 py-2.5 text-[12.5px] text-ach-navy/85">
-        Recording placement for <span className="font-medium text-ach-navy">{candidateRef}</span> · {candidateName}.
-        Milestones (placement / 6-month / 12-month) are created automatically based on salary band.
-      </div>
-
       <div className="grid grid-cols-2 gap-4">
         <Field label="Workforce partner" error={fe('partner_id')}>
           <Select name="partner_id">
@@ -70,7 +65,7 @@ export function PlacementForm({
       </Field>
 
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Salary band" error={fe('salary_band')} hint="Drives the milestone schedule (memo §5 amounts).">
+        <Field label="Salary band" error={fe('salary_band')}>
           <Select name="salary_band" defaultValue="standard">
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
