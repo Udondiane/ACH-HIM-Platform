@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Handshake, Building2, FileText, ArrowRight, TrendingUp } from 'lucide-react';
+import { Handshake, Building2, TrendingUp } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
@@ -90,7 +90,7 @@ export default async function EngagementDashboardPage() {
             <Handshake className="h-3 w-3" />Workforce partners
           </div>
           <div className="text-[12px] text-ach-navy/60 mt-0.5">
-            YTD placements and partner investment per partner. &quot;Meeting pack&quot; opens a printable summary.
+            YTD placements and partner investment per partner.
           </div>
         </CardHeader>
         <CardContent>
@@ -104,7 +104,7 @@ export default async function EngagementDashboardPage() {
                 return (
                   <div
                     key={p.id}
-                    className="grid grid-cols-[1fr_120px_120px_140px_auto] items-center gap-3 p-3 rounded-[10px] border-[0.5px] border-ach-border bg-white hover:bg-ach-page transition-colors"
+                    className="grid grid-cols-[1fr_120px_120px_140px] items-center gap-3 p-3 rounded-[10px] border-[0.5px] border-ach-border bg-white hover:bg-ach-page transition-colors"
                   >
                     <Link href={`/partners/${p.id}`} className="min-w-0">
                       <div className="text-[13.5px] font-medium text-ach-navy truncate">{p.name}</div>
@@ -124,13 +124,6 @@ export default async function EngagementDashboardPage() {
                     <div className="text-[11.5px] tabular-nums text-ach-navy/85 font-medium">
                       £{sponsor.totalFee.toLocaleString('en-GB', { maximumFractionDigits: 0 })}
                     </div>
-                    <Link
-                      href={`/partners/${p.id}/meeting-pack`}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] text-[11.5px] font-medium text-ach-navy bg-white border-[0.5px] border-ach-border hover:bg-ach-page transition-colors"
-                    >
-                      <FileText className="h-3 w-3" />Meeting pack
-                      <ArrowRight className="h-3 w-3" />
-                    </Link>
                   </div>
                 );
               })}
