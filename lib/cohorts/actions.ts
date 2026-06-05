@@ -40,15 +40,35 @@ function normalisePayload(input: ReturnType<typeof cohortSchema.parse>) {
   };
 }
 
+/** Resolve a cohort_ref that doesn't collide. If the submitted one already
+ *  exists, append -2 / -3 / -N until we find a free slot. */
+async function uniqueCohortRef(
+  supabase: ReturnType<typeof createClient>,
+  desired: string,
+): Promise<string> {
+  let candidate = desired;
+  let n = 2;
+  for (;;) {
+    const { data } = await supabase
+      .from('cohorts').select('id').eq('cohort_ref', candidate).maybeSingle();
+    if (!data) return candidate;
+    candidate = `${desired}-${n}`;
+    n += 1;
+    if (n > 50) return `${desired}-${Date.now()}`; // safety net
+  }
+}
+
 export async function createCohortAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
   const parsed = cohortSchema.safeParse(fdToPlain(fd));
   if (!parsed.success) {
     return { ok: false, error: 'Please fix the highlighted fields.', fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
   }
   const supabase = createClient();
+  const safeRef = await uniqueCohortRef(supabase, parsed.data.cohort_ref);
+  const payload = { ...normalisePayload(parsed.data), cohort_ref: safeRef };
   const { data, error } = await supabase
     .from('cohorts')
-    .insert(normalisePayload(parsed.data) as never)
+    .insert(payload as never)
     .select('id').single();
   if (error) return { ok: false, error: error.message };
   const row = data as { id: string } | null;
