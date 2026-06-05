@@ -277,11 +277,6 @@ export default async function AssessmentRunnerPage({
                             {fac.measurement_question}
                           </div>
                         )}
-                        {fac.behavioural_prompt && (
-                          <div className="text-[12.5px] italic text-ach-navy/75 mb-2">
-                            {tPrompt(fac.id, fac.behavioural_prompt)}
-                          </div>
-                        )}
                         <FactorResponseField
                           assessmentId={params.assessmentId}
                           factorId={fac.id}
