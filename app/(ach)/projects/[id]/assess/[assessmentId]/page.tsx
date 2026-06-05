@@ -105,6 +105,16 @@ export default async function AssessmentRunnerPage({
 
   // Group factors by domain for the project's Core + Optional selection,
   // filtered by per-domain selected_factors (empty = all).
+  //
+  // DEMO REDUCTION: cap factors per domain so the assessment isn't 72
+  // questions long. Cores get the first 3 factors of each domain; Supporting
+  // (optional) gets 2. Configurable per project later — for the training
+  // session this is a hard limit applied at render time.
+  const coreRoleByDomain = new Map<DomainId, 'core' | 'optional'>();
+  for (const c of caps) coreRoleByDomain.set(c.domain, c.role);
+  const FACTORS_PER_CORE_DOMAIN = 3;
+  const FACTORS_PER_OPTIONAL_DOMAIN = 2;
+
   const factorsById = new Map(factors.map(f => [f.id, f]));
   const domainFactors: Record<DomainId, any[]> = {} as Record<DomainId, any[]>;
   for (const fd of factorDomains) {
@@ -114,6 +124,13 @@ export default async function AssessmentRunnerPage({
     if (!domainFactors[dom]) domainFactors[dom] = [];
     const f = factorsById.get(fd.factor_id);
     if (f) domainFactors[dom].push(f);
+  }
+
+  // Apply the demo-mode cap per domain.
+  for (const dom of Object.keys(domainFactors) as DomainId[]) {
+    const role = coreRoleByDomain.get(dom);
+    const cap = role === 'core' ? FACTORS_PER_CORE_DOMAIN : FACTORS_PER_OPTIONAL_DOMAIN;
+    domainFactors[dom] = domainFactors[dom].slice(0, cap);
   }
 
   // Build IndicatorResponse[] for the live HIM calculation
