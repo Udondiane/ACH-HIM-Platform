@@ -25,8 +25,10 @@ interface Props {
 }
 
 export function FactorResponseField({
-  assessmentId, factorId, factorName, initial, candidateLanguage, consentToRecord, locked,
+  assessmentId, factorId, factorName, initial, candidateLanguage, consentToRecord, locked: _locked,
 }: Props) {
+  // Demo mode: ignore the locked prop entirely so the textarea always accepts typing.
+  const locked = false;
   const [text, setText] = useState(initial?.response_text ?? '');
   const [capturedVia, setCapturedVia] = useState<CapturedVia>(initial?.captured_via ?? 'typed');
   const [language, setLanguage] = useState(initial?.spoken_language ?? candidateLanguage ?? null);
@@ -200,7 +202,7 @@ export function FactorResponseField({
         onChange={e => setText(e.target.value)}
         onBlur={onBlur}
         rows={3}
-        disabled={!!locked || recording || transcribing}
+        disabled={recording || transcribing}
         placeholder={
           consentToRecord
             ? `Press Record while ${factorName.toLowerCase()} is being discussed, or type the candidate's response here.`
