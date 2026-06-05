@@ -124,7 +124,20 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
         <div className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Latest consent</div>
+              <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Audio recording consent</div>
+            </CardHeader>
+            <CardContent>
+              <AudioConsentToggle
+                candidateId={c.id}
+                initialConsent={!!c.consent_audio_recording}
+                initialDate={c.consent_audio_recording_date ?? null}
+              />
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Reporting consent</div>
             </CardHeader>
             <CardContent className="text-[12.5px] space-y-1.5">
               {latestConsent ? (
@@ -139,11 +152,6 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
               ) : (
                 <div className="text-ach-navy/60">No consent recorded yet.</div>
               )}
-              <AudioConsentToggle
-                candidateId={c.id}
-                initialConsent={!!c.consent_audio_recording}
-                initialDate={c.consent_audio_recording_date ?? null}
-              />
             </CardContent>
           </Card>
 
@@ -205,7 +213,7 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
 
       <Card className="mt-4">
         <CardHeader>
-          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Record consent</div>
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Record reporting consent</div>
         </CardHeader>
         <CardContent>
           <ConsentForm candidateId={c.id} />
