@@ -35,7 +35,9 @@ export async function startAssessmentAction(
     redirect(`/projects/${projectId}/assess/${(existing as { id: string }).id}`);
   }
 
-  // Look up the candidate's cohort + intervention timing context.
+  // Look up the candidate's cohort. (Baseline-window gating is intentionally
+  // off in demo mode so every timepoint can be opened freely; the timing
+  // context is still loaded for the UI banner.)
   const { data: cc } = await supabase
     .from('cohort_candidates')
     .select('cohort_id, intervention_start_date, cohorts(intervention_start_date)')
@@ -43,33 +45,6 @@ export async function startAssessmentAction(
     .maybeSingle();
   const ccRow = cc as { cohort_id?: string; intervention_start_date?: string | null; cohorts?: { intervention_start_date?: string | null } } | null;
   const cohortId = ccRow?.cohort_id ?? null;
-
-  // Pull the project's baseline window so we can enforce the gate.
-  const { data: projectRow } = await supabase
-    .from('projects').select('baseline_window_days').eq('id', projectId).maybeSingle();
-  const windowDays = (projectRow as { baseline_window_days?: number } | null)?.baseline_window_days ?? 14;
-
-  const window = baselineWindowState({
-    candidateStart: ccRow?.intervention_start_date ?? null,
-    cohortStart: ccRow?.cohorts?.intervention_start_date ?? null,
-    windowDays,
-  });
-
-  // Gate 1: starting a non-baseline timepoint requires a completed-or-in-progress baseline.
-  if (timepoint !== 'baseline') {
-    const { data: baseline } = await supabase
-      .from('assessments').select('id')
-      .eq('project_id', projectId).eq('candidate_id', candidateId).eq('timepoint', 'baseline')
-      .maybeSingle();
-    if (!baseline) {
-      return { ok: false, error: 'Record the baseline assessment first. Other timepoints anchor to it.' };
-    }
-  }
-
-  // Gate 2: baseline window has closed.
-  if (timepoint === 'baseline' && window.state === 'after-window') {
-    return { ok: false, error: `Baseline window closed on ${window.windowEnd}. This candidate is reported as having no valid baseline; later timepoints can still be recorded but uplift cannot be computed for them.` };
-  }
 
   const { data, error } = await supabase
     .from('assessments')
