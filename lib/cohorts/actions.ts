@@ -20,6 +20,8 @@ function fdToPlain(fd: FormData): Record<string, unknown> {
 }
 
 function normalisePayload(input: ReturnType<typeof cohortSchema.parse>) {
+  // intervention_start_date + is_rolling live in migration 034; omit them
+  // until the migration is applied so saves work everywhere.
   return {
     cohort_ref: input.cohort_ref,
     name: input.name,
@@ -31,8 +33,6 @@ function normalisePayload(input: ReturnType<typeof cohortSchema.parse>) {
     sector_focus: input.sector_focus || null,
     start_date: input.start_date || null,
     end_date: input.end_date || null,
-    intervention_start_date: input.is_rolling ? null : (input.intervention_start_date || null),
-    is_rolling: input.is_rolling,
     programme_weeks: input.programme_weeks === '' ? null : input.programme_weeks ?? null,
     target_size: input.target_size === '' ? null : input.target_size ?? null,
     delivery_cost: input.delivery_cost === '' ? null : input.delivery_cost ?? null,
@@ -109,13 +109,14 @@ export async function linkCandidateToCohortAction(
   cohortId: string,
   candidateId: string,
   sponsoringPartnerId?: string | null,
-  interventionStartDate?: string | null,
+  _interventionStartDate?: string | null,
 ) {
+  // intervention_start_date column is part of migration 034; omitted from
+  // the insert until that migration is applied.
   const supabase = createClient();
   await supabase.from('cohort_candidates').upsert({
     cohort_id: cohortId, candidate_id: candidateId,
     sponsoring_partner_id: sponsoringPartnerId ?? null,
-    intervention_start_date: interventionStartDate || null,
   } as never, { onConflict: 'cohort_id,candidate_id' });
   revalidatePath(`/cohorts/${cohortId}`);
 }
