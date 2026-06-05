@@ -150,22 +150,18 @@ export function CohortForm({ action, initial, cancelHref, submitLabel = 'Save co
         </Field>
       </div>
 
-      {isBridgeToEmployment ? (
-        <Field
-          label="Programme type"
-          error={fe('service_type')}
-          hint={COHORT_SERVICE_TYPE_HINTS[serviceType as typeof COHORT_SERVICE_TYPES[number]]}
-        >
-          <Select name="service_type" value={serviceType} onValueChange={setServiceType}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {COHORT_SERVICE_TYPES.map(s => <SelectItem key={s} value={s}>{COHORT_SERVICE_TYPE_LABELS[s]}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </Field>
-      ) : (
-        <input type="hidden" name="service_type" value="full_programme" />
-      )}
+      <Field
+        label="Programme type"
+        error={fe('service_type')}
+        hint={COHORT_SERVICE_TYPE_HINTS[serviceType as typeof COHORT_SERVICE_TYPES[number]]}
+      >
+        <Select name="service_type" value={serviceType} onValueChange={setServiceType}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {COHORT_SERVICE_TYPES.map(s => <SelectItem key={s} value={s}>{COHORT_SERVICE_TYPE_LABELS[s]}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </Field>
 
       <Field label="Sector focus" error={fe('sector_focus')}>
         <Input name="sector_focus" defaultValue={initial?.sector_focus ?? ''} placeholder="Hospitality, Retail, Construction" />
