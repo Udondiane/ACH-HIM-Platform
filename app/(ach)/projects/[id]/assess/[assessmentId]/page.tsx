@@ -260,20 +260,25 @@ export default async function AssessmentRunnerPage({
                     if (!fac) return null;
                     const inds = indicators.filter(i => i.factor_id === fac.id);
                     if (inds.length === 0) return null;
+                    // Only score against the first indicator per factor — the
+                    // others were the indicator-bullet rows the user doesn't
+                    // want surfaced. Score holder collapses to one per factor.
+                    const primaryInd = inds[0];
                     return (
                       <div key={fac.id} className="mb-5 last:mb-0">
                         <div className="flex items-center gap-2 mb-2">
                           <div className="text-[12.5px] font-medium text-ach-navy">{tFactor(fac.id, fac.name)}</div>
-                          {fac.is_universal && (
-                            <span className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/50">Universal</span>
-                          )}
                           <span className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/50">
                             {fac.conversion_factor_type}
                           </span>
                         </div>
+                        {fac.measurement_question && (
+                          <div className="text-[14px] italic text-ach-navy mb-2 leading-snug">
+                            {fac.measurement_question}
+                          </div>
+                        )}
                         {fac.behavioural_prompt && (
-                          <div className="text-[12.5px] text-ach-navy bg-ach-page rounded-[8px] px-3 py-2 mb-2 border-l-[2px] border-ach-navy/30">
-                            <span className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/55 mr-1.5">Prompt</span>
+                          <div className="text-[12.5px] italic text-ach-navy/75 mb-2">
                             {tPrompt(fac.id, fac.behavioural_prompt)}
                           </div>
                         )}
@@ -286,29 +291,26 @@ export default async function AssessmentRunnerPage({
                           consentToRecord={consentToRecord}
                           locked={isLocked}
                         />
-                        <div className="space-y-1">
-                          {inds.map(ind => {
-                            const r = respMap.get(ind.id);
-                            return (
-                              <IndicatorScorer
-                                key={ind.id}
-                                assessmentId={params.assessmentId}
-                                indicator={{
-                                  id: ind.id,
-                                  name: ind.name,
-                                  factor_id: fac.id,
-                                  measurement_method: fac.measurement_method,
-                                }}
-                                initialValue={r?.numeric_value ?? null}
-                                initialNarrative={r?.narrative ?? null}
-                                initialObservableChanges={r?.observable_changes ?? null}
-                                initialPractices={r?.practices ?? null}
-                                locked={isLocked}
-                                timepoint={a.timepoint as 'baseline' | 'mid_3mo' | 'exit_6mo' | 'followup_12mo'}
-                              />
-                            );
-                          })}
-                        </div>
+                        {primaryInd && (() => {
+                          const r = respMap.get(primaryInd.id);
+                          return (
+                            <IndicatorScorer
+                              assessmentId={params.assessmentId}
+                              indicator={{
+                                id: primaryInd.id,
+                                name: '',
+                                factor_id: fac.id,
+                                measurement_method: fac.measurement_method,
+                              }}
+                              initialValue={r?.numeric_value ?? null}
+                              initialNarrative={r?.narrative ?? null}
+                              initialObservableChanges={r?.observable_changes ?? null}
+                              initialPractices={r?.practices ?? null}
+                              locked={isLocked}
+                              timepoint={a.timepoint as 'baseline' | 'mid_3mo' | 'exit_6mo' | 'followup_12mo'}
+                            />
+                          );
+                        })()}
                       </div>
                     );
                   })}

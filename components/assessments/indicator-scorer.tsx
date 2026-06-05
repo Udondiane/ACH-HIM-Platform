@@ -88,12 +88,14 @@ export function IndicatorScorer({
 
   return (
     <div className="py-3 first:pt-0 last:pb-0 border-b-[0.5px] border-ach-border last:border-0">
-      <div className="flex items-start justify-between gap-4 mb-2">
-        <div className="text-[13px] text-ach-navy font-medium">{indicator.name}</div>
-        <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/50 shrink-0">
-          {isNarrative ? 'Narrative' : isYesNo ? 'Yes / No' : '0 – 5'}
+      {indicator.name && (
+        <div className="flex items-start justify-between gap-4 mb-2">
+          <div className="text-[13px] text-ach-navy font-medium">{indicator.name}</div>
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/50 shrink-0">
+            {isNarrative ? 'Narrative' : isYesNo ? 'Yes / No' : '0 – 5'}
+          </div>
         </div>
-      </div>
+      )}
 
       {!isNarrative && (
         <div className="flex items-center gap-1.5 mb-2">
