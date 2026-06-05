@@ -4,6 +4,9 @@ import { CohortForm } from '@/components/cohorts/cohort-form';
 import { createCohortAction } from '@/lib/cohorts/actions';
 import { createClient } from '@/lib/supabase/server';
 
+// Always re-fetch projects so newly-created ones appear in the dropdown.
+export const dynamic = 'force-dynamic';
+
 export default async function NewCohortPage() {
   const supabase = createClient();
   const { data: projects } = await supabase

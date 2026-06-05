@@ -213,6 +213,8 @@ export async function createProjectAction(_prev: ActionResult | null, fd: FormDa
   await syncPartnersFromFunderName(supabase, parsed.data.funder_name, parsed.data.funding_model);
   revalidatePath('/projects');
   revalidatePath('/partners');
+  revalidatePath('/cohorts/new');
+  revalidatePath('/cohorts');
   revalidatePath('/dashboard');
   redirect(`/projects/${row!.id}`);
 }
