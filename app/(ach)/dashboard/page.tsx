@@ -85,56 +85,6 @@ export default async function AchDashboardPage() {
         ))}
       </div>
 
-      {pending.length > 0 && (
-        <div className="mt-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 flex items-center gap-1.5"><Bell className="h-3 w-3" />Pending actions</div>
-                  <div className="text-[12.5px] text-ach-navy/60 mt-0.5">
-                    Stage transitions ACH staff need to action — assessments due, retention checks due, exits unrecorded, candidates needing attention.
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 text-[11.5px]">
-                  {atRisk.length > 0 && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-ach-rose/15 text-[#8B3A4F] border-[0.5px] border-ach-rose/30 font-medium">
-                      <AlertTriangle className="h-3 w-3" />{atRisk.length} need{atRisk.length === 1 ? 's' : ''} attention
-                    </span>
-                  )}
-                  {overdue.length > 0 && <span className="text-ach-navy/65"><span className="font-medium text-ach-navy">{overdue.length}</span> overdue &gt;14d</span>}
-                  {dueSoon.length > 0 && <span className="text-ach-navy/65"><span className="font-medium text-ach-navy">{dueSoon.length}</span> due soon</span>}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-1.5 max-h-[420px] overflow-y-auto">
-                {pending.slice(0, 30).map((a, i) => (
-                  <Link key={`${a.candidateId}-${a.kind}-${i}`} href={a.href} className={`flex items-center justify-between gap-3 p-2.5 rounded-[10px] border-[0.5px] hover:bg-ach-page transition-colors ${a.kind === 'at_risk_flagged' ? 'border-ach-rose/30 bg-ach-rose/5' : 'border-ach-border bg-white'}`}>
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      {a.kind === 'at_risk_flagged' && <AlertTriangle className="h-3.5 w-3.5 text-[#8B3A4F] shrink-0" />}
-                      <div className="min-w-0">
-                        <div className="text-[13px] font-medium text-ach-navy truncate">{a.candidateRef}{a.cohortRef ? ` · ${a.cohortRef}` : ''}</div>
-                        <div className="text-[11.5px] text-ach-navy/65">{labelFor(a.kind)}{a.reason ? ` — ${a.reason}` : ''}</div>
-                      </div>
-                    </div>
-                    {a.due_in_days != null && (
-                      <span className={`text-[11px] tabular-nums shrink-0 ${a.due_in_days > 14 ? 'text-[#8B3A4F] font-medium' : 'text-ach-navy/55'}`}>
-                        {a.due_in_days >= 0 ? `${a.due_in_days}d` : `${Math.abs(a.due_in_days)}d ahead`}
-                      </span>
-                    )}
-                  </Link>
-                ))}
-              </div>
-              {pending.length > 30 && (
-                <div className="text-[11.5px] text-ach-navy/55 mt-3">
-                  Showing 30 of {pending.length} pending items.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
       <div className="mt-4">
         <Card>
