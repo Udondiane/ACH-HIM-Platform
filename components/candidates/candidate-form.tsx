@@ -78,7 +78,7 @@ export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className={isEdit ? 'grid grid-cols-2 gap-4' : ''}>
         <Field label="Candidate reference" error={fe('candidate_ref')} hint={!isEdit ? 'Leave blank to auto-generate (e.g. C-2026-012)' : undefined}>
           <Input
             name="candidate_ref"
@@ -88,16 +88,20 @@ export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save
             className={refLocked ? 'bg-ach-page text-ach-navy/60 cursor-not-allowed' : undefined}
           />
         </Field>
-        <Field label="Status" error={fe('status')} hint="Progressed = moved beyond placement (e.g. promotion, second job, sustained progression).">
-          <Select name="status" value={status} onValueChange={setStatus}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {CANDIDATE_STATUSES.map(s => (
-                <SelectItem key={s} value={s}>{CANDIDATE_STATUS_LABELS[s]}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
+        {isEdit ? (
+          <Field label="Status" error={fe('status')} hint="Progressed = moved beyond placement (e.g. promotion, second job, sustained progression).">
+            <Select name="status" value={status} onValueChange={setStatus}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {CANDIDATE_STATUSES.map(s => (
+                  <SelectItem key={s} value={s}>{CANDIDATE_STATUS_LABELS[s]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+        ) : (
+          <input type="hidden" name="status" value="applicant" />
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
