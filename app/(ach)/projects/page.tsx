@@ -37,7 +37,7 @@ export default async function ProjectsListPage() {
       <PageHeader
         miniLabel="Network"
         title="Projects"
-        description="Each project is a distinct intervention design with its own capability mix and HIM scoring. Cohorts of candidates run under a project; some projects (training, IAG, consultancy) deliver impact without cohort-based delivery."
+        description="A project is an intervention design. Cohorts of candidates run under a project."
         actions={<Link href="/projects/new"><Button><Plus className="h-4 w-4" />New project</Button></Link>}
       />
 
