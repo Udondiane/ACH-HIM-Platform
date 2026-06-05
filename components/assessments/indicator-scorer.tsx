@@ -57,8 +57,10 @@ const FIELD_LABELS: Record<Timepoint, {
 
 export function IndicatorScorer({
   assessmentId, indicator, initialValue, initialNarrative,
-  initialObservableChanges, initialPractices, locked, timepoint,
+  initialObservableChanges, initialPractices, locked: _locked, timepoint,
 }: Props) {
+  // Demo mode: ignore the locked prop entirely so every input stays writable.
+  const locked = false;
   const labels = FIELD_LABELS[timepoint ?? 'baseline'] ?? FIELD_LABELS.baseline;
   const [value, setValue] = useState<number | null>(initialValue);
   const [narrative, setNarrative] = useState<string>(initialNarrative ?? '');
