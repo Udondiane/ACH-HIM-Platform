@@ -264,7 +264,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Cohorts running this project</div>
+              <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Cohorts under this project</div>
               <div className="text-[12px] text-ach-navy/60 mt-1">Each cohort is a specific intake against the same design.</div>
             </div>
             <Link href="/cohorts/new">
