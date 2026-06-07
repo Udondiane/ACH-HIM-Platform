@@ -16,13 +16,25 @@ export default async function CohortDetailPage({ params }: { params: { id: strin
   if (!cohort) notFound();
   const c = cohort as any;
 
-  const [cohortPartners, cohortCandidates, allPartners, allCandidates, assessmentsRes] = await Promise.all([
+  const [cohortPartners, cohortCandidates, allPartners, allCandidates, assessmentsRes, projectRes, placementsRes] = await Promise.all([
     supabase.from('cohort_partners').select('id, partner_id, sponsorship_count, engagement_fee, is_lead_partner, partners(id, name, type)').eq('cohort_id', params.id),
     supabase.from('cohort_candidates').select('id, candidate_id, sponsoring_partner_id, candidates(id, candidate_ref, given_name, status), partners:sponsoring_partner_id(name)').eq('cohort_id', params.id),
     supabase.from('partners').select('id, name, type, status').neq('status', 'closed').order('name'),
     supabase.from('candidates').select('id, candidate_ref, given_name, status').order('candidate_ref'),
     supabase.from('assessments').select('id, candidate_id, timepoint, status, assessed_on, project_id').eq('cohort_id', params.id),
+    c.project_id ? supabase.from('projects').select('id, funding_model').eq('id', c.project_id).maybeSingle() : Promise.resolve({ data: null }),
+    supabase.from('placements').select('candidate_id, start_date').order('start_date', { ascending: false }),
   ]);
+
+  const cohortProject = projectRes.data as { funding_model?: string } | null;
+  const isWorkforceProgramme = cohortProject?.funding_model === 'commercial' || cohortProject?.funding_model === 'hybrid';
+  // Per-candidate placement start date (latest placement wins).
+  const placementByCandidate = new Map<string, string>();
+  for (const p of (placementsRes.data as { candidate_id: string; start_date: string | null }[]) ?? []) {
+    if (p.start_date && !placementByCandidate.has(p.candidate_id)) {
+      placementByCandidate.set(p.candidate_id, p.start_date);
+    }
+  }
 
   const linkedPartnerIds = new Set((cohortPartners.data as any[] | null)?.map(cp => cp.partner_id) ?? []);
   const linkedCandidateIds = new Set((cohortCandidates.data as any[] | null)?.map(cc => cc.candidate_id) ?? []);
@@ -38,7 +50,12 @@ export default async function CohortDetailPage({ params }: { params: { id: strin
     project_id?: string;
   };
   const TIMEPOINTS = ['baseline', 'mid_3mo', 'exit_6mo', 'followup_12mo'] as const;
-  const TIMEPOINT_LABELS: Record<string, string> = {
+  const TIMEPOINT_LABELS: Record<string, string> = isWorkforceProgramme ? {
+    baseline:      'Baseline',
+    mid_3mo:       'End of placement',
+    exit_6mo:      '6mo retention',
+    followup_12mo: '12mo retention',
+  } : {
     baseline:      'Baseline',
     mid_3mo:       '3 months',
     exit_6mo:      '6 months',
@@ -53,18 +70,33 @@ export default async function CohortDetailPage({ params }: { params: { id: strin
       project_id: a.project_id,
     });
   }
-  // Anchor for "due in N days" calc — intervention start (if set) wins over
-  // the planning start_date because timepoints are measured from when the
-  // candidate's intervention actually begins.
-  const anchorIso = c.intervention_start_date || c.start_date || null;
-  const cohortStart = anchorIso ? new Date(anchorIso) : null;
+  // Anchor for "due in N days" calc.
+  // Workforce programmes: post-baseline timepoints anchor to the candidate's
+  //   placement start date (end-of-placement = +3mo, retention checks at 6mo
+  //   and 12mo from placement).
+  // Other programmes: anchored to intervention_start_date as before.
+  const cohortAnchorIso = c.intervention_start_date || c.start_date || null;
+  const cohortStart = cohortAnchorIso ? new Date(cohortAnchorIso) : null;
   const dueOffsetDays: Record<string, number> = {
     baseline:      0,
     mid_3mo:       90,
     exit_6mo:      180,
     followup_12mo: 365,
   };
-  function dueDateFor(timepoint: string): Date | null {
+  function dueDateFor(timepoint: string, candidateId?: string): Date | null {
+    if (isWorkforceProgramme && candidateId) {
+      const placementIso = placementByCandidate.get(candidateId);
+      // Baseline still anchored to cohort (or intake); post-baseline anchored
+      // to placement when one exists. No placement = no due date for those.
+      if (timepoint === 'baseline') {
+        if (!cohortStart) return null;
+        return new Date(cohortStart);
+      }
+      if (!placementIso) return null;
+      const d = new Date(`${placementIso}T00:00:00`);
+      d.setDate(d.getDate() + (dueOffsetDays[timepoint] ?? 0));
+      return d;
+    }
     if (!cohortStart) return null;
     const d = new Date(cohortStart);
     d.setDate(d.getDate() + (dueOffsetDays[timepoint] ?? 0));
@@ -272,7 +304,7 @@ export default async function CohortDetailPage({ params }: { params: { id: strin
                         </td>
                         {TIMEPOINTS.map(tp => {
                           const cell = cellByKey.get(`${candId}::${tp}`);
-                          const due = dueDateFor(tp);
+                          const due = dueDateFor(tp, candId);
                           let chip: { text: string; cls: string };
                           let href: string | null = null;
                           if (cell && (cell.status === 'completed' || cell.status === 'reviewed')) {
