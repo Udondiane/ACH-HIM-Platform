@@ -10,12 +10,39 @@ import { startAssessmentAction } from '@/lib/assessments/actions';
 
 type Timepoint = 'baseline' | 'mid_3mo' | 'exit_6mo' | 'followup_12mo';
 
-const TIMEPOINTS: { id: Timepoint; label: string; description: string; order: number }[] = [
-  { id: 'baseline',      label: 'Baseline',          description: 'Anchors every later assessment. Run BEFORE training begins.',     order: 1 },
-  { id: 'mid_3mo',       label: '3-month mid-point', description: 'Captures movement during training, typically the largest delta.', order: 2 },
-  { id: 'exit_6mo',      label: '6-month exit',      description: 'Programme end. Final capability under ACH support.',              order: 3 },
-  { id: 'followup_12mo', label: '12-month follow-up',description: 'Sustained capability after support ends.',                        order: 4 },
+interface TimepointDef {
+  id: Timepoint;
+  label: string;
+  description: string;
+  monthsFromAnchor: number; // 0 for baseline (intake), 3/6/12 for the rest
+}
+
+// Two variants per timepoint depending on whether the project anchors to
+// placement_date (workforce programmes) or intervention start (everything
+// else). Same DB codes either way — labels differ.
+const WORKFORCE_TIMEPOINTS: TimepointDef[] = [
+  { id: 'baseline',      label: 'Baseline',           description: 'At intake. Anchors every later assessment. Run before placement.', monthsFromAnchor: 0 },
+  { id: 'mid_3mo',       label: 'End of placement',   description: 'Typically 3 months after placement starts.',                       monthsFromAnchor: 3 },
+  { id: 'exit_6mo',      label: '6-month retention',  description: '6 months after placement starts.',                                 monthsFromAnchor: 6 },
+  { id: 'followup_12mo', label: '12-month retention', description: '12 months after placement starts.',                                monthsFromAnchor: 12 },
 ];
+
+const DEFAULT_TIMEPOINTS: TimepointDef[] = [
+  { id: 'baseline',      label: 'Baseline',           description: 'Anchors every later assessment. Run before delivery begins.',     monthsFromAnchor: 0 },
+  { id: 'mid_3mo',       label: '3-month mid-point',  description: 'Captures movement during delivery.',                              monthsFromAnchor: 3 },
+  { id: 'exit_6mo',      label: '6-month exit',       description: 'Programme end. Final capability under ACH support.',              monthsFromAnchor: 6 },
+  { id: 'followup_12mo', label: '12-month follow-up', description: 'Sustained capability after support ends.',                        monthsFromAnchor: 12 },
+];
+
+function addMonths(iso: string, months: number): string {
+  const d = new Date(`${iso}T00:00:00`);
+  d.setMonth(d.getMonth() + months);
+  return d.toISOString().slice(0, 10);
+}
+
+function isoToday(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 const STATUS_LABELS: Record<string, string> = {
   in_progress: 'In progress',
@@ -53,7 +80,7 @@ export default async function CandidateAssessChooserPage({
   // candidate isn't in a cohort. The querystring ?project=<id> overrides the
   // cohort-derived project, and is the only source when there is no cohort.
   const { data: allProjects } = await supabase
-    .from('projects').select('id, project_ref, name').order('name');
+    .from('projects').select('id, project_ref, name, funding_model').order('name');
   const projects = ((allProjects as any[]) ?? []);
 
   // Resolve which project to run the assessment against.
@@ -61,6 +88,26 @@ export default async function CandidateAssessChooserPage({
   const project = overrideId
     ? projects.find(p => p.id === overrideId) ?? cohortProject ?? projects[0] ?? null
     : cohortProject ?? projects[0] ?? null;
+
+  // Workforce programmes (commercial or hybrid funding model) anchor the
+  // post-baseline timepoints to the candidate's placement start date. Other
+  // programmes anchor to the cohort intervention start.
+  const isWorkforceProgramme = !!project && (project.funding_model === 'commercial' || project.funding_model === 'hybrid');
+
+  // Pull the candidate's placement so we know whether they're post-placement.
+  const { data: placementRow } = await supabase
+    .from('placements')
+    .select('id, start_date, role_title, partners(name)')
+    .eq('candidate_id', params.id)
+    .order('start_date', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const placement = placementRow as { start_date: string | null; role_title: string | null; partners?: { name: string } | null } | null;
+
+  // Choose the timepoint variant + anchor date.
+  const TIMEPOINTS = isWorkforceProgramme ? WORKFORCE_TIMEPOINTS : DEFAULT_TIMEPOINTS;
+  const anchorDate: string | null =
+    (isWorkforceProgramme && placement?.start_date) ? placement.start_date : null;
 
   // Pull existing assessments so we can show status against each timepoint.
   const existingMap = new Map<Timepoint, { id: string; status: string; assessed_on: string }>();
@@ -127,6 +174,16 @@ export default async function CandidateAssessChooserPage({
                     Cohort: <Link href={`/cohorts/${cohort.id}`} className="hover:underline">{cohort.cohort_ref}</Link>
                   </div>
                 )}
+                {isWorkforceProgramme && (
+                  <div className="text-[12px] text-ach-navy/65">
+                    Workforce programme — post-baseline timepoints anchor to placement start date.
+                    {placement?.start_date ? (
+                      <span> Placement: <span className="font-medium">{placement.role_title ?? '—'}</span>{placement.partners?.name ? ` · ${placement.partners.name}` : ''} from {placement.start_date}.</span>
+                    ) : (
+                      <span className="block text-ach-navy/55 mt-0.5">No placement recorded yet — only baseline is due. Record a placement on the candidate page to schedule end-of-placement and retention timepoints.</span>
+                    )}
+                  </div>
+                )}
               </div>
             </CardHeader>
           </Card>
@@ -135,6 +192,13 @@ export default async function CandidateAssessChooserPage({
             {TIMEPOINTS.map(tp => {
               const existing = existingMap.get(tp.id);
               const isNextDue = nextDue === tp.id;
+              const dueDate = (tp.monthsFromAnchor === 0 || !anchorDate)
+                ? null
+                : addMonths(anchorDate, tp.monthsFromAnchor);
+              const today = isoToday();
+              const dueLabel = dueDate
+                ? (dueDate < today ? `Due ${dueDate} (overdue)` : `Due ${dueDate}`)
+                : null;
               return (
                 <TimepointCard
                   key={tp.id}
@@ -142,7 +206,7 @@ export default async function CandidateAssessChooserPage({
                   projectId={project.id}
                   timepoint={tp.id}
                   label={tp.label}
-                  description={tp.description}
+                  description={tp.description + (dueLabel ? ` · ${dueLabel}` : '')}
                   existing={existing ?? null}
                   isNextDue={isNextDue}
                 />
