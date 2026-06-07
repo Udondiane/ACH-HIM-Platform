@@ -182,7 +182,10 @@ export default async function AggregateDashboardPage() {
           <Card>
             <CardHeader>
               <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Uplift — completers vs ITT</div>
-              <div className="text-[11.5px] text-ach-navy/55 mt-0.5">The honest pair: completers basis + intention-to-treat.</div>
+              <div className="text-[11.5px] text-ach-navy/55 mt-0.5">
+                Completers = uplift averaged only over candidates with both a baseline and an exit assessment.
+                ITT (intention-to-treat) = uplift averaged over everyone who started, with dropouts held at their baseline score. Reporting both prevents survivorship bias.
+              </div>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-1">
