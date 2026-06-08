@@ -106,14 +106,31 @@ export default async function AssessmentRunnerPage({
   // Group factors by domain for the project's Core + Optional selection,
   // filtered by per-domain selected_factors (empty = all).
   //
-  // DEMO REDUCTION: cap factors per domain so the assessment isn't 72
-  // questions long. Cores get the first 3 factors of each domain; Supporting
-  // (optional) gets 2. Configurable per project later — for the training
-  // session this is a hard limit applied at render time.
+  // Factor selection rule:
+  //   1. If the project has any project_activities ticked, factors are
+  //      derived from the activity_factors mapping. Each activity activates
+  //      a curated set of factors; their union is the assessment set.
+  //   2. If no activities are ticked (legacy projects), fall back to the
+  //      per-domain selected_factors override (if set), and otherwise the
+  //      previous "first 3 Core / 2 Supporting" cap so the runner still
+  //      renders.
   const coreRoleByDomain = new Map<DomainId, 'core' | 'optional'>();
   for (const c of caps) coreRoleByDomain.set(c.domain, c.role);
-  const FACTORS_PER_CORE_DOMAIN = 3;
-  const FACTORS_PER_OPTIONAL_DOMAIN = 2;
+  const FACTORS_PER_CORE_DOMAIN_FALLBACK = 3;
+  const FACTORS_PER_OPTIONAL_DOMAIN_FALLBACK = 2;
+
+  // Pull this project's activities + the activity→factor mapping. The runner
+  // does this here rather than in the parallel framework fetch above to keep
+  // the diff small.
+  const [projectActivitiesRes, activityFactorsRes] = await Promise.all([
+    supabase.from('project_activities').select('activity').eq('project_id', params.id),
+    supabase.from('activity_factors').select('activity, factor_id'),
+  ]);
+  const projectActivities = ((projectActivitiesRes.data as { activity: string }[] | null) ?? []).map(r => r.activity);
+  const activityFactorsAll = (activityFactorsRes.data as { activity: string; factor_id: string }[] | null) ?? [];
+  const activatedFactorIds = projectActivities.length === 0
+    ? null
+    : new Set(activityFactorsAll.filter(af => projectActivities.includes(af.activity)).map(af => af.factor_id));
 
   const factorsById = new Map(factors.map(f => [f.id, f]));
   const domainFactors: Record<DomainId, any[]> = {} as Record<DomainId, any[]>;
@@ -121,16 +138,19 @@ export default async function AssessmentRunnerPage({
     const dom = fd.domain_id as DomainId;
     const selectedSet = selectedFactorsByDomain.get(dom);
     if (selectedSet && !selectedSet.has(fd.factor_id)) continue;
+    if (activatedFactorIds && !activatedFactorIds.has(fd.factor_id)) continue;
     if (!domainFactors[dom]) domainFactors[dom] = [];
     const f = factorsById.get(fd.factor_id);
     if (f) domainFactors[dom].push(f);
   }
 
-  // Apply the demo-mode cap per domain.
-  for (const dom of Object.keys(domainFactors) as DomainId[]) {
-    const role = coreRoleByDomain.get(dom);
-    const cap = role === 'core' ? FACTORS_PER_CORE_DOMAIN : FACTORS_PER_OPTIONAL_DOMAIN;
-    domainFactors[dom] = domainFactors[dom].slice(0, cap);
+  // Apply the legacy fallback cap only if no activity-driven set was applied.
+  if (!activatedFactorIds) {
+    for (const dom of Object.keys(domainFactors) as DomainId[]) {
+      const role = coreRoleByDomain.get(dom);
+      const cap = role === 'core' ? FACTORS_PER_CORE_DOMAIN_FALLBACK : FACTORS_PER_OPTIONAL_DOMAIN_FALLBACK;
+      domainFactors[dom] = domainFactors[dom].slice(0, cap);
+    }
   }
 
   // Build IndicatorResponse[] for the live HIM calculation

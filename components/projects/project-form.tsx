@@ -17,6 +17,7 @@ import {
   deriveTypeAndWeight,
   type FundingModel, type CapAnswer, type CapDomain,
 } from '@/lib/projects/schema';
+import { PROGRAMME_ACTIVITIES } from '@/lib/activities/definitions';
 import type { ActionResult } from '@/lib/projects/actions';
 
 interface Props {
@@ -43,6 +44,23 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
   );
   const [coreSet, setCoreSet] = useState<Set<CapDomain>>(initialCore);
   const [optionalSet, setOptionalSet] = useState<Set<CapDomain>>(initialOptional);
+
+  // Activities the project delivers. Drives which factors get measured.
+  const [activitySet, setActivitySet] = useState<Set<string>>(
+    new Set<string>(((initial?.activities ?? []) as string[]) || []),
+  );
+  function toggleActivity(id: string) {
+    const next = new Set(activitySet);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setActivitySet(next);
+  }
+  // Activities relevant to selected domains. If no domain is picked yet, the
+  // section is hidden so the form doesn't overwhelm new users.
+  const selectedDomains = new Set<CapDomain>([...coreSet, ...optionalSet]);
+  const relevantActivities = PROGRAMME_ACTIVITIES.filter(a =>
+    a.domains.some(d => selectedDomains.has(d as CapDomain)),
+  );
 
   const derived = deriveTypeAndWeight(coreSet.size, optionalSet.size);
   const [typeValue, setTypeValue] = useState<string>(initial?.type ?? derived.type);
@@ -258,6 +276,44 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
           return <input key={d} type="hidden" name={`cap_${d}`} value={v} />;
         })}
       </div>
+
+      {relevantActivities.length > 0 && (
+        <div className="pt-5 border-t-[0.5px] border-ach-border">
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">Programme activities</div>
+          <p className="text-[12px] text-ach-navy/60 mb-3">
+            Tick the activities this programme delivers. The assessment set is derived from this — you don&apos;t pick individual factors.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {relevantActivities.map(act => {
+              const selected = activitySet.has(act.id);
+              return (
+                <button
+                  key={act.id}
+                  type="button"
+                  onClick={() => toggleActivity(act.id)}
+                  className={`text-left p-3 rounded-[10px] border-[0.5px] transition-colors ${
+                    selected
+                      ? 'border-ach-navy bg-ach-navy text-ach-cream'
+                      : 'border-ach-border bg-white text-ach-navy/80 hover:bg-ach-page'
+                  }`}
+                  aria-pressed={selected}
+                >
+                  <div className="text-[13px] font-medium">{act.label}</div>
+                  <div className={`text-[11px] mt-0.5 ${selected ? 'text-ach-cream/75' : 'text-ach-navy/55'}`}>
+                    {act.hint}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="text-[11px] text-ach-navy/55 mt-2">
+            {activitySet.size} activit{activitySet.size === 1 ? 'y' : 'ies'} ticked.
+          </div>
+          {[...activitySet].map(id => (
+            <input key={id} type="hidden" name="activities" value={id} />
+          ))}
+        </div>
+      )}
 
       <input type="hidden" name="type" value={typeValue} />
       <input type="hidden" name="weight_ratio" value={ratioValue} />

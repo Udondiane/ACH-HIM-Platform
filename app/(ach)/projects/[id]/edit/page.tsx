@@ -57,12 +57,15 @@ export default async function EditProjectPage({ params }: { params: { id: string
   }
   const p = projectRes.data as any;
 
-  const [cohortCountRes, assessmentCountRes] = await Promise.all([
+  const [cohortCountRes, assessmentCountRes, activitiesRes] = await Promise.all([
     supabase.from('cohorts').select('id', { count: 'exact', head: true }).eq('project_id', params.id),
     supabase.from('assessments').select('id', { count: 'exact', head: true }).eq('project_id', params.id),
+    supabase.from('project_activities').select('activity').eq('project_id', params.id),
   ]);
   const cohortCount = cohortCountRes.count ?? 0;
   const assessmentCount = assessmentCountRes.count ?? 0;
+  const activities = ((activitiesRes.data as { activity: string }[] | null) ?? []).map(r => r.activity);
+  p.activities = activities;
 
   // Bind the project ID to the server actions so they remain proper server
   // actions when passed across the server/client boundary. The previous
