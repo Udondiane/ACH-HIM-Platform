@@ -100,6 +100,9 @@ export const projectSchema = z.object({
   evaluation_type: z.enum(EVALUATION_TYPES).optional().or(z.literal('')),
   personnel: z.string().trim().max(2000).optional().or(z.literal('')),
   focus_area: z.string().trim().max(500).optional().or(z.literal('')),
+  /** Activity IDs from PROGRAMME_ACTIVITIES — what this project delivers.
+   *  Drives which factors get measured. */
+  activities: z.array(z.string()).optional().default([]),
   type: z.enum(PROJECT_TYPES),
   weight_ratio: z.enum(WEIGHT_RATIOS),
   hybrid_option: z.enum(HYBRID_OPTIONS).optional().or(z.literal('')),
