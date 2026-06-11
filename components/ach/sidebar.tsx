@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Building2, Users, FolderKanban,
-  PoundSterling, FileText,
+  PoundSterling, FileText, Compass, ListChecks,
   Languages, ScrollText, Calculator, Settings2, BarChart3, BookOpen,
   ChevronsLeft, ChevronsRight,
 } from 'lucide-react';
@@ -13,7 +13,10 @@ import { cn } from '@/lib/utils';
 
 const NAV = [
   { href: '/dashboard',          label: 'Dashboard',        icon: LayoutDashboard },
-  { section: 'Network' },
+  { section: 'Evaluation Surface' },
+  { href: '/methodology',        label: 'HIM methodology',  icon: Compass },
+  { href: '/roadmap',            label: 'Roadmap & status', icon: ListChecks },
+  { section: 'Impact Tracker' },
   { href: '/partners',           label: 'Partners',         icon: Building2 },
   { href: '/candidates',         label: 'Candidates',       icon: Users },
   { href: '/projects',           label: 'Projects',         icon: FolderKanban },
