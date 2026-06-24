@@ -30,6 +30,7 @@ export function CohortTrainingRoster({ cohortId, attendees }: Props) {
   const [trainer, setTrainer] = useState('');
   const [sessionDate, setSessionDate] = useState(new Date().toISOString().slice(0, 10));
   const [topic, setTopic] = useState('');
+  const [skillsLearnt, setSkillsLearnt] = useState('');
   const [completionStatus, setCompletionStatus] = useState<CompletionStatus>('completed');
   const [checked, setChecked] = useState<Set<string>>(() => new Set(attendees.map(a => a.id)));
   const [feedback, setFeedback] = useState<{ kind: 'ok' | 'error'; msg: string } | null>(null);
@@ -65,6 +66,7 @@ export function CohortTrainingRoster({ cohortId, attendees }: Props) {
         trainer: trainer || null,
         sessionDate,
         topic: topic || null,
+        skillsLearnt: skillsLearnt || null,
         completionStatus,
       });
       if (res.ok) {
@@ -72,6 +74,7 @@ export function CohortTrainingRoster({ cohortId, attendees }: Props) {
         setTrainingName('');
         setTrainer('');
         setTopic('');
+        setSkillsLearnt('');
         setChecked(new Set(attendees.map(a => a.id)));
         router.refresh();
       } else {
@@ -131,6 +134,16 @@ export function CohortTrainingRoster({ cohortId, attendees }: Props) {
             <option value="not_started">Not started</option>
           </select>
         </div>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>Skills learnt (optional)</Label>
+        <Textarea
+          value={skillsLearnt}
+          onChange={e => setSkillsLearnt(e.target.value)}
+          rows={2}
+          placeholder="What can the attendees now do that they couldn't before? Applied to every ticked attendee."
+        />
       </div>
 
       <div className="rounded-[10px] border-[0.5px] border-ach-border bg-white p-3">

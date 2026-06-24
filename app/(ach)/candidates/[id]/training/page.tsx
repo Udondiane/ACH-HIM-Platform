@@ -71,6 +71,12 @@ export default async function CandidateTrainingPage({ params }: { params: { id: 
                     <Stat label="Completed on">{t.completion_date ? new Date(t.completion_date).toLocaleDateString('en-GB') : '—'}</Stat>
                     <Stat label="Certificate">{t.certificate_url ? <a href={t.certificate_url} target="_blank" className="underline">Open link</a> : '—'}</Stat>
                   </div>
+                  {t.skills_learnt && (
+                    <div className="mt-3 rounded-[8px] bg-ach-page/60 border-[0.5px] border-ach-border px-3 py-2">
+                      <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/55 mb-1">Skills learnt</div>
+                      <p className="text-[12.5px] text-ach-navy whitespace-pre-wrap">{t.skills_learnt}</p>
+                    </div>
+                  )}
                   {t.notes && <p className="text-[12.5px] text-ach-navy/75 mt-3 whitespace-pre-wrap">{t.notes}</p>}
                   <form action={handleDelete} className="mt-3 flex justify-end">
                     <input type="hidden" name="id" value={t.id} />
