@@ -41,7 +41,7 @@ export default async function AssessmentRunnerPage({
     supabase.from('assessments').select('*, candidates(candidate_ref, given_name, preferred_locale)').eq('id', params.assessmentId).maybeSingle(),
     supabase.from('project_capabilities').select('domain, role, selected_factors').eq('project_id', params.id),
     Promise.all([
-      supabase.from('factors').select('id, name, conversion_factor_type, is_universal, measurement_method, measurement_question, behavioural_prompt'),
+      supabase.from('factors').select('id, name, conversion_factor_type, is_universal, measurement_method, measurement_question, behavioural_prompt, observable_bullets'),
       supabase.from('factor_domains').select('factor_id, domain_id'),
       supabase.from('indicators').select('id, factor_id, name, sort_order').order('sort_order'),
     ]),
@@ -351,6 +351,19 @@ export default async function AssessmentRunnerPage({
                           <div className="text-[14px] italic text-ach-navy mb-2 leading-snug">
                             {fac.measurement_question}
                           </div>
+                        )}
+                        {Array.isArray(fac.observable_bullets) && fac.observable_bullets.length > 0 && (
+                          <details className="mb-3 rounded-[8px] border-[0.5px] border-ach-border bg-ach-page/40 px-3 py-2 group">
+                            <summary className="cursor-pointer text-[11px] uppercase tracking-[1.2px] text-ach-navy/60 hover:text-ach-navy select-none list-none flex items-center justify-between">
+                              <span>What the assessor is listening for</span>
+                              <span className="text-ach-navy/40 group-open:rotate-180 transition-transform">▾</span>
+                            </summary>
+                            <ul className="mt-2 space-y-1 text-[12.5px] text-ach-navy/80 list-disc pl-5">
+                              {(fac.observable_bullets as string[]).map((b, i) => (
+                                <li key={i}>{b}</li>
+                              ))}
+                            </ul>
+                          </details>
                         )}
                         <FactorResponseField
                           assessmentId={params.assessmentId}
