@@ -300,7 +300,12 @@ export default async function AssessmentRunnerPage({
               </CardContent>
             </Card>
           ) : caps.map(cap => {
-            const factorsForDomain = domainFactors[cap.domain] ?? [];
+            const rawFactorsForDomain = domainFactors[cap.domain] ?? [];
+            // Belt-and-braces: keep baseline-hidden factors out of the render
+            // path no matter what (covers any upstream shape change).
+            const factorsForDomain = a.timepoint === 'baseline'
+              ? rawFactorsForDomain.filter(f => f && !BASELINE_HIDDEN_FACTORS.has(f.id))
+              : rawFactorsForDomain;
             const allIndicators = factorsForDomain.flatMap(f =>
               f ? indicators.filter(i => i.factor_id === f.id).map(i => ({ ...i, factor: f })) : []
             );
