@@ -28,6 +28,7 @@ function normalisePayload(input: ReturnType<typeof trainingSchema.parse>) {
     completion_status: input.completion_status,
     completion_date: input.completion_date || null,
     certificate_url: input.certificate_url || null,
+    skills_learnt: input.skills_learnt || null,
     notes: input.notes || null,
   };
 }
@@ -85,6 +86,7 @@ export async function bulkLogTrainingSessionAction(input: {
   trainer: string | null;
   sessionDate: string;
   topic: string | null;
+  skillsLearnt: string | null;
   completionStatus: 'not_started' | 'in_progress' | 'completed';
 }): Promise<{ ok: true; count: number } | { ok: false; error: string }> {
   if (!input.candidateIds.length) return { ok: false, error: 'No attendees selected.' };
@@ -106,6 +108,7 @@ export async function bulkLogTrainingSessionAction(input: {
     completion_status: input.completionStatus,
     completion_date: input.completionStatus === 'completed' ? input.sessionDate : null,
     notes: input.topic?.trim() || null,
+    skills_learnt: input.skillsLearnt?.trim() || null,
     recorded_by: user.user?.id ?? null,
   }));
 

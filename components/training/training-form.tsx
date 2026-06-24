@@ -71,6 +71,15 @@ export function TrainingForm({ action, candidateId, cohortId, initial, cancelHre
         </Field>
       </div>
 
+      <Field label="Skills learnt">
+        <Textarea
+          name="skills_learnt"
+          defaultValue={initial?.skills_learnt ?? ''}
+          rows={2}
+          placeholder="What can the candidate now do that they couldn't before? e.g. CV writing, basic Excel, interview techniques."
+        />
+      </Field>
+
       <Field label="Notes">
         <Textarea name="notes" defaultValue={initial?.notes ?? ''} rows={2} />
       </Field>

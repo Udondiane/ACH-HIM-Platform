@@ -21,6 +21,7 @@ export const trainingSchema = z.object({
   completion_status:  z.enum(COMPLETION_STATUSES).default('not_started'),
   completion_date:    z.string().trim().regex(/^(\d{4}-\d{2}-\d{2})?$/).optional().or(z.literal('')),
   certificate_url:    z.string().trim().max(500).optional().or(z.literal('')),
+  skills_learnt:      z.string().trim().max(2000).optional().or(z.literal('')),
   notes:              z.string().trim().max(2000).optional().or(z.literal('')),
 });
 
