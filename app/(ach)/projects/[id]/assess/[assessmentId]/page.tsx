@@ -153,6 +153,37 @@ export default async function AssessmentRunnerPage({
     }
   }
 
+  // Factors that are not meaningful at baseline because the candidate hasn't
+  // started the intervention they refer to. Auto-score these at 0 and hide
+  // them from the assessor UI so the question doesn't confuse anyone.
+  // - emp_e_norm (Workplace Norms & Inclusion): only meaningful once in a workplace.
+  const BASELINE_HIDDEN_FACTORS = new Set<string>(['emp_e_norm']);
+  if (a.timepoint === 'baseline') {
+    for (const factorId of BASELINE_HIDDEN_FACTORS) {
+      const facIndicators = indicators.filter(i => i.factor_id === factorId);
+      if (facIndicators.length === 0) continue;
+      const primaryInd = facIndicators[0];
+      if (!respMap.has(primaryInd.id)) {
+        await supabase.from('assessment_responses').insert({
+          assessment_id: params.assessmentId,
+          indicator_id: primaryInd.id,
+          numeric_value: 0,
+          narrative: 'Auto-scored 0 at baseline — pre-placement, factor not yet meaningful.',
+        } as never);
+        respMap.set(primaryInd.id, {
+          numeric_value: 0,
+          narrative: 'Auto-scored 0 at baseline — pre-placement, factor not yet meaningful.',
+          observable_changes: null,
+          practices: null,
+        });
+      }
+    }
+    // Hide from the rendered set
+    for (const dom of Object.keys(domainFactors) as DomainId[]) {
+      domainFactors[dom] = domainFactors[dom].filter(f => !BASELINE_HIDDEN_FACTORS.has(f.id));
+    }
+  }
+
   // Build IndicatorResponse[] for the live HIM calculation
   const scoringResponses: IndicatorResponse[] = [];
   for (const cap of caps) {
