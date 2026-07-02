@@ -105,6 +105,47 @@ export async function saveAssessmentResponseAction(
     } as never, { onConflict: 'assessment_id,indicator_id' });
 }
 
+/**
+ * Adjust a score after AI review. Called when the assessor sees the AI
+ * suggestion differs from their own and chooses to change theirs.
+ *
+ * Preserves the original assessor score in original_score_before_ai_review,
+ * flags was_adjusted_after_ai_review=true, and requires a reason (structured
+ * category + free text). This is the audit trail that makes assessor↔AI
+ * calibration research meaningful.
+ */
+export async function adjustScoreAfterAiReviewAction(input: {
+  assessmentId: string;
+  indicatorId: string;
+  newScore: number;
+  originalScore: number | null;
+  reasonCategory: 'assessor_observed_more' | 'ai_missed_cultural_context'
+    | 'ai_missed_language_nuance' | 'assessor_error_corrected' | 'other';
+  reasonText: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!input.reasonText || input.reasonText.trim().length < 3) {
+    return { ok: false, error: 'A reason for the adjustment is required.' };
+  }
+  if (input.newScore < 0 || input.newScore > 5) {
+    return { ok: false, error: 'Score must be between 0 and 5.' };
+  }
+  const supabase = createClient();
+  const { error } = await supabase
+    .from('assessment_responses')
+    .update({
+      numeric_value: input.newScore,
+      original_score_before_ai_review: input.originalScore,
+      was_adjusted_after_ai_review: true,
+      adjustment_reason_category: input.reasonCategory,
+      adjustment_reason: input.reasonText.trim().slice(0, 2000),
+      adjusted_at: new Date().toISOString(),
+    } as never)
+    .eq('assessment_id', input.assessmentId)
+    .eq('indicator_id', input.indicatorId);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
 export async function saveFactorResponseAction(
   assessmentId: string,
   factorId: string,
