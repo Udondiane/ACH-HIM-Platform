@@ -353,17 +353,16 @@ export default async function AssessmentRunnerPage({
                           </div>
                         )}
                         {Array.isArray(fac.observable_bullets) && fac.observable_bullets.length > 0 && (
-                          <details className="mb-3 rounded-[8px] border-[0.5px] border-ach-border bg-ach-page/40 px-3 py-2 group">
-                            <summary className="cursor-pointer text-[11px] uppercase tracking-[1.2px] text-ach-navy/60 hover:text-ach-navy select-none list-none flex items-center justify-between">
-                              <span>What the assessor is listening for</span>
-                              <span className="text-ach-navy/40 group-open:rotate-180 transition-transform">▾</span>
-                            </summary>
-                            <ul className="mt-2 space-y-1 text-[12.5px] text-ach-navy/80 list-disc pl-5">
+                          <div className="mb-3 rounded-[8px] border-[0.5px] border-ach-border bg-ach-page/40 px-3 py-2">
+                            <div className="text-[11px] uppercase tracking-[1.2px] text-ach-navy/60 mb-1.5">
+                              What the assessor is listening for
+                            </div>
+                            <ul className="space-y-1 text-[12.5px] text-ach-navy/80 list-disc pl-5">
                               {(fac.observable_bullets as string[]).map((b, i) => (
                                 <li key={i}>{b}</li>
                               ))}
                             </ul>
-                          </details>
+                          </div>
                         )}
                         <FactorResponseField
                           assessmentId={params.assessmentId}
