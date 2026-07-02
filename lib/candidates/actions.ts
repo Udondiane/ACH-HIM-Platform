@@ -157,6 +157,7 @@ export async function recordConsentAction(
     may_be_named?: boolean;
     may_be_quoted?: boolean;
     may_appear_in_case_study?: boolean;
+    may_ai_analyse_transcript?: boolean;
   },
   notes?: string,
 ) {
@@ -168,6 +169,7 @@ export async function recordConsentAction(
     may_be_quoted: !!flags.may_be_quoted,
     may_appear_in_case_study: !!flags.may_appear_in_case_study,
     may_share_career_goal_with_partner: false,
+    may_ai_analyse_transcript: !!flags.may_ai_analyse_transcript,
     recorded_by: user.user?.id ?? null,
     notes: notes ?? null,
   } as never);

@@ -11,6 +11,7 @@ export function ConsentForm({ candidateId }: { candidateId: string }) {
     may_be_named: false,
     may_be_quoted: false,
     may_appear_in_case_study: false,
+    may_ai_analyse_transcript: false,
   });
   const [notes, setNotes] = useState('');
 
@@ -19,7 +20,7 @@ export function ConsentForm({ candidateId }: { candidateId: string }) {
       await recordConsentAction(candidateId, flags, notes);
       setFlags({
         may_be_named: false, may_be_quoted: false,
-        may_appear_in_case_study: false,
+        may_appear_in_case_study: false, may_ai_analyse_transcript: false,
       });
       setNotes('');
     });
@@ -48,6 +49,8 @@ export function ConsentForm({ candidateId }: { candidateId: string }) {
         hint="Quotes can appear without personally-identifying detail." />
       <Toggle k="may_appear_in_case_study" label="May appear in a case study"
         hint="Story may be developed into a longer narrative case study." />
+      <Toggle k="may_ai_analyse_transcript" label="AI may analyse assessment transcripts"
+        hint="Interview transcripts may be reviewed by an AI to produce a comparison score. Used only to support assessor calibration; the assessor's judgement remains the final decision." />
 
       <Textarea
         value={notes}

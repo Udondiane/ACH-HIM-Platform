@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { saveAssessmentResponseAction } from '@/lib/assessments/actions';
+import { AiReviewPanel } from './ai-review-panel';
 
 interface Indicator {
   id: string;
@@ -156,6 +157,20 @@ export function IndicatorScorer({
         <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/40 mt-1.5">
           {pending ? 'Saving…' : `Saved ${savedAt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}`}
         </div>
+      )}
+
+      {!isNarrative && value !== null && (
+        <AiReviewPanel
+          assessmentId={assessmentId}
+          indicatorId={indicator.id}
+          factorId={indicator.factor_id}
+          assessorScore={value}
+          onScoreAdjusted={(next) => {
+            setValue(next);
+            // No re-persist call needed — the server action inside
+            // adjustScoreAfterAiReviewAction has already updated the row.
+          }}
+        />
       )}
     </div>
   );
