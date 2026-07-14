@@ -8,6 +8,8 @@ import { PageHeader } from '@/components/ui/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { COHORT_STATUSES, COHORT_STATUS_LABELS, COHORT_STRUCTURE_LABELS } from '@/lib/cohorts/schema';
 
+export const dynamic = 'force-dynamic';
+
 type Search = { status?: string };
 
 export default async function CohortsListPage({ searchParams }: { searchParams?: Search }) {

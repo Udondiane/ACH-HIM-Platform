@@ -8,6 +8,8 @@ import { PageHeader } from '@/components/ui/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { CANDIDATE_STATUSES, CANDIDATE_STATUS_LABELS, LOCALE_NAMES } from '@/lib/candidates/schema';
 
+export const dynamic = 'force-dynamic';
+
 type Search = { status?: string; at_risk?: string; project?: string; view?: string };
 
 type CandidateRow = {

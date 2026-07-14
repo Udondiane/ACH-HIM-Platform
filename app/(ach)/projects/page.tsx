@@ -8,6 +8,8 @@ import { PageHeader } from '@/components/ui/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { FUNDING_MODEL_LABELS, type FundingModel } from '@/lib/projects/schema';
 
+export const dynamic = 'force-dynamic';
+
 function FundingPill({ model }: { model: FundingModel }) {
   const cls = model === 'commercial'
     ? 'bg-ach-navy text-ach-cream border-ach-navy'
