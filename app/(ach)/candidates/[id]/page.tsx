@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CANDIDATE_STATUS_LABELS, LOCALE_NAMES, PROGRESSION_TYPE_LABELS } from '@/lib/candidates/schema';
 import { ConsentForm } from '@/components/candidates/consent-form';
+import { CandidateIdentity } from '@/components/ui/candidate-identity';
 import { AudioConsentToggle } from '@/components/candidates/audio-consent-toggle';
 
 export default async function CandidateDetailPage({ params }: { params: { id: string } }) {
@@ -33,7 +34,7 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
         backHref="/candidates"
         backLabel="Candidates"
         miniLabel={c.candidate_ref}
-        title={c.given_name}
+        title={<CandidateIdentity candidate={c} />}
         description={[c.country_of_origin, c.english_level && `English ${c.english_level}`].filter(Boolean).join(' · ') || undefined}
         actions={
           <div className="flex items-center gap-2">

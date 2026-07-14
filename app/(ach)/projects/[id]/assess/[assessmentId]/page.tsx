@@ -11,6 +11,7 @@ import { FactorResponseField } from '@/components/assessments/factor-response-fi
 import { HimScoreCard } from '@/components/assessments/him-score-card';
 import { TranscriptModal } from '@/components/assessments/transcript-modal';
 import { AttachmentUploader } from '@/components/assessments/attachment-uploader';
+import { CandidateIdentity } from '@/components/ui/candidate-identity';
 import { getTranslations } from 'next-intl/server';
 import { completeAssessmentAction } from '@/lib/assessments/actions';
 import { calculateHim } from '@/lib/scoring/him';
@@ -252,7 +253,7 @@ export default async function AssessmentRunnerPage({
       <PageHeader
         backHref={`/projects/${params.id}`}
         backLabel={p.project_ref}
-        miniLabel={`${a.candidates?.candidate_ref} · ${a.candidates?.given_name}`}
+        miniLabel={a.candidates ? <CandidateIdentity candidate={a.candidates} showRef /> : ''}
         title={`Assessment · ${TIMEPOINT_LABELS[a.timepoint] ?? a.timepoint}`}
         description={`Score each indicator from 0 to 5 (or Yes/No for binary factors). The HIM score on the right updates live as you fill in responses.`}
         actions={

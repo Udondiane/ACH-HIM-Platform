@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { COHORT_STATUS_LABELS, COHORT_STRUCTURE_LABELS } from '@/lib/cohorts/schema';
 import { LinkPartnerToCohort, LinkCandidateToCohort, UnlinkRow } from '@/components/cohorts/linkers';
 import { PARTNER_TYPE_LABELS } from '@/lib/partners/schema';
+import { CandidateIdentity } from '@/components/ui/candidate-identity';
 
 export default async function CohortDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -251,7 +252,7 @@ export default async function CohortDetailPage({ params }: { params: { id: strin
                         {cc.candidates?.candidate_ref}
                       </Link>
                     </td>
-                    <td className="py-2">{cc.candidates?.given_name}</td>
+                    <td className="py-2">{cc.candidates && <CandidateIdentity candidate={cc.candidates} />}</td>
                     <td className="py-2 text-ach-navy/70">{cc.partners?.name ?? '—'}</td>
                     <td className="py-2"><Badge>{cc.candidates?.status}</Badge></td>
                     <td className="py-2 text-right">
@@ -300,7 +301,9 @@ export default async function CohortDetailPage({ params }: { params: { id: strin
                           <Link href={`/candidates/${candId}`} className="text-ach-navy font-medium hover:underline">
                             {cc.candidates?.candidate_ref}
                           </Link>
-                          <span className="text-ach-navy/55 ml-1.5">{cc.candidates?.given_name}</span>
+                          {cc.candidates && (
+                            <span className="text-ach-navy/55 ml-1.5 identity-name">{cc.candidates.given_name}</span>
+                          )}
                         </td>
                         {TIMEPOINTS.map(tp => {
                           const cell = cellByKey.get(`${candId}::${tp}`);

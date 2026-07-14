@@ -4,8 +4,8 @@ import { ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface PageHeaderProps {
-  miniLabel?: string;
-  title: string;
+  miniLabel?: React.ReactNode;
+  title: React.ReactNode;
   description?: string;
   backHref?: string;
   backLabel?: string;
