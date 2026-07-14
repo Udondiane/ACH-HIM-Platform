@@ -5,6 +5,8 @@ import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { computePendingActions, labelFor, type PendingAction } from '@/lib/scoring/pending-actions';
 
+export const dynamic = 'force-dynamic';
+
 async function loadPendingActions(): Promise<PendingAction[]> {
   const supabase = createClient();
   const [candidatesRes, assessmentsRes, placementsRes] = await Promise.all([
