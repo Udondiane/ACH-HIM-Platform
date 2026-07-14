@@ -98,7 +98,7 @@ export default async function CohortTrainingPage({ params }: { params: { id: str
                 <div key={a.id} className="grid grid-cols-[180px_1fr_auto] items-start gap-4 px-4 py-3">
                   <Link href={`/candidates/${a.id}/training`} className="min-w-0">
                     <div className="text-[12.5px] font-medium text-ach-navy truncate">{a.candidate_ref}</div>
-                    <div className="text-[11.5px] text-ach-navy/60 truncate">
+                    <div className="text-[11.5px] text-ach-navy/60 truncate identity-name">
                       {a.given_name}{a.family_name ? ` ${a.family_name}` : ''}
                     </div>
                   </Link>

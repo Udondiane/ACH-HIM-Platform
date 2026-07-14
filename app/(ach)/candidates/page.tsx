@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/ui/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { CANDIDATE_STATUSES, CANDIDATE_STATUS_LABELS, LOCALE_NAMES } from '@/lib/candidates/schema';
+import { CandidateIdentity } from '@/components/ui/candidate-identity';
 
 export const dynamic = 'force-dynamic';
 
@@ -331,7 +332,7 @@ function CandidateTable({ candidates }: { candidates: CandidateRow[] }) {
                   {c.candidate_ref}
                 </Link>
               </Td>
-              <Td>{c.given_name}</Td>
+              <Td><CandidateIdentity candidate={c} /></Td>
               <Td className="text-ach-navy/70">{c.country_of_origin ?? '—'}</Td>
               <Td className="text-ach-navy/70">{LOCALE_NAMES[c.preferred_locale as keyof typeof LOCALE_NAMES] ?? c.preferred_locale}</Td>
               <Td>

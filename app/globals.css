@@ -279,3 +279,14 @@ table.data-table td {
 table.data-table tr:last-child td { border-bottom: 0; }
 table.data-table tr.clickable { cursor: pointer; transition: background 0.1s; }
 table.data-table tr.clickable:hover td { background: var(--ach-cream); }
+
+/* ============================================================
+ * Privacy mode — hide candidate names, show refs.
+ * Triggered by adding `privacy-mode` class to <body> via the
+ * PrivacyModeToggle button in the sidebar. Every CandidateIdentity
+ * component renders both a name span and a ref span; these CSS rules
+ * swap which one is visible.
+ * ============================================================ */
+.identity-ref { display: none; }
+body.privacy-mode .identity-name { display: none; }
+body.privacy-mode .identity-ref  { display: inline; }

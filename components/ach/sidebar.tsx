@@ -10,6 +10,7 @@ import {
   ChevronsLeft, ChevronsRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PrivacyModeToggle } from '@/components/ui/privacy-mode-toggle';
 
 const NAV = [
   { href: '/dashboard',          label: 'Dashboard',        icon: LayoutDashboard },
@@ -111,6 +112,8 @@ export function AchSidebar() {
           );
         })}
       </nav>
+
+      <PrivacyModeToggle collapsed={collapsed} />
 
       <button
         type="button"

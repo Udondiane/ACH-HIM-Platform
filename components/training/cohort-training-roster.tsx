@@ -176,7 +176,7 @@ export function CohortTrainingRoster({ cohortId, attendees }: Props) {
               />
               <span className="text-[12px] text-ach-navy truncate">
                 <span className="font-medium">{a.candidate_ref}</span>
-                <span className="text-ach-navy/60"> · {a.given_name}{a.family_name ? ` ${a.family_name}` : ''}</span>
+                <span className="text-ach-navy/60 identity-name"> · {a.given_name}{a.family_name ? ` ${a.family_name}` : ''}</span>
               </span>
             </label>
           ))}
