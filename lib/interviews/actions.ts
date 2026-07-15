@@ -50,17 +50,50 @@ export async function createInterviewAction(_prev: InterviewResult | null, fd: F
   const supabase = createClient();
   const { data: user } = await supabase.auth.getUser();
   const payload = { ...normalisePayload(parsed.data), recorded_by: user.user?.id ?? null };
-  const { data, error } = await supabase
+
+  // Idempotent semantics: for a given (candidate, kind, partner) tuple
+  // there should only ever be one interview record. If ACH double-clicks
+  // save, or navigates back and re-submits, or the form is re-mounted
+  // and posted again, we update the existing row rather than creating a
+  // duplicate. Prevents the "same candidate appears twice in the partner
+  // interview list" bug.
+  let existingQuery = supabase
     .from('candidate_interviews')
-    .insert(payload as never)
     .select('id')
-    .single();
-  if (error) return { ok: false, error: error.message };
+    .eq('candidate_id', parsed.data.candidate_id)
+    .eq('kind', parsed.data.kind)
+    .limit(1);
+  if (parsed.data.partner_id) {
+    existingQuery = existingQuery.eq('partner_id', parsed.data.partner_id);
+  } else {
+    existingQuery = existingQuery.is('partner_id', null);
+  }
+  const { data: existing } = await existingQuery.maybeSingle();
+  const existingId = (existing as { id: string } | null)?.id;
+
+  let savedId: string;
+  if (existingId) {
+    const { error: updErr } = await supabase
+      .from('candidate_interviews')
+      .update(payload as never)
+      .eq('id', existingId);
+    if (updErr) return { ok: false, error: updErr.message };
+    savedId = existingId;
+  } else {
+    const { data, error } = await supabase
+      .from('candidate_interviews')
+      .insert(payload as never)
+      .select('id')
+      .single();
+    if (error) return { ok: false, error: error.message };
+    savedId = (data as { id: string }).id;
+  }
+
   await maybeAdvanceJourney(supabase, parsed.data.candidate_id, parsed.data.kind, parsed.data.outcome);
   revalidatePath(`/candidates/${parsed.data.candidate_id}`);
   revalidatePath(`/candidates/${parsed.data.candidate_id}/interviews`);
   revalidatePath('/partner/interviews');
-  return { ok: true, id: (data as { id: string }).id };
+  return { ok: true, id: savedId };
 }
 
 export async function updateInterviewAction(id: string, _prev: InterviewResult | null, fd: FormData): Promise<InterviewResult> {
