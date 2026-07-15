@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { CANDIDATE_STATUS_LABELS, LOCALE_NAMES, PROGRESSION_TYPE_LABELS } from '@/lib/candidates/schema';
 import { ConsentForm } from '@/components/candidates/consent-form';
 import { CandidateIdentity } from '@/components/ui/candidate-identity';
+import { ShortlistForPartner } from '@/components/candidates/shortlist-for-partner';
 import { AudioConsentToggle } from '@/components/candidates/audio-consent-toggle';
 
 export default async function CandidateDetailPage({ params }: { params: { id: string } }) {
@@ -18,15 +19,23 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
   if (!candidate) notFound();
   const c = candidate as any;
 
-  const [consents, balance, placements, cohortCandidates] = await Promise.all([
+  const [consents, balance, placements, cohortCandidates, workforcePartners, shortlists] = await Promise.all([
     supabase.from('candidate_consent').select('*').eq('candidate_id', params.id).order('given_at', { ascending: false }).limit(5),
     supabase.from('development_fund_balances').select('*').eq('candidate_id', params.id).maybeSingle(),
     supabase.from('placements').select('id, role_title, salary_band, start_date, status, partners(name)').eq('candidate_id', params.id).order('start_date', { ascending: false }).limit(5),
-    supabase.from('cohort_candidates').select('id, enrolled_at, cohorts(id, name, cohort_ref, status)').eq('candidate_id', params.id),
+    supabase.from('cohort_candidates').select('id, enrolled_at, cohorts(id, name, cohort_ref, status, cohort_partners(partner_id, partners(id, name, partner_types)))').eq('candidate_id', params.id),
+    supabase.from('partners').select('id, name, partner_types'),
+    supabase.from('partner_shortlist').select('partner_id, withdrawn_at, notes').eq('candidate_id', params.id),
   ]);
 
   const latestConsent = (consents.data as any[])?.[0];
   const bal = balance.data as any;
+
+  // Only workforce partners are eligible for shortlisting.
+  const availableWorkforcePartners = ((workforcePartners.data as any[]) ?? [])
+    .filter(p => Array.isArray(p.partner_types) && p.partner_types.includes('workforce_partner'))
+    .map(p => ({ id: p.id, name: p.name }));
+  const shortlistRows = (shortlists.data as any[]) ?? [];
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -187,6 +196,25 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
                 </li>
               ))}
             </ul>
+          </CardContent>
+        </Card>
+      )}
+
+      {availableWorkforcePartners.length > 0 && (
+        <Card className="mt-4">
+          <CardHeader>
+            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Workforce partner shortlist</div>
+            <div className="text-[12px] text-ach-navy/60 mt-0.5">
+              Toggle to explicitly forward this candidate to a workforce partner.
+              Partners only see candidates ACH has shortlisted for them.
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ShortlistForPartner
+              candidateId={c.id}
+              availablePartners={availableWorkforcePartners}
+              currentShortlists={shortlistRows}
+            />
           </CardContent>
         </Card>
       )}
