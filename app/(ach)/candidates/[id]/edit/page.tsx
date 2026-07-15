@@ -3,9 +3,8 @@ import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { CandidateForm } from '@/components/candidates/candidate-form';
-import { updateCandidateAction, withdrawCandidateAction } from '@/lib/candidates/actions';
-import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
+import { updateCandidateAction } from '@/lib/candidates/actions';
+import { WithdrawForm } from '@/components/candidates/withdraw-form';
 
 export default async function EditCandidatePage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -15,7 +14,6 @@ export default async function EditCandidatePage({ params }: { params: { id: stri
   const c = candidate as any;
 
   const action = updateCandidateAction.bind(null, params.id);
-  const handleWithdraw = withdrawCandidateAction.bind(null, params.id);
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -44,11 +42,7 @@ export default async function EditCandidatePage({ params }: { params: { id: stri
             Marking a candidate as withdrawn preserves their record for reporting. Use Edit → Status if they
             simply moved on (placed, progressed, completed).
           </p>
-          <form action={handleWithdraw}>
-            <Button variant="danger" type="submit">
-              <Trash2 className="h-3.5 w-3.5" />Mark withdrawn
-            </Button>
-          </form>
+          <WithdrawForm candidateId={params.id} />
         </CardContent>
       </Card>
     </div>

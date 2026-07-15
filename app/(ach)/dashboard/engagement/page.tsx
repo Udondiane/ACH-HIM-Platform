@@ -15,8 +15,8 @@ export default async function EngagementDashboardPage() {
   const [workforcePartnersRes, cohortPartnersRes, ytdPlacementsRes, recentCohortsRes] = await Promise.all([
     supabase
       .from('partners')
-      .select('id, name, type, status, sector')
-      .eq('type', 'workforce_partner')
+      .select('id, name, types, status, sector')
+      .contains('types', ['workforce_partner'])
       .neq('status', 'closed')
       .order('name'),
     supabase
@@ -109,7 +109,7 @@ export default async function EngagementDashboardPage() {
                     <Link href={`/partners/${p.id}`} className="min-w-0">
                       <div className="text-[13.5px] font-medium text-ach-navy truncate">{p.name}</div>
                       <div className="text-[11.5px] text-ach-navy/60 truncate">
-                        {PARTNER_TYPE_LABELS[p.type as keyof typeof PARTNER_TYPE_LABELS] ?? p.type}
+                        {((p.types as string[] | null) ?? []).map(t => PARTNER_TYPE_LABELS[t as keyof typeof PARTNER_TYPE_LABELS] ?? t).join(' · ')}
                         {p.sector && ` · ${p.sector}`}
                       </div>
                     </Link>

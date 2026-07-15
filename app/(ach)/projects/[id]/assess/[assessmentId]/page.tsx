@@ -42,7 +42,7 @@ export default async function AssessmentRunnerPage({
     supabase.from('assessments').select('*, candidates(candidate_ref, given_name, preferred_locale)').eq('id', params.assessmentId).maybeSingle(),
     supabase.from('project_capabilities').select('domain, role, selected_factors').eq('project_id', params.id),
     Promise.all([
-      supabase.from('factors').select('id, name, conversion_factor_type, is_universal, measurement_method, measurement_question, behavioural_prompt, observable_bullets'),
+      supabase.from('factors').select('id, name, conversion_factor_type, is_universal, measurement_method, measurement_question, behavioural_prompt'),
       supabase.from('factor_domains').select('factor_id, domain_id'),
       supabase.from('indicators').select('id, factor_id, name, sort_order').order('sort_order'),
     ]),
@@ -52,8 +52,9 @@ export default async function AssessmentRunnerPage({
 
   if (!project.data || !assessment.data) notFound();
 
-  // assessment_factor_responses + candidates.consent_audio_recording rely on
-  // migration 030. Guard both so the page still works if 030 hasn't been run.
+  // Audio recording consent lives on candidate_consent.may_ai_analyse_transcript
+  // (latest row wins). Older records were on candidates.consent_audio_recording
+  // — migration 042 backfills, so this single read is authoritative.
   const candidateId = (assessment.data as any).candidate_id;
   const [factorResponsesRes, audioConsentRes] = await Promise.all([
     supabase
@@ -61,7 +62,13 @@ export default async function AssessmentRunnerPage({
       .select('factor_id, response_text, captured_via, spoken_language, audio_attachment_id')
       .eq('assessment_id', params.assessmentId),
     candidateId
-      ? supabase.from('candidates').select('consent_audio_recording').eq('id', candidateId).maybeSingle()
+      ? supabase
+          .from('candidate_consent')
+          .select('may_ai_analyse_transcript')
+          .eq('candidate_id', candidateId)
+          .order('given_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
   ]);
   const factorResponsesMap = new Map<string, { response_text: string | null; captured_via: 'typed' | 'voice' | 'voice_edited'; spoken_language: string | null; audio_attachment_id: string | null }>();
@@ -73,7 +80,7 @@ export default async function AssessmentRunnerPage({
       audio_attachment_id: fr.audio_attachment_id,
     });
   }
-  const consentToRecord = !!(audioConsentRes.data as { consent_audio_recording?: boolean } | null)?.consent_audio_recording;
+  const consentToRecord = !!(audioConsentRes.data as { may_ai_analyse_transcript?: boolean } | null)?.may_ai_analyse_transcript;
   const p = project.data as any;
   const a = assessment.data as any;
   // Demo mode: project-level lock and assessment 'reviewed' lock are both
@@ -353,14 +360,14 @@ export default async function AssessmentRunnerPage({
                             {fac.measurement_question}
                           </div>
                         )}
-                        {Array.isArray(fac.observable_bullets) && fac.observable_bullets.length > 0 && (
+                        {inds.length > 0 && (
                           <div className="mb-3 rounded-[8px] border-[0.5px] border-ach-border bg-ach-page/40 px-3 py-2">
                             <div className="text-[11px] uppercase tracking-[1.2px] text-ach-navy/60 mb-1.5">
                               What the assessor is listening for
                             </div>
                             <ul className="space-y-1 text-[12.5px] text-ach-navy/80 list-disc pl-5">
-                              {(fac.observable_bullets as string[]).map((b, i) => (
-                                <li key={i}>{b}</li>
+                              {inds.map(i => (
+                                <li key={i.id}>{i.name}</li>
                               ))}
                             </ul>
                           </div>

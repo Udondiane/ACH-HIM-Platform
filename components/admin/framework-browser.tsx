@@ -12,7 +12,6 @@ interface Factor {
   measurement_question: string | null;
   behavioural_prompt: string | null;
   measurement_method: string;
-  observable_bullets: string[] | null;
   indicators: { id: string; name: string; sort_order: number }[];
   domains: string[];
 }
@@ -127,7 +126,7 @@ export function FrameworkBrowser({ factors, domains }: Props) {
 }
 
 function FactorCard({ factor }: { factor: Factor }) {
-  const bullets = factor.observable_bullets ?? factor.indicators?.map(i => i.name) ?? [];
+  const bullets = factor.indicators?.map(i => i.name) ?? [];
 
   return (
     <Card>

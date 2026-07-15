@@ -60,7 +60,7 @@ export async function resolveCurrentPartner(
       const { data: defaultPartner } = await supabase
         .from('partners')
         .select('id')
-        .eq('type', 'workforce_partner')
+        .contains('types', ['workforce_partner'])
         .eq('status', 'active')
         .order('name')
         .limit(1)

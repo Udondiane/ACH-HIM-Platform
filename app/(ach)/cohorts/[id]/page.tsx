@@ -18,9 +18,9 @@ export default async function CohortDetailPage({ params }: { params: { id: strin
   const c = cohort as any;
 
   const [cohortPartners, cohortCandidates, allPartners, allCandidates, assessmentsRes, projectRes, placementsRes] = await Promise.all([
-    supabase.from('cohort_partners').select('id, partner_id, sponsorship_count, engagement_fee, is_lead_partner, partners(id, name, type)').eq('cohort_id', params.id),
+    supabase.from('cohort_partners').select('id, partner_id, sponsorship_count, engagement_fee, is_lead_partner, partners(id, name, types)').eq('cohort_id', params.id),
     supabase.from('cohort_candidates').select('id, candidate_id, sponsoring_partner_id, candidates(id, candidate_ref, given_name, status), partners:sponsoring_partner_id(name)').eq('cohort_id', params.id),
-    supabase.from('partners').select('id, name, type, status').neq('status', 'closed').order('name'),
+    supabase.from('partners').select('id, name, types, status').neq('status', 'closed').order('name'),
     supabase.from('candidates').select('id, candidate_ref, given_name, status').order('candidate_ref'),
     supabase.from('assessments').select('id, candidate_id, timepoint, status, assessed_on, project_id').eq('cohort_id', params.id),
     c.project_id ? supabase.from('projects').select('id, funding_model').eq('id', c.project_id).maybeSingle() : Promise.resolve({ data: null }),
@@ -199,7 +199,13 @@ export default async function CohortDetailPage({ params }: { params: { id: strin
                       </Link>
                       {cp.is_lead_partner && <span className="ml-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Lead</span>}
                     </td>
-                    <td className="py-2"><Badge variant={cp.partners?.type}>{PARTNER_TYPE_LABELS[cp.partners?.type as keyof typeof PARTNER_TYPE_LABELS]}</Badge></td>
+                    <td className="py-2">
+                      <div className="flex flex-wrap gap-1">
+                        {((cp.partners?.types as string[] | null) ?? []).map((t: string) => (
+                          <Badge key={t} variant={t as any}>{PARTNER_TYPE_LABELS[t as keyof typeof PARTNER_TYPE_LABELS] ?? t}</Badge>
+                        ))}
+                      </div>
+                    </td>
                     <td className="py-2 text-right tabular-nums">{cp.sponsorship_count}</td>
                     <td className="py-2 text-right tabular-nums">£{Number(cp.engagement_fee ?? 0).toFixed(0)}</td>
                     <td className="py-2 text-right">

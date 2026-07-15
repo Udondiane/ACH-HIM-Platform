@@ -57,14 +57,19 @@ export async function POST(req: NextRequest) {
 
   const supabase = createClient();
 
-  // Load assessment, factor, transcript, and consent in parallel.
-  const [assessmentRes, factorRes, transcriptRes] = await Promise.all([
+  // Load assessment, factor, indicators, transcript, and consent in parallel.
+  const [assessmentRes, factorRes, indicatorsRes, transcriptRes] = await Promise.all([
     supabase.from('assessments').select('id, candidate_id').eq('id', body.assessmentId).maybeSingle(),
     supabase
       .from('factors')
-      .select('id, name, measurement_question, behavioural_prompt, observable_bullets, measurement_method')
+      .select('id, name, measurement_question, behavioural_prompt, measurement_method')
       .eq('id', body.factorId)
       .maybeSingle(),
+    supabase
+      .from('indicators')
+      .select('name, sort_order')
+      .eq('factor_id', body.factorId)
+      .order('sort_order'),
     supabase
       .from('assessment_factor_responses')
       .select('response_text, captured_via')
@@ -81,9 +86,9 @@ export async function POST(req: NextRequest) {
     name: string;
     measurement_question: string | null;
     behavioural_prompt: string | null;
-    observable_bullets: string[] | null;
     measurement_method: string;
   };
+  const bullets = ((indicatorsRes.data as { name: string }[]) ?? []).map(i => i.name);
   const transcript = transcriptRes.data as { response_text: string | null; captured_via: string } | null;
   const transcriptText = transcript?.response_text ?? '';
   const transcriptSource = (transcript?.captured_via as 'typed' | 'voice' | 'voice_edited' | undefined) ?? 'none';
@@ -137,7 +142,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, status: 'skipped_no_transcript' });
   }
 
-  const bullets = Array.isArray(factor.observable_bullets) ? factor.observable_bullets : [];
   const bulletList = bullets.length > 0
     ? bullets.map((b, i) => `${i + 1}. ${b}`).join('\n')
     : '(no observable indicators supplied for this factor)';

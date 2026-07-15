@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { REPLACEMENT_COST_PCT, SALARY_BAND_LABELS as BAND_LABELS, SECTOR_BENCHMARK_12MO } from '@/lib/economics/replacement-cost';
 
 const DOMAIN_LABELS: Record<string, string> = {
   employment: 'Employment',
@@ -12,30 +13,6 @@ const DOMAIN_LABELS: Record<string, string> = {
   rights:     'Rights & Citizenship',
 };
 const DOMAIN_ORDER = ['employment','education','housing','health','belonging','social','rights'];
-
-/* Replacement-cost methodology per the HIM Methodology Specification
-   Section 9.1: salary band -> % of salary used as replacement-cost
-   estimate. Following Oxford Economics (2014) and CIPD research.
-   Estimated, not realised. Conservative - calculated only where 12+
-   months has elapsed AND only for the count exceeding industry-
-   expected retention. */
-
-const REPLACEMENT_COST_PCT: Record<string, number> = {
-  volume:   0.16, // Entry level (<£25k) - 16%
-  standard: 0.50, // Mid-range (£25-35k) - 50%
-  premium:  0.75, // Senior (£35-50k) - 75%
-};
-
-const BAND_LABELS: Record<string, string> = {
-  volume:   'Entry (<£25k)',
-  standard: 'Mid-range (£25–35k)',
-  premium:  'Senior (£35–50k)',
-};
-
-/* Industry-expected 12-month retention (sector benchmark, indicative).
-   Used as a conservative baseline: we only claim savings on retained
-   placements EXCEEDING this rate. */
-const SECTOR_BENCHMARK_12MO = 0.68;
 
 export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partner: any; hideHeader?: boolean }) {
   const supabase = createClient();
