@@ -74,7 +74,7 @@ export async function bulkImportCandidatesAction(input: {
       application_source_data: Object.keys(r.application_source_data).length > 0 ? r.application_source_data : null,
     };
 
-    const { data: candidate, error: insErr } = await supabase
+    const { data, error: insErr } = await supabase
       .from('candidates')
       .insert(insert as never)
       .select('id')
@@ -83,10 +83,11 @@ export async function bulkImportCandidatesAction(input: {
     if (insErr) { failed.push({ row: i + 1, error: insErr.message }); continue; }
     created++;
 
-    if (input.cohortId && candidate?.id) {
+    const candidateId = (data as { id: string } | null)?.id;
+    if (input.cohortId && candidateId) {
       await supabase
         .from('cohort_candidates')
-        .insert({ cohort_id: input.cohortId, candidate_id: candidate.id } as never);
+        .insert({ cohort_id: input.cohortId, candidate_id: candidateId } as never);
     }
   }
 
