@@ -7,6 +7,8 @@ import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PARTNER_TYPE_LABELS, PARTNER_STATUS_LABELS } from '@/lib/partners/schema';
+import { PartnerAccessTokens } from '@/components/partners/partner-access-tokens';
+import { headers } from 'next/headers';
 
 export default async function PartnerDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -26,6 +28,18 @@ export default async function PartnerDetailPage({ params }: { params: { id: stri
     .eq('partner_id', params.id)
     .order('start_date', { ascending: false })
     .limit(5);
+
+  const { data: tokensRes } = await supabase
+    .from('partner_access_tokens')
+    .select('id, token, label, created_at, expires_at, revoked_at, last_used_at')
+    .eq('partner_id', params.id)
+    .order('created_at', { ascending: false });
+  const tokens = (tokensRes as any[]) ?? [];
+
+  const h = headers();
+  const host = h.get('x-forwarded-host') ?? h.get('host') ?? 'localhost:3000';
+  const proto = h.get('x-forwarded-proto') ?? 'https';
+  const origin = `${proto}://${host}`;
 
   // ALL placements for the oversight role-breakdown (lifetime view)
   const { data: allPlacementsRes } = await supabase
@@ -168,6 +182,22 @@ export default async function PartnerDetailPage({ params }: { params: { id: stri
           </CardContent>
         </Card>
       )}
+
+      <Card className="mb-4">
+        <CardHeader>
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Partner access tokens</div>
+          <div className="text-[11.5px] text-ach-navy/55 mt-0.5">
+            Time-boxed URLs a partner contact can use to fill in their timepoint reports without a login.
+          </div>
+        </CardHeader>
+        <CardContent>
+          <PartnerAccessTokens
+            partnerId={p.id}
+            initialTokens={tokens}
+            originHref={origin}
+          />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
