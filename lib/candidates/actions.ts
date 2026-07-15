@@ -9,6 +9,91 @@ export type ActionResult =
   | { ok: true; id?: string }
   | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
 
+/**
+ * Bulk-create candidates from a set of pre-validated rows (typically the
+ * output of mapRow() in ./import.ts, after ACH has ticked which rows to
+ * import). Optionally enrol every newly-created candidate in a cohort.
+ *
+ * Duplicate handling: candidates matching an existing row on email or
+ * NI number are skipped and reported back — not merged, not overwritten.
+ * The caller decides what to do with the skipped list.
+ */
+export async function bulkImportCandidatesAction(input: {
+  rows: Array<{
+    mapped: Record<string, unknown>;
+    application_source_data: Record<string, unknown>;
+  }>;
+  cohortId?: string;
+}): Promise<
+  | { ok: true; created: number; skipped_duplicates: number; failed: Array<{ row: number; error: string }> }
+  | { ok: false; error: string }
+> {
+  const supabase = createClient();
+  let created = 0;
+  let skipped = 0;
+  const failed: Array<{ row: number; error: string }> = [];
+
+  for (let i = 0; i < input.rows.length; i++) {
+    const r = input.rows[i];
+    const m = r.mapped;
+
+    // Duplicate check on email + ni_number
+    if (m.email || m.ni_number) {
+      const orClauses: string[] = [];
+      if (m.email)     orClauses.push(`email.eq.${m.email}`);
+      if (m.ni_number) orClauses.push(`ni_number.eq.${m.ni_number}`);
+      const { data: dupe } = await supabase
+        .from('candidates')
+        .select('id')
+        .or(orClauses.join(','))
+        .limit(1)
+        .maybeSingle();
+      if (dupe) { skipped++; continue; }
+    }
+
+    const insert: Record<string, unknown> = {
+      given_name:       m.given_name ?? null,
+      family_name:      m.family_name ?? null,
+      preferred_name:   m.preferred_name ?? null,
+      email:            m.email ?? null,
+      phone:            m.phone ?? null,
+      address_line1:    m.address_line1 ?? null,
+      postcode:         m.postcode ?? null,
+      date_of_birth:    m.date_of_birth ?? null,
+      country_of_origin:m.country_of_origin ?? null,
+      arrival_year:     m.arrival_year ?? null,
+      preferred_locale: m.preferred_locale ?? 'en',
+      english_level:    m.english_level ?? null,
+      esol_level:       m.esol_level ?? null,
+      benefit_status:   m.benefit_status ?? null,
+      ni_number:        m.ni_number ?? null,
+      career_goal_summary: m.career_goal_summary ?? null,
+      notes:            m.notes ?? null,
+      status:           'applicant',
+      journey_stage:    'applicant',
+      application_source_data: Object.keys(r.application_source_data).length > 0 ? r.application_source_data : null,
+    };
+
+    const { data: candidate, error: insErr } = await supabase
+      .from('candidates')
+      .insert(insert as never)
+      .select('id')
+      .single();
+
+    if (insErr) { failed.push({ row: i + 1, error: insErr.message }); continue; }
+    created++;
+
+    if (input.cohortId && candidate?.id) {
+      await supabase
+        .from('cohort_candidates')
+        .insert({ cohort_id: input.cohortId, candidate_id: candidate.id } as never);
+    }
+  }
+
+  revalidatePath('/candidates');
+  return { ok: true, created, skipped_duplicates: skipped, failed };
+}
+
 function fdToPlain(fd: FormData): Record<string, unknown> {
   const obj: Record<string, unknown> = {};
   for (const [k, v] of fd.entries()) obj[k] = v;

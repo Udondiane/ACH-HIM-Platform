@@ -19,10 +19,16 @@ export default async function PartnerInterviewsPage({
 
   const supabase = createClient();
 
-  // Find candidates who are linked to one of this partner's cohorts and
-  // who have either already had a partner_interview with this partner OR
-  // are eligible (in a cohort the partner sponsors / leads).
-  const [cohortPartnersRes, interviewsRes] = await Promise.all([
+  // Under Path B, partners see only candidates ACH has explicitly
+  // shortlisted for them via partner_shortlist. Cohort membership alone
+  // is no longer sufficient. If the shortlist is empty, the partner
+  // falls back to cohort-linked candidates (legacy behaviour) so
+  // existing pilots that haven't populated shortlists don't go blank.
+  const [shortlistRes, cohortPartnersRes, interviewsRes] = await Promise.all([
+    supabase.from('partner_shortlist')
+      .select('candidate_id, candidates(id, candidate_ref, given_name, country_of_origin, status, journey_stage)')
+      .eq('partner_id', partner.id)
+      .is('withdrawn_at', null),
     supabase.from('cohort_partners')
       .select(`
         cohorts(
@@ -37,6 +43,9 @@ export default async function PartnerInterviewsPage({
       .eq('kind', 'partner_interview')
       .order('conducted_on', { ascending: false, nullsFirst: true }),
   ]);
+
+  const shortlistRows = (shortlistRes.data as any[]) ?? [];
+  const useShortlistGate = shortlistRows.length > 0;
 
   // Build candidate pool grouped by cohort, deduped
   const cohortMap = new Map<string, { cohort: any; candidates: any[] }>();
@@ -53,7 +62,18 @@ export default async function PartnerInterviewsPage({
   const allCandidates = Array.from(cohortMap.values())
     .flatMap(({ cohort, candidates }) => candidates.map(c => ({ ...c, cohort })));
   const dedupedCandidates = Array.from(new Map(allCandidates.map(c => [c.id, c])).values());
-  const awaitingInterview = dedupedCandidates.filter(c => !interviewedIds.has(c.id));
+
+  // If ACH has populated a shortlist for this partner, restrict visibility
+  // to those explicitly shortlisted candidates only. Otherwise (empty
+  // shortlist) fall back to cohort-linked candidates for backward compatibility.
+  const gatedCandidates = useShortlistGate
+    ? (() => {
+        const shortlistIds = new Set(shortlistRows.map(r => r.candidate_id));
+        return dedupedCandidates.filter(c => shortlistIds.has(c.id));
+      })()
+    : dedupedCandidates;
+
+  const awaitingInterview = gatedCandidates.filter(c => !interviewedIds.has(c.id));
 
   return (
     <div className="max-w-6xl mx-auto">
