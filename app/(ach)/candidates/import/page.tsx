@@ -19,7 +19,7 @@ export default async function CandidateImportPage() {
         backLabel="Candidates"
         miniLabel="Bulk import"
         title="Import candidates from application form"
-        description="Upload a CSV export (from Microsoft Forms, Google Forms, or any spreadsheet). ACH picks which rows to import. Unrecognised columns are preserved on each candidate record."
+        description="Upload a CSV or Excel export (from Microsoft Forms, Google Forms, or any spreadsheet). ACH picks which rows to import. Unrecognised columns are preserved on each candidate record."
       />
       <Card>
         <CardContent className="pt-6">

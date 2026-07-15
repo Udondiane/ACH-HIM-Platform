@@ -154,7 +154,7 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
               </Link>
             )}
             <Link href="/candidates/import">
-              <Button variant="secondary"><Plus className="h-4 w-4" />Import from CSV</Button>
+              <Button variant="secondary"><Plus className="h-4 w-4" />Import from CSV / Excel</Button>
             </Link>
             <Link href="/candidates/new">
               <Button><Plus className="h-4 w-4" />Add candidate</Button>
