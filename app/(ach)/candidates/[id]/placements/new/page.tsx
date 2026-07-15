@@ -13,7 +13,7 @@ export default async function NewPlacementPage({ params }: { params: { id: strin
     supabase
       .from('partners')
       .select('id, name')
-      .eq('type', 'workforce_partner')
+      .contains('types', ['workforce_partner'])
       .neq('status', 'closed')
       .order('name'),
     supabase

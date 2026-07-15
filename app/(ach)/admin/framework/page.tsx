@@ -24,7 +24,7 @@ export default async function FrameworkLibraryPage() {
   const supabase = createClient();
   const [domainsRes, factorsRes, factorDomainsRes, indicatorsRes] = await Promise.all([
     supabase.from('domains').select('id, name, description, sort_order').order('sort_order'),
-    supabase.from('factors').select('id, name, conversion_factor_type, measurement_question, behavioural_prompt, measurement_method, observable_bullets'),
+    supabase.from('factors').select('id, name, conversion_factor_type, measurement_question, behavioural_prompt, measurement_method'),
     supabase.from('factor_domains').select('factor_id, domain_id'),
     supabase.from('indicators').select('id, factor_id, name, sort_order').order('sort_order'),
   ]);

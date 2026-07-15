@@ -139,8 +139,8 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
             <CardContent>
               <AudioConsentToggle
                 candidateId={c.id}
-                initialConsent={!!c.consent_audio_recording}
-                initialDate={c.consent_audio_recording_date ?? null}
+                initialConsent={!!latestConsent?.may_ai_analyse_transcript}
+                initialDate={latestConsent?.given_at ? String(latestConsent.given_at).slice(0, 10) : null}
               />
             </CardContent>
           </Card>

@@ -203,6 +203,27 @@ export async function updateCandidateAction(
     return { ok: false, error: 'Please fix the highlighted fields.', fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
   }
   const supabase = createClient();
+
+  // Guard: status='placed' must be backed by an actual placements row. Setting
+  // the flag without a placement row leaves the candidate invisible on partner
+  // dashboards and timepoint reports. Placements are the source of truth for
+  // "placed"; this action can only set the flag if that source already agrees.
+  if (parsed.data.status === 'placed') {
+    const { data: placementRow } = await supabase
+      .from('placements')
+      .select('id')
+      .eq('candidate_id', id)
+      .limit(1)
+      .maybeSingle();
+    if (!placementRow) {
+      return {
+        ok: false,
+        error: 'To mark this candidate as placed, first record a placement (Record placement button). The Placed status is set automatically once the placement exists.',
+        fieldErrors: { status: ['Record a placement first — status will update automatically.'] } as Record<string, string[]>,
+      };
+    }
+  }
+
   // On update we require an existing ref (form preserves it). If somehow blank, regenerate.
   const submittedRef = (parsed.data.candidate_ref ?? '').trim();
   const ref = submittedRef || (await nextCandidateRef(supabase));
@@ -216,22 +237,48 @@ export async function updateCandidateAction(
   return { ok: true, id };
 }
 
-export async function withdrawCandidateAction(id: string) {
+export async function withdrawCandidateAction(
+  id: string,
+  opts?: { exitReason?: string | null; exitNotes?: string | null; exitDate?: string | null },
+) {
   const supabase = createClient();
-  await supabase.from('candidates').update({ status: 'withdrawn' } as never).eq('id', id);
+  await supabase.from('candidates').update({
+    status: 'withdrawn',
+    exit_reason: opts?.exitReason ?? null,
+    exit_notes: opts?.exitNotes ?? null,
+    exit_date: opts?.exitDate ?? new Date().toISOString().slice(0, 10),
+  } as never).eq('id', id);
   revalidatePath('/candidates');
   redirect('/candidates');
 }
 
+// Audio-recording consent is stored on `candidate_consent` as
+// `may_ai_analyse_transcript` (see migration 039). We carry forward the
+// most recent publication flags so the timestamp of a toggle doesn't
+// silently reset previously-recorded consent to false.
 export async function setAudioConsentAction(candidateId: string, consent: boolean) {
   const supabase = createClient();
-  const { error } = await supabase
-    .from('candidates')
-    .update({
-      consent_audio_recording: consent,
-      consent_audio_recording_date: consent ? new Date().toISOString().slice(0, 10) : null,
-    } as never)
-    .eq('id', candidateId);
+  const { data: user } = await supabase.auth.getUser();
+
+  const { data: latest } = await supabase
+    .from('candidate_consent')
+    .select('may_be_named, may_be_quoted, may_appear_in_case_study, may_share_career_goal_with_partner')
+    .eq('candidate_id', candidateId)
+    .order('given_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const prior = (latest ?? {}) as Record<string, boolean | null>;
+
+  const { error } = await supabase.from('candidate_consent').insert({
+    candidate_id: candidateId,
+    may_be_named: !!prior.may_be_named,
+    may_be_quoted: !!prior.may_be_quoted,
+    may_appear_in_case_study: !!prior.may_appear_in_case_study,
+    may_share_career_goal_with_partner: !!prior.may_share_career_goal_with_partner,
+    may_ai_analyse_transcript: consent,
+    recorded_by: user.user?.id ?? null,
+    notes: consent ? 'Audio recording consent granted.' : 'Audio recording consent withdrawn.',
+  } as never);
   if (error) return { ok: false, error: error.message };
   revalidatePath(`/candidates/${candidateId}`);
   return { ok: true };

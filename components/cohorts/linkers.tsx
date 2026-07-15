@@ -20,7 +20,7 @@ import { PARTNER_TYPE_LABELS } from '@/lib/partners/schema';
 // ─── Link partner to cohort ────────────────────────────────
 interface LinkPartnerProps {
   cohortId: string;
-  availablePartners: { id: string; name: string; type: string; status: string }[];
+  availablePartners: { id: string; name: string; types: string[] | null; status: string }[];
 }
 
 export function LinkPartnerToCohort({ cohortId, availablePartners }: LinkPartnerProps) {
@@ -32,7 +32,7 @@ export function LinkPartnerToCohort({ cohortId, availablePartners }: LinkPartner
   const [isLead, setIsLead] = useState(false);
 
   const selected = availablePartners.find(p => p.id === partnerId);
-  const isGrantFunder = selected?.type === 'grant_funder';
+  const isGrantFunder = (selected?.types ?? []).includes('grant_funder');
   // Funding label adapts to partner kind: grant funders receive a grant award,
   // corporate partners invest in the cohort. Underlying column is the same.
   const feeLabel = isGrantFunder ? 'Grant amount (£)' : 'Corporate partner investment (£)';
@@ -78,7 +78,7 @@ export function LinkPartnerToCohort({ cohortId, availablePartners }: LinkPartner
               <SelectContent>
                 {availablePartners.map(p => (
                   <SelectItem key={p.id} value={p.id}>
-                    {p.name} · {PARTNER_TYPE_LABELS[p.type as keyof typeof PARTNER_TYPE_LABELS] ?? p.type}
+                    {p.name} · {(p.types ?? []).map(t => PARTNER_TYPE_LABELS[t as keyof typeof PARTNER_TYPE_LABELS] ?? t).join(' · ')}
                   </SelectItem>
                 ))}
               </SelectContent>
