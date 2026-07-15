@@ -16,6 +16,12 @@
 -- migration once we've verified no other reader references it.
 -- ============================================================
 
+-- Defensive: ensure the target column exists.  Migration 039 already
+-- adds it (add column if not exists), but if 042 is run in isolation
+-- or 039 was skipped, this guarantees the backfill target is present.
+alter table public.candidate_consent
+  add column if not exists may_ai_analyse_transcript boolean not null default false;
+
 insert into public.candidate_consent (
   candidate_id,
   given_at,
