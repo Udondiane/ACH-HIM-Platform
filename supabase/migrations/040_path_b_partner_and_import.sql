@@ -111,7 +111,7 @@ create table if not exists public.placement_retention_checks (
   timepoint           text not null
     check (timepoint in ('retention_6mo', 'retention_12mo')),
   still_employed      boolean,
-  current_role        text,
+  role_at_check       text,  -- "current_role" is a Postgres reserved word; renamed
   leaving_date        date,
   leaving_reason      text,
   progression_note    text,
