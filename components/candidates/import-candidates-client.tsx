@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { Upload, CheckCircle2, AlertCircle, Info } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { parseCsv, mapRow, type ImportRow } from '@/lib/candidates/import';
 import { bulkImportCandidatesAction } from '@/lib/candidates/actions';
 import { Button } from '@/components/ui/button';
@@ -20,8 +21,34 @@ export function ImportCandidatesClient({ cohorts }: { cohorts: CohortOpt[] }) {
     setErr(null);
     setResult(null);
     try {
-      const text = await f.text();
-      const raw = parseCsv(text);
+      const isXlsx = /\.xlsx$/i.test(f.name) || /\.xls$/i.test(f.name);
+      let raw: Record<string, string>[];
+
+      if (isXlsx) {
+        // Parse xlsx client-side via SheetJS. Reads the first sheet,
+        // uses the first row as headers, converts every cell to string
+        // so downstream mapping works identically to CSV path.
+        const buf = await f.arrayBuffer();
+        const wb = XLSX.read(buf, { type: 'array' });
+        const firstSheetName = wb.SheetNames[0];
+        if (!firstSheetName) throw new Error('The Excel file has no sheets.');
+        const sheet = wb.Sheets[firstSheetName];
+        const json = XLSX.utils.sheet_to_json(sheet, { header: 1, blankrows: false, defval: '' }) as unknown[][];
+        if (json.length === 0) throw new Error('The first sheet is empty.');
+        const headers = (json[0] as unknown[]).map(h => String(h ?? '').trim());
+        raw = json.slice(1).map(row => {
+          const obj: Record<string, string> = {};
+          headers.forEach((h, i) => {
+            const v = (row as unknown[])[i];
+            obj[h] = v === null || v === undefined ? '' : String(v).trim();
+          });
+          return obj;
+        });
+      } else {
+        const text = await f.text();
+        raw = parseCsv(text);
+      }
+
       const mapped = raw.map(mapRow);
       setRows(mapped);
       // Auto-tick rows without blocking errors
@@ -76,7 +103,7 @@ export function ImportCandidatesClient({ cohorts }: { cohorts: CohortOpt[] }) {
         <div className="flex items-start gap-2.5">
           <Info className="h-4 w-4 mt-0.5 text-ach-navy/60 shrink-0" />
           <div className="text-[12.5px] text-ach-navy/80 space-y-1">
-            <p><strong>Accepts any CSV</strong> — export from MS Forms, Google Forms, Excel, whatever the application form was.</p>
+            <p><strong>Accepts CSV or Excel (.xlsx)</strong> — export from MS Forms, Google Forms, Excel, whatever the application form was.</p>
             <p><strong>Only two things are required per row:</strong> a name column, and at least one contact (email or phone).</p>
             <p><strong>Any column that doesn&apos;t match a HIM field</strong> — e.g., IKEA&apos;s &ldquo;Can you commute to BS5?&rdquo; — is preserved on the candidate record as application data. Nothing is lost.</p>
           </div>
@@ -86,10 +113,10 @@ export function ImportCandidatesClient({ cohorts }: { cohorts: CohortOpt[] }) {
       <div>
         <label className="inline-flex items-center gap-2 rounded-[10px] border-[0.5px] border-ach-border bg-white px-3 py-2 cursor-pointer hover:bg-ach-page">
           <Upload className="h-4 w-4 text-ach-navy/70" />
-          <span className="text-[12.5px] text-ach-navy">Choose CSV file…</span>
+          <span className="text-[12.5px] text-ach-navy">Choose CSV or Excel file…</span>
           <input
             type="file"
-            accept=".csv,text/csv"
+            accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
             className="hidden"
             onChange={e => { const f = e.target.files?.[0]; if (f) onFile(f); }}
           />
