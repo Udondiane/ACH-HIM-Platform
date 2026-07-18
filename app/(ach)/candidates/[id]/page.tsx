@@ -19,13 +19,15 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
   if (!candidate) notFound();
   const c = candidate as any;
 
-  const [consents, balance, placements, cohortCandidates, workforcePartners, shortlists] = await Promise.all([
+  const [consents, balance, placements, cohortCandidates, workforcePartners, shortlists, trainingEnrols, trainingCerts] = await Promise.all([
     supabase.from('candidate_consent').select('*').eq('candidate_id', params.id).order('given_at', { ascending: false }).limit(5),
     supabase.from('development_fund_balances').select('*').eq('candidate_id', params.id).maybeSingle(),
     supabase.from('placements').select('id, role_title, salary_band, start_date, status, partners(name)').eq('candidate_id', params.id).order('start_date', { ascending: false }).limit(5),
     supabase.from('cohort_candidates').select('id, enrolled_at, cohorts(id, name, cohort_ref, status, cohort_partners(partner_id, partners(id, name, partner_types)))').eq('candidate_id', params.id),
     supabase.from('partners').select('id, name, partner_types'),
     supabase.from('partner_shortlist').select('partner_id, withdrawn_at, notes').eq('candidate_id', params.id),
+    supabase.from('training_enrolments').select('id, status, enrolled_date, completed_date, training_programmes(id, name, code, category)').eq('candidate_id', params.id).order('enrolled_date', { ascending: false }),
+    supabase.from('training_certificates').select('id, certificate_number, issued_date, attendance_pct, training_programmes(name)').eq('candidate_id', params.id).order('issued_date', { ascending: false }),
   ]);
 
   const latestConsent = (consents.data as any[])?.[0];
@@ -215,6 +217,53 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
               availablePartners={availableWorkforcePartners}
               currentShortlists={shortlistRows}
             />
+          </CardContent>
+        </Card>
+      )}
+
+      {((trainingEnrols.data as any[]) ?? []).length > 0 && (
+        <Card className="mt-4">
+          <CardHeader>
+            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Training</div>
+            <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Enrolments and certificates — evidence linked to HIM factors via each programme's learning outcomes.</div>
+          </CardHeader>
+          <CardContent>
+            <ul className="text-[13px] space-y-2 mb-3">
+              {((trainingEnrols.data as any[]) ?? []).map((e: any) => (
+                <li key={e.id} className="flex items-center justify-between">
+                  <div>
+                    <Link href={`/training/programmes/${e.training_programmes?.id}`} className="text-ach-navy font-medium hover:underline">
+                      {e.training_programmes?.name ?? '—'}
+                    </Link>
+                    <div className="text-[12px] text-ach-navy/60">
+                      {e.training_programmes?.code ? `${e.training_programmes.code} · ` : ''}
+                      Enrolled {e.enrolled_date ? new Date(e.enrolled_date).toLocaleDateString('en-GB') : '—'}
+                      {e.completed_date && ` · Completed ${new Date(e.completed_date).toLocaleDateString('en-GB')}`}
+                    </div>
+                  </div>
+                  <Badge>{e.status}</Badge>
+                </li>
+              ))}
+            </ul>
+            {((trainingCerts.data as any[]) ?? []).length > 0 && (
+              <div className="border-t-[0.5px] border-ach-border pt-3">
+                <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-1.5">Certificates</div>
+                <ul className="text-[12.5px] space-y-1">
+                  {((trainingCerts.data as any[]) ?? []).map((c: any) => (
+                    <li key={c.id} className="flex items-center justify-between">
+                      <span>
+                        <span className="text-ach-navy font-medium">{c.training_programmes?.name ?? '—'}</span>
+                        <span className="text-ach-navy/55 ml-2">{c.certificate_number}</span>
+                      </span>
+                      <span className="text-ach-navy/60">
+                        {c.attendance_pct !== null ? `${Number(c.attendance_pct).toFixed(0)}% · ` : ''}
+                        {new Date(c.issued_date).toLocaleDateString('en-GB')}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
