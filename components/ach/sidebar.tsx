@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Building2, Users, FolderKanban,
-  PoundSterling, FileText,
+  PoundSterling, FileText, GraduationCap,
   Languages, ScrollText, Calculator, BarChart3, BookOpen,
   ChevronsLeft, ChevronsRight,
 } from 'lucide-react';
@@ -18,6 +18,9 @@ const NAV = [
   { href: '/partners',           label: 'Partners',         icon: Building2 },
   { href: '/candidates',         label: 'Candidates',       icon: Users },
   { href: '/projects',           label: 'Projects',         icon: FolderKanban },
+  { section: 'Delivery' },
+  { href: '/training',           label: 'Training',         icon: GraduationCap },
+  { href: '/training/my',        label: 'My classes',       icon: ScrollText },
   { section: 'Operations' },
   { href: '/pricing',            label: 'Pricing tool',     icon: Calculator },
   { href: '/development-fund',   label: 'Development fund', icon: PoundSterling },
