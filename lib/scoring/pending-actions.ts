@@ -113,14 +113,18 @@ export function computePendingActions(
     }
   }
 
+  // Fire retention pending actions 14 days BEFORE the timepoint hits, so the
+  // caseworker has lead time to email the partner rather than being told
+  // on the day it's already due.  ~5.54 months = 6 months minus 14 days;
+  // ~11.54 months = 12 months minus 14 days.
   for (const p of placements) {
     const months = monthsBetween(p.start_date);
     const cand = candidates.find(c => c.id === p.candidate_id);
     const ref = cand?.candidate_ref ?? p.candidate_ref ?? '—';
-    if (months >= 6 && !['completed_6mo', 'completed_12mo', 'left_pre_6mo'].includes(p.status)) {
+    if (months >= 5.54 && !['completed_6mo', 'completed_12mo', 'left_pre_6mo'].includes(p.status)) {
       out.push({ kind: 'retention_6mo_due', candidateId: p.candidate_id, candidateRef: ref, due_in_days: Math.round((months - 6) * 30), href: `/candidates/${p.candidate_id}` });
     }
-    if (months >= 12 && !['completed_12mo', 'left_6_to_12mo'].includes(p.status)) {
+    if (months >= 11.54 && !['completed_12mo', 'left_6_to_12mo'].includes(p.status)) {
       out.push({ kind: 'retention_12mo_due', candidateId: p.candidate_id, candidateRef: ref, due_in_days: Math.round((months - 12) * 30), href: `/candidates/${p.candidate_id}` });
     }
   }
