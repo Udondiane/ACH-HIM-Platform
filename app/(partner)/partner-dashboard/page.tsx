@@ -1,6 +1,4 @@
-import { CapabilityInvestorDashboard } from '@/components/partner-portal/capability-investor-dashboard';
 import { WorkforcePartnerDashboard } from '@/components/partner-portal/workforce-partner-dashboard';
-import { TrainingPartnerDashboard } from '@/components/partner-portal/training-partner-dashboard';
 import { Card, CardContent } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { Badge } from '@/components/ui/badge';
@@ -54,20 +52,13 @@ export default async function PartnerDashboardPage({
         {types.includes('workforce_partner') && (
           <WorkforcePartnerDashboard partner={partner} hideHeader={isMulti} />
         )}
-        {types.includes('capability_investor') && (
-          <CapabilityInvestorDashboard partner={partner} hideHeader={isMulti} />
-        )}
-        {types.includes('training_partner') && (
-          <TrainingPartnerDashboard partner={partner} hideHeader={isMulti} />
-        )}
-        {types.includes('grant_funder') && !types.includes('workforce_partner') && !types.includes('capability_investor') && !types.includes('training_partner') && (
+        {!types.includes('workforce_partner') && (
           <Card>
             <CardContent className="pt-6 text-[13px] text-ach-navy/80 space-y-2">
-              <p className="font-medium text-ach-navy">Grant funder relationship</p>
+              <p className="font-medium text-ach-navy">Data flows outside the portal</p>
               <p>
-                Grant funders receive outcome reports from ACH directly rather than logging into a portal. If you&apos;re
-                looking for a recent report, please contact your ACH programme manager — they&apos;ll send the most
-                current capability and outcomes pack.
+                For your partner type, ACH sends outcome reports and evidence packs directly rather than via the portal.
+                Please contact your ACH programme manager for the most current report.
               </p>
             </CardContent>
           </Card>

@@ -4,8 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
-  LayoutDashboard, Users, ScrollText, MessageSquare,
-  Building2, GraduationCap, ShieldCheck,
+  LayoutDashboard,
   ChevronsLeft, ChevronsRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -40,36 +39,12 @@ export function PartnerSidebar({ partner }: { partner: Partner | null }) {
     if (typeof window !== 'undefined') localStorage.setItem(STORAGE_KEY, next ? 'true' : 'false');
   };
 
-  const types: string[] = partner?.types ?? (partner?.type ? [partner.type] : []);
-
-  const items: Array<
-    | { section: string }
-    | { href: string; label: string; icon: any }
-  > = [
+  // Partner data collection now flows through the tokenised `/report/[token]`
+  // surface. The authenticated portal here is retained only as a summary
+  // landing page for partners with dashboard access.
+  const items: Array<{ href: string; label: string; icon: any }> = [
     { href: '/partner-dashboard', label: 'Dashboard', icon: LayoutDashboard },
   ];
-
-  if (types.includes('workforce_partner')) {
-    items.push(
-      { section: 'Hiring' },
-      { href: '/partner/interviews',    label: 'Interviews',         icon: MessageSquare },
-      { href: '/partner/placements',    label: 'Placements',         icon: Users },
-    );
-  }
-  if (types.includes('capability_investor')) {
-    items.push(
-      { section: 'Investment' },
-      { href: '/partner/sponsorships',  label: 'Sponsorships',       icon: Building2 },
-      { href: '/partner/capability',    label: 'Capability uplift',  icon: GraduationCap },
-    );
-  }
-  if (types.includes('training_partner')) {
-    items.push(
-      { section: 'Practice change' },
-      { href: '/partner/audit-entries', label: 'Audit entries',      icon: ShieldCheck },
-      { href: '/partner/inclusion',     label: 'Inclusion assessment', icon: GraduationCap },
-    );
-  }
 
   return (
     <aside
@@ -92,19 +67,7 @@ export function PartnerSidebar({ partner }: { partner: Partner | null }) {
       </div>
 
       <nav className={cn('flex-1 overflow-y-auto py-4', collapsed ? 'px-2' : 'px-3')}>
-        {items.map((item, idx) => {
-          if ('section' in item) {
-            if (collapsed) {
-              return idx === 0 ? null : (
-                <div key={`section-${idx}`} className="my-3 h-px bg-ach-border/70" />
-              );
-            }
-            return (
-              <div key={`section-${idx}`} className="px-2 mt-5 mb-1.5 first:mt-1 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/40">
-                {item.section}
-              </div>
-            );
-          }
+        {items.map(item => {
           const Icon = item.icon;
           const active = pathname === item.href || pathname?.startsWith(item.href + '/');
           return (

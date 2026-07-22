@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Building2, Users, FolderKanban,
-  PoundSterling, FileText, GraduationCap, CalendarDays,
-  ScrollText, Calculator, BarChart3, BookOpen,
+  PoundSterling, GraduationCap, CalendarDays,
+  ScrollText, Calculator,
   ChevronsLeft, ChevronsRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -28,11 +28,7 @@ const NAV = [
   { href: '/milestones',         label: 'Retention milestones', icon: ScrollText },
   { section: 'Reports' },
   { href: '/aggregate',          label: 'Aggregate',        icon: LayoutDashboard },
-  { href: '/evidence-pack',      label: 'Evidence packs',   icon: FileText },
-  { href: '/toms-crosswalk',     label: 'TOMs crosswalk',   icon: BarChart3 },
   { href: '/reports',            label: 'Other reports',    icon: ScrollText },
-  { section: 'Admin' },
-  { href: '/admin/framework',    label: 'Framework library', icon: BookOpen },
 ] as const;
 
 const STORAGE_KEY = 'ach_sidebar_collapsed';
