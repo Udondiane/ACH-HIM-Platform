@@ -21,7 +21,6 @@ export default async function HomePage() {
         const role = (data as { role?: string } | null)?.role;
         if (role === 'ach_staff') redirect('/dashboard');
         if (role === 'partner')   redirect('/partner-dashboard');
-        if (role === 'candidate') redirect('/candidate-dashboard');
       }
     }
   } catch {

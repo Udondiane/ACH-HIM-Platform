@@ -53,7 +53,7 @@ export async function requireUser(allowedRoles?: UserRole[]): Promise<SessionUse
   if (allowedRoles && !allowedRoles.includes(sessionUser.role)) {
     if (sessionUser.role === 'ach_staff') redirect('/dashboard');
     if (sessionUser.role === 'partner')   redirect('/partner-dashboard');
-    if (sessionUser.role === 'candidate') redirect('/candidate-dashboard');
+    redirect('/sign-in');
   }
 
   return sessionUser;
