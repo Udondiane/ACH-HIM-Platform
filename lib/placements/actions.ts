@@ -90,6 +90,6 @@ export async function createPlacementAction(
 
   revalidatePath(`/candidates/${input.candidate_id}`);
   revalidatePath('/milestones');
-  revalidatePath('/dashboard/specialist');
+  revalidatePath('/dashboard');
   redirect(`/candidates/${input.candidate_id}`);
 }

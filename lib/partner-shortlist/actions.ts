@@ -36,7 +36,6 @@ export async function shortlistForPartnerAction(input: {
 
   if (error) return { ok: false, error: error.message };
   revalidatePath(`/candidates/${input.candidateId}`);
-  revalidatePath('/partner/interviews');
   return { ok: true };
 }
 
@@ -56,6 +55,5 @@ export async function withdrawFromShortlistAction(input: {
     .eq('candidate_id', input.candidateId);
   if (error) return { ok: false, error: error.message };
   revalidatePath(`/candidates/${input.candidateId}`);
-  revalidatePath('/partner/interviews');
   return { ok: true };
 }

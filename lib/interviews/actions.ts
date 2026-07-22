@@ -92,7 +92,6 @@ export async function createInterviewAction(_prev: InterviewResult | null, fd: F
   await maybeAdvanceJourney(supabase, parsed.data.candidate_id, parsed.data.kind, parsed.data.outcome);
   revalidatePath(`/candidates/${parsed.data.candidate_id}`);
   revalidatePath(`/candidates/${parsed.data.candidate_id}/interviews`);
-  revalidatePath('/partner/interviews');
   return { ok: true, id: savedId };
 }
 
@@ -110,7 +109,6 @@ export async function updateInterviewAction(id: string, _prev: InterviewResult |
   await maybeAdvanceJourney(supabase, parsed.data.candidate_id, parsed.data.kind, parsed.data.outcome);
   revalidatePath(`/candidates/${parsed.data.candidate_id}`);
   revalidatePath(`/candidates/${parsed.data.candidate_id}/interviews`);
-  revalidatePath('/partner/interviews');
   return { ok: true, id };
 }
 
@@ -119,7 +117,6 @@ export async function deleteInterviewAction(id: string, candidateId: string) {
   await supabase.from('candidate_interviews').delete().eq('id', id);
   revalidatePath(`/candidates/${candidateId}`);
   revalidatePath(`/candidates/${candidateId}/interviews`);
-  revalidatePath('/partner/interviews');
 }
 
 export async function updateJourneyStageAction(candidateId: string, stage: string) {
