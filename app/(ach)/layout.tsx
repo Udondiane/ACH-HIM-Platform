@@ -18,7 +18,6 @@ export default async function AchLayout({ children }: { children: React.ReactNod
     const role = roleRow as { role: string } | null;
     if (!role || role.role !== 'ach_staff') {
       if (role?.role === 'partner') redirect('/partner-dashboard');
-      if (role?.role === 'candidate') redirect('/candidate-dashboard');
       redirect('/sign-in');
     }
   }

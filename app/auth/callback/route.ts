@@ -23,7 +23,6 @@ export async function GET(request: NextRequest) {
       const role = (data as { role?: string } | null)?.role;
       if (role === 'ach_staff') return NextResponse.redirect(`${origin}/dashboard`);
       if (role === 'partner')   return NextResponse.redirect(`${origin}/partner-dashboard`);
-      if (role === 'candidate') return NextResponse.redirect(`${origin}/candidate-dashboard`);
     }
   } catch {
     // fall through
