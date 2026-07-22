@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { createClient } from '@/lib/supabase/server';
+import { checkRateLimit, ipFromHeaders, rateLimitedResponse } from '@/lib/security/rate-limit';
 
 export const runtime = 'nodejs';
 
@@ -11,6 +12,14 @@ export const runtime = 'nodejs';
    Capability Investor Report can attach it. */
 
 export async function POST(req: NextRequest) {
+  const rl = checkRateLimit({
+    ip: ipFromHeaders(req.headers),
+    key: 'ai:synthesize-cohort',
+    limit: 10,
+    windowMs: 60_000,
+  });
+  if (!rl.allowed) return rateLimitedResponse(rl);
+
   const apiKey = process.env.AZURE_OPENAI_API_KEY;
   const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
   const deployment = process.env.AZURE_OPENAI_DEPLOYMENT;

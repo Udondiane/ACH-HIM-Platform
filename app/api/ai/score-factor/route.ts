@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { createClient } from '@/lib/supabase/server';
+import { checkRateLimit, ipFromHeaders, rateLimitedResponse } from '@/lib/security/rate-limit';
 
 export const runtime = 'nodejs';
 
@@ -33,6 +34,16 @@ const PROMPT_VERSION = 'score-factor.v1';
  * and a suggestion row is written with status='skipped_no_consent'.
  */
 export async function POST(req: NextRequest) {
+  // Rate limit — 30 calls per minute per IP.  LLM calls cost real money;
+  // this stops runaway spend from a bug or an attacker.
+  const rl = checkRateLimit({
+    ip: ipFromHeaders(req.headers),
+    key: 'ai:score-factor',
+    limit: 30,
+    windowMs: 60_000,
+  });
+  if (!rl.allowed) return rateLimitedResponse(rl);
+
   const apiKey     = process.env.AZURE_OPENAI_API_KEY;
   const endpoint   = process.env.AZURE_OPENAI_ENDPOINT;
   const deployment = process.env.AZURE_OPENAI_DEPLOYMENT;
