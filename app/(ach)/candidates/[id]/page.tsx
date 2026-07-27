@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Pencil, MessageSquare, GraduationCap, LifeBuoy, ClipboardCheck, Briefcase } from 'lucide-react';
+import { Pencil, MessageSquare, GraduationCap, LifeBuoy, ClipboardCheck, Briefcase, FileText } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
@@ -68,6 +68,9 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
             </Link>
             <Link href={`/candidates/${c.id}/placements/new`}>
               <Button variant="secondary"><Briefcase className="h-3.5 w-3.5" />Record placement</Button>
+            </Link>
+            <Link href={`/candidates/${c.id}/case-study`}>
+              <Button variant="secondary"><FileText className="h-3.5 w-3.5" />Case study</Button>
             </Link>
             <Link href={`/candidates/${c.id}/edit`}>
               <Button variant="secondary"><Pencil className="h-3.5 w-3.5" />Edit</Button>
