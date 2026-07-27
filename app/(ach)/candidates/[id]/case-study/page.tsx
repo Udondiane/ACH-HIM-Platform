@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Printer } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { Card, CardContent } from '@/components/ui/card';
+import { PrintButton } from '@/components/ui/print-button';
 
 export const metadata = { title: 'Candidate case study' };
 
@@ -13,37 +14,93 @@ const TIMEPOINT_LABELS: Record<string, string> = {
   followup_12mo: '12 months',
 };
 
+async function safeFetch<T>(fn: () => any, fallback: T): Promise<T> {
+  try {
+    const r = await fn();
+    if (r?.error) return fallback;
+    return (r?.data ?? fallback) as T;
+  } catch {
+    return fallback;
+  }
+}
+
 export default async function CaseStudyPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
-  const { data: candidate } = await supabase
+
+  // Candidate must exist. Everything else is best-effort so schema drift
+  // (e.g. migration 045 not yet applied) never crashes the page.
+  const candidateRes = await supabase
     .from('candidates')
     .select('*')
     .eq('id', params.id)
-    .maybeSingle();
-  if (!candidate) notFound();
-  const cand = candidate as any;
+    .maybeSingle()
+    .then((r: any) => r, () => ({ data: null }));
+  const cand = candidateRes?.data as any;
+  if (!cand) notFound();
 
-  const [consentRes, assessmentsRes, responsesRes, placementsRes, quotesRes, trainingRes] = await Promise.all([
-    supabase.from('candidate_consent').select('may_be_named, may_be_quoted, may_appear_in_case_study, given_at').eq('candidate_id', params.id).order('given_at', { ascending: false }).limit(1),
-    supabase.from('assessments').select('id, timepoint, status, assessed_on, cohort_id').eq('candidate_id', params.id).order('assessed_on', { ascending: true }),
-    supabase.from('assessment_responses').select('id, assessment_id, indicator_id, numeric_value, narrative, candidate_voice, feature_worthy').limit(1000),
-    supabase.from('placements').select('id, start_date, end_date, role_title, partners(id, name)').eq('candidate_id', params.id).order('start_date', { ascending: false }),
-    supabase.from('featured_quotes').select('id, quote_text, context, speaker_type, use_anonymised, display_name, source_type, tagged_at').eq('candidate_id', params.id).is('archived_at', null).order('tagged_at', { ascending: false }),
-    supabase.from('training_enrolments').select('id, status, programme:programme_id(name, category)').eq('candidate_id', params.id).limit(50),
-  ]);
+  const consent = await safeFetch<any[]>(
+    () => supabase.from('candidate_consent')
+      .select('may_be_named, may_be_quoted, may_appear_in_case_study, given_at')
+      .eq('candidate_id', params.id)
+      .order('given_at', { ascending: false })
+      .limit(1),
+    [],
+  );
+  const consentLatest = (consent as any[])[0] ?? {};
+  const consentGiven = !!consentLatest.may_appear_in_case_study;
+  const useName = !!consentLatest.may_be_named;
 
-  const consent = ((consentRes.data as any[])?.[0] ?? {}) as any;
-  const consentGiven = !!(consent.may_appear_in_case_study);
-  const assessments = (assessmentsRes.data as any[]) ?? [];
-  const responses = (responsesRes.data as any[]) ?? [];
-  const placements = (placementsRes.data as any[]) ?? [];
-  const quotes = (quotesRes.data as any[]) ?? [];
-  const training = ((trainingRes.data as any[]) ?? []);
+  const assessments = await safeFetch<any[]>(
+    () => supabase.from('assessments')
+      .select('id, timepoint, status, assessed_on, cohort_id')
+      .eq('candidate_id', params.id)
+      .order('assessed_on', { ascending: true }),
+    [],
+  );
 
-  // Identity handling: anonymised name if by-name consent not granted
-  const useName = !!consent.may_be_named;
+  // First try with new columns (post-migration-045). Fall back to legacy shape.
+  let responses = await safeFetch<any[]>(
+    () => supabase.from('assessment_responses')
+      .select('id, assessment_id, indicator_id, numeric_value, narrative, candidate_voice, feature_worthy')
+      .limit(1000),
+    [],
+  );
+  if (!responses.length) {
+    responses = await safeFetch<any[]>(
+      () => supabase.from('assessment_responses')
+        .select('id, assessment_id, indicator_id, numeric_value, narrative')
+        .limit(1000),
+      [],
+    );
+  }
+
+  const placements = await safeFetch<any[]>(
+    () => supabase.from('placements')
+      .select('id, start_date, end_date, role_title, partners(id, name)')
+      .eq('candidate_id', params.id)
+      .order('start_date', { ascending: false }),
+    [],
+  );
+
+  const quotes = await safeFetch<any[]>(
+    () => supabase.from('featured_quotes')
+      .select('id, quote_text, context, speaker_type, use_anonymised, display_name, source_type, tagged_at')
+      .eq('candidate_id', params.id)
+      .is('archived_at', null)
+      .order('tagged_at', { ascending: false }),
+    [],
+  );
+
+  const training = await safeFetch<any[]>(
+    () => supabase.from('training_enrolments')
+      .select('id, status, programme:programme_id(name, category)')
+      .eq('candidate_id', params.id)
+      .limit(50),
+    [],
+  );
+
   const displayName = useName
-    ? (cand.preferred_name || cand.given_name || cand.candidate_ref)  /* preferred_name optional */
+    ? (cand.preferred_name || cand.given_name || cand.candidate_ref)
     : `${cand.candidate_ref} (anonymised)`;
 
   const candAssessmentIds = new Set(assessments.map(a => a.id));
@@ -62,7 +119,9 @@ export default async function CaseStudyPage({ params }: { params: { id: string }
     }
   }
 
-  const featureWorthyResponses = candResponses.filter(r => r.feature_worthy && (r.narrative || r.candidate_voice));
+  const featureWorthyResponses = candResponses.filter(
+    r => r.feature_worthy && (r.narrative || r.candidate_voice),
+  );
 
   return (
     <div className="max-w-4xl mx-auto pb-16 print:max-w-none">
@@ -72,7 +131,6 @@ export default async function CaseStudyPage({ params }: { params: { id: string }
         </Link>
       </div>
 
-      {/* Header */}
       <div className="mb-8 border-b border-ach-border pb-6">
         <div className="text-[11px] uppercase tracking-[1.4px] text-ach-navy/55 mb-1">Candidate case study</div>
         <h1 className="text-[26px] font-serif font-semibold text-ach-navy leading-tight">
@@ -84,7 +142,6 @@ export default async function CaseStudyPage({ params }: { params: { id: string }
         </div>
       </div>
 
-      {/* Consent gate */}
       {!consentGiven && (
         <Card className="mb-6 border-amber-300 bg-amber-50/60">
           <CardContent className="pt-4 pb-4">
@@ -97,15 +154,9 @@ export default async function CaseStudyPage({ params }: { params: { id: string }
       )}
 
       <div className="print:hidden mb-6">
-        <button
-          onClick={() => window.print()}
-          className="inline-flex items-center gap-1.5 text-[12.5px] px-3 py-1.5 rounded-[8px] border border-ach-border text-ach-navy hover:bg-ach-page"
-        >
-          <Printer className="h-3.5 w-3.5" /> Print or save as PDF
-        </button>
+        <PrintButton />
       </div>
 
-      {/* Background */}
       <section className="mb-8">
         <h2 className="text-[16px] font-serif font-semibold text-ach-navy mb-3">Background</h2>
         <Card>
@@ -122,17 +173,19 @@ export default async function CaseStudyPage({ params }: { params: { id: string }
               <div>
                 <span className="text-ach-navy/60">Training taken:</span>
                 <ul className="list-disc list-inside mt-1 text-[12.5px]">
-                  {training.slice(0, 8).map(t => (
-                    <li key={t.id}>{t.programme?.name}{t.status === 'completed' ? ' · completed' : ''}</li>
+                  {training.slice(0, 8).map((t: any) => (
+                    <li key={t.id}>{t.programme?.name ?? 'Programme'}{t.status === 'completed' ? ' · completed' : ''}</li>
                   ))}
                 </ul>
               </div>
+            )}
+            {!cand.country_of_origin && !cand.career_goal_summary && training.length === 0 && (
+              <div className="text-ach-navy/55 italic">No background data captured yet.</div>
             )}
           </CardContent>
         </Card>
       </section>
 
-      {/* Journey through capability change */}
       <section className="mb-8">
         <h2 className="text-[16px] font-serif font-semibold text-ach-navy mb-3">Journey through the programme</h2>
         {scoreByTimepoint.size === 0 ? (
@@ -155,19 +208,18 @@ export default async function CaseStudyPage({ params }: { params: { id: string }
                   );
                 })}
               </div>
-              <div className="text-[11.5px] text-ach-navy/55 mt-3">Mean indicator score across HIM's 7 domains, 0–5 scale.</div>
+              <div className="text-[11.5px] text-ach-navy/55 mt-3">Mean indicator score across HIM&rsquo;s 7 domains, 0&ndash;5 scale.</div>
             </CardContent>
           </Card>
         )}
       </section>
 
-      {/* Placement */}
       {placements.length > 0 && (
         <section className="mb-8">
           <h2 className="text-[16px] font-serif font-semibold text-ach-navy mb-3">Placement outcome</h2>
           <Card>
             <CardContent className="pt-6">
-              {placements.slice(0, 1).map(p => (
+              {placements.slice(0, 1).map((p: any) => (
                 <div key={p.id} className="text-[13px] text-ach-navy leading-relaxed">
                   {p.role_title && <div className="font-medium">{p.role_title}</div>}
                   {p.partners?.name && <div className="text-ach-navy/70">{p.partners.name}</div>}
@@ -181,7 +233,6 @@ export default async function CaseStudyPage({ params }: { params: { id: string }
         </section>
       )}
 
-      {/* Featured quotes */}
       <section className="mb-8">
         <h2 className="text-[16px] font-serif font-semibold text-ach-navy mb-3">In their own words</h2>
         {quotes.length === 0 && featureWorthyResponses.length === 0 ? (
@@ -194,9 +245,9 @@ export default async function CaseStudyPage({ params }: { params: { id: string }
           </Card>
         ) : (
           <div className="space-y-3">
-            {quotes.map(q => (
+            {quotes.map((q: any) => (
               <div key={q.id} className="border-l-2 border-ach-navy/40 pl-4 py-1">
-                <div className="text-[14px] text-ach-navy font-serif italic leading-relaxed">“{q.quote_text}”</div>
+                <div className="text-[14px] text-ach-navy font-serif italic leading-relaxed">&ldquo;{q.quote_text}&rdquo;</div>
                 <div className="text-[11.5px] text-ach-navy/55 mt-1.5">
                   {q.use_anonymised ? 'Anonymised' : (q.display_name ?? 'By name')}
                   {' · '}{q.speaker_type}
@@ -204,16 +255,16 @@ export default async function CaseStudyPage({ params }: { params: { id: string }
                 </div>
               </div>
             ))}
-            {featureWorthyResponses.slice(0, 3).map(r => (
+            {featureWorthyResponses.slice(0, 3).map((r: any) => (
               <div key={r.id} className="border-l-2 border-ach-navy/30 pl-4 py-1">
                 {r.candidate_voice && (
-                  <div className="text-[13.5px] text-ach-navy font-serif italic leading-relaxed">“{r.candidate_voice}”</div>
+                  <div className="text-[13.5px] text-ach-navy font-serif italic leading-relaxed">&ldquo;{r.candidate_voice}&rdquo;</div>
                 )}
                 {r.narrative && (
                   <div className="text-[12.5px] text-ach-navy/75 mt-1">{r.narrative}</div>
                 )}
                 <div className="text-[10.5px] uppercase tracking-[1.1px] text-ach-navy/45 mt-1.5">
-                  Flagged during assessment · indicator {r.indicator_id}
+                  Flagged during assessment &middot; indicator {r.indicator_id}
                 </div>
               </div>
             ))}
@@ -221,7 +272,6 @@ export default async function CaseStudyPage({ params }: { params: { id: string }
         )}
       </section>
 
-      {/* Progression */}
       {cand.progression_type && (
         <section className="mb-8">
           <h2 className="text-[16px] font-serif font-semibold text-ach-navy mb-3">Progression</h2>
@@ -234,7 +284,6 @@ export default async function CaseStudyPage({ params }: { params: { id: string }
         </section>
       )}
 
-      {/* Methodology footer */}
       <section className="mt-10 pt-6 border-t border-ach-border text-[11.5px] text-ach-navy/60 leading-relaxed">
         <div className="font-medium text-ach-navy/75 mb-1">Methodology note</div>
         <p>
