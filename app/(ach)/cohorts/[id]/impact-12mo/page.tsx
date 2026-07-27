@@ -18,7 +18,7 @@ export default async function ImpactReportPage({ params }: { params: { id: strin
     supabase.from('assessments').select('id, candidate_id, timepoint, status, assessed_on').eq('cohort_id', params.id),
     supabase.from('assessment_responses').select('id, assessment_id, indicator_id, numeric_value, narrative, candidate_voice, feature_worthy').limit(2000),
     supabase.from('placements').select('id, candidate_id, start_date, end_date').order('start_date', { ascending: false }),
-    supabase.from('placement_retention_checks').select('placement_id, timepoint, still_employed, progression_notes, checked_at').limit(1000).then(r => r).catch(() => ({ data: [] })),
+    supabase.from('placement_retention_checks').select('placement_id, timepoint, still_employed, progression_note, checked_at').limit(1000),
     supabase.from('featured_quotes').select('id, quote_text, context, speaker_type, use_anonymised, display_name, candidate_id, source_type').eq('cohort_id', params.id).is('archived_at', null),
     supabase.from('cohort_reports').select('id, report_type, status, generated_at, issued_at').eq('cohort_id', params.id).eq('report_type', 'impact_12mo').order('generated_at', { ascending: false }).limit(3),
     supabase.from('cohort_partners').select('id, partners(id, name)').eq('cohort_id', params.id),
@@ -28,7 +28,7 @@ export default async function ImpactReportPage({ params }: { params: { id: strin
   const assessments = (assessmentsRes.data as any[]) ?? [];
   const responses = (responsesRes.data as any[]) ?? [];
   const placements = (placementsRes.data as any[]) ?? [];
-  const retention = ((retentionRes as any).data as any[]) ?? [];
+  const retention = ((retentionRes.data as any[]) ?? []);
   const quotes = (quotesRes.data as any[]) ?? [];
   const prior = (priorReports.data as any[]) ?? [];
   const partners = ((partnersRes.data as any[]) ?? []).map(p => p.partners).filter(Boolean);
@@ -42,8 +42,8 @@ export default async function ImpactReportPage({ params }: { params: { id: strin
   const placementIds = new Set(cohortPlacements.map(p => p.id));
   const cohortRetention = retention.filter(r => placementIds.has(r.placement_id));
 
-  const retention6mo = cohortRetention.filter(r => r.timepoint === '6mo');
-  const retention12mo = cohortRetention.filter(r => r.timepoint === '12mo');
+  const retention6mo = cohortRetention.filter(r => r.timepoint === 'retention_6mo');
+  const retention12mo = cohortRetention.filter(r => r.timepoint === 'retention_12mo');
   const employedAt6 = retention6mo.filter(r => r.still_employed === true).length;
   const employedAt12 = retention12mo.filter(r => r.still_employed === true).length;
 
@@ -73,8 +73,8 @@ export default async function ImpactReportPage({ params }: { params: { id: strin
 
   // Progression narratives from retention checks
   const progressionNarratives = cohortRetention
-    .filter(r => r.progression_notes && r.progression_notes.trim().length > 0)
-    .map(r => r.progression_notes as string);
+    .filter(r => r.progression_note && r.progression_note.trim().length > 0)
+    .map(r => r.progression_note as string);
 
   const snapshot = {
     generated_at: new Date().toISOString(),
