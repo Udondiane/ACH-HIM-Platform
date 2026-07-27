@@ -221,7 +221,6 @@ create or replace view public.follow_ups_queue as
     c.candidate_ref,
     c.given_name,
     c.family_name,
-    c.preferred_name,
     c.at_risk,
     co.name        as cohort_name,
     p.role_title   as placement_role,
