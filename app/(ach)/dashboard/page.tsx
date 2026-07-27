@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { computePendingActions, labelFor, type PendingAction } from '@/lib/scoring/pending-actions';
+import { FollowUpExceptions } from '@/components/dashboard/follow-up-exceptions';
 
 export const dynamic = 'force-dynamic';
 
@@ -85,6 +86,10 @@ export default async function AchDashboardPage() {
             </Card>
           </Link>
         ))}
+      </div>
+
+      <div className="mt-4">
+        <FollowUpExceptions />
       </div>
 
 
