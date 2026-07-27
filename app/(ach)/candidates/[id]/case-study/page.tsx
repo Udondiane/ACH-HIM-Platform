@@ -29,7 +29,7 @@ export default async function CaseStudyPage({ params }: { params: { id: string }
     supabase.from('assessment_responses').select('id, assessment_id, indicator_id, numeric_value, narrative, candidate_voice, feature_worthy').limit(1000),
     supabase.from('placements').select('id, start_date, end_date, role_title, partners(id, name)').eq('candidate_id', params.id).order('start_date', { ascending: false }),
     supabase.from('featured_quotes').select('id, quote_text, context, speaker_type, use_anonymised, display_name, source_type, tagged_at').eq('candidate_id', params.id).is('archived_at', null).order('tagged_at', { ascending: false }),
-    supabase.from('training_enrolments').select('id, status, programme:programme_id(name, category)').eq('candidate_id', params.id).limit(50).then(r => r).catch(() => ({ data: [] })),
+    supabase.from('training_enrolments').select('id, status, programme:programme_id(name, category)').eq('candidate_id', params.id).limit(50),
   ]);
 
   const consent = ((consentRes.data as any[])?.[0] ?? {}) as any;
@@ -38,7 +38,7 @@ export default async function CaseStudyPage({ params }: { params: { id: string }
   const responses = (responsesRes.data as any[]) ?? [];
   const placements = (placementsRes.data as any[]) ?? [];
   const quotes = (quotesRes.data as any[]) ?? [];
-  const training = ((trainingRes as any).data as any[]) ?? [];
+  const training = ((trainingRes.data as any[]) ?? []);
 
   // Identity handling: anonymised name if by-name consent not granted
   const useName = !!consent.may_be_named;
