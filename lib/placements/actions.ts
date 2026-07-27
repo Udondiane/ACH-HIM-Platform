@@ -89,7 +89,6 @@ export async function createPlacementAction(
   await supabase.from('candidates').update({ status: 'placed' } as never).eq('id', input.candidate_id);
 
   revalidatePath(`/candidates/${input.candidate_id}`);
-  revalidatePath('/milestones');
   revalidatePath('/dashboard');
   redirect(`/candidates/${input.candidate_id}`);
 }
