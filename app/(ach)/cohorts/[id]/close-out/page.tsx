@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Printer } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import { PrintButton } from '@/components/ui/print-button';
 import { createClient } from '@/lib/supabase/server';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -121,12 +122,7 @@ export default async function CloseOutReportPage({ params }: { params: { id: str
       {/* Actions row */}
       <div className="print:hidden flex items-center gap-2 mb-6">
         <SnapshotButton cohortId={c.id} snapshot={snapshot} reportType="close_out" />
-        <button
-          onClick={() => window.print()}
-          className="inline-flex items-center gap-1.5 text-[12.5px] px-3 py-1.5 rounded-[8px] border border-ach-border text-ach-navy hover:bg-ach-page"
-        >
-          <Printer className="h-3.5 w-3.5" /> Print or save as PDF
-        </button>
+        <PrintButton />
         {prior.length > 0 && (
           <span className="text-[12px] text-ach-navy/60 ml-auto">
             {prior.filter(p => p.status === 'issued').length} issued · {prior.filter(p => p.status === 'draft').length} draft on file
