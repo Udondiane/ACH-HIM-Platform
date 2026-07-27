@@ -262,7 +262,7 @@ export async function setAudioConsentAction(candidateId: string, consent: boolea
 
   const { data: latest } = await supabase
     .from('candidate_consent')
-    .select('may_be_named, may_be_quoted, may_appear_in_case_study, may_share_career_goal_with_partner')
+    .select('may_be_named, may_be_quoted, may_appear_in_case_study, may_share_career_goal_with_partner, may_be_recontacted_for_followup')
     .eq('candidate_id', candidateId)
     .order('given_at', { ascending: false })
     .limit(1)
@@ -275,6 +275,7 @@ export async function setAudioConsentAction(candidateId: string, consent: boolea
     may_be_quoted: !!prior.may_be_quoted,
     may_appear_in_case_study: !!prior.may_appear_in_case_study,
     may_share_career_goal_with_partner: !!prior.may_share_career_goal_with_partner,
+    may_be_recontacted_for_followup: !!prior.may_be_recontacted_for_followup,
     may_ai_analyse_transcript: consent,
     recorded_by: user.user?.id ?? null,
     notes: consent ? 'Audio recording consent granted.' : 'Audio recording consent withdrawn.',
@@ -291,6 +292,7 @@ export async function recordConsentAction(
     may_be_quoted?: boolean;
     may_appear_in_case_study?: boolean;
     may_ai_analyse_transcript?: boolean;
+    may_be_recontacted_for_followup?: boolean;
   },
   notes?: string,
 ) {
@@ -303,6 +305,7 @@ export async function recordConsentAction(
     may_appear_in_case_study: !!flags.may_appear_in_case_study,
     may_share_career_goal_with_partner: false,
     may_ai_analyse_transcript: !!flags.may_ai_analyse_transcript,
+    may_be_recontacted_for_followup: !!flags.may_be_recontacted_for_followup,
     recorded_by: user.user?.id ?? null,
     notes: notes ?? null,
   } as never);

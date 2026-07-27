@@ -12,6 +12,7 @@ export function ConsentForm({ candidateId }: { candidateId: string }) {
     may_be_quoted: false,
     may_appear_in_case_study: false,
     may_ai_analyse_transcript: false,
+    may_be_recontacted_for_followup: false,
   });
   const [notes, setNotes] = useState('');
 
@@ -21,6 +22,7 @@ export function ConsentForm({ candidateId }: { candidateId: string }) {
       setFlags({
         may_be_named: false, may_be_quoted: false,
         may_appear_in_case_study: false, may_ai_analyse_transcript: false,
+        may_be_recontacted_for_followup: false,
       });
       setNotes('');
     });
@@ -51,6 +53,8 @@ export function ConsentForm({ candidateId }: { candidateId: string }) {
         hint="Story may be developed into a longer narrative case study." />
       <Toggle k="may_ai_analyse_transcript" label="AI may analyse assessment transcripts"
         hint="Interview transcripts may be reviewed by an AI to produce a comparison score. Used only to support assessor calibration; the assessor's judgement remains the final decision." />
+      <Toggle k="may_be_recontacted_for_followup" label="May be recontacted for 12-month follow-up"
+        hint="ACH may reach out a year after programme end to capture retention outcomes and impact evidence for funder reporting." />
 
       <Textarea
         value={notes}
