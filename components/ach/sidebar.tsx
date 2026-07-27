@@ -25,10 +25,8 @@ const NAV = [
   { href: '/placements/timepoints', label: 'Placement timepoints', icon: CalendarDays },
   { href: '/pricing',            label: 'Pricing tool',     icon: Calculator },
   { href: '/development-fund',   label: 'Development fund', icon: PoundSterling },
-  { href: '/milestones',         label: 'Retention milestones', icon: ScrollText },
   { section: 'Reports' },
   { href: '/aggregate',          label: 'Aggregate',        icon: LayoutDashboard },
-  { href: '/reports',            label: 'Other reports',    icon: ScrollText },
 ] as const;
 
 const STORAGE_KEY = 'ach_sidebar_collapsed';

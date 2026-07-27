@@ -32,6 +32,9 @@ KTP but do not have active users in operational ACH work.
 | Framework library viewer | `_archive/routes/ach/admin-framework/` | `mkdir -p 'app/(ach)/admin' && mv _archive/routes/ach/admin-framework 'app/(ach)/admin/framework'` |
 | Evidence pack builder | `_archive/routes/ach/evidence-pack/` | `mv _archive/routes/ach/evidence-pack 'app/(ach)/evidence-pack'` |
 | Cohort capability report | `_archive/routes/ach/capability-report/` | `mv _archive/routes/ach/capability-report 'app/(ach)/cohorts/[id]/capability-report'` |
+| Career Progression + Engagement Reports (index) | `_archive/routes/ach/reports/` | `mv _archive/routes/ach/reports 'app/(ach)/reports'` (then re-add sidebar link + 'Reports' section) |
+| Training delivery report (KPIs + programme table) | `_archive/routes/ach/training-reports/` | `mv _archive/routes/ach/training-reports 'app/(ach)/training/reports'` (then re-add the header link + `BarChart3` import in `app/(ach)/training/page.tsx`) |
+| Retention milestones dashboard | `_archive/routes/ach/milestones/` | `mv _archive/routes/ach/milestones 'app/(ach)/milestones'` (then re-add sidebar link + `revalidatePath('/milestones')` in `lib/placements/actions.ts`) |
 
 ### Role-specific dashboards (consolidated to `/dashboard`)
 

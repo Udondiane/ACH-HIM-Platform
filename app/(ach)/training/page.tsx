@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Plus, GraduationCap, CalendarDays, ClipboardList, BarChart3 } from 'lucide-react';
+import { Plus, GraduationCap, CalendarDays, ClipboardList } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
@@ -102,12 +102,7 @@ export default async function TrainingLandingPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">All programmes</div>
-            <Link href="/training/reports" className="text-[12px] text-ach-navy/70 underline underline-offset-2 inline-flex items-center gap-1">
-              <BarChart3 className="h-3.5 w-3.5" />Reports
-            </Link>
-          </div>
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">All programmes</div>
         </CardHeader>
         <CardContent>
           {programmes.length === 0 ? (
