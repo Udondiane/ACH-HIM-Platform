@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Building2, Users, FolderKanban,
   PoundSterling, GraduationCap, CalendarDays,
-  ScrollText, Calculator, Quote,
+  ScrollText, Calculator, Quote, Phone,
   ChevronsLeft, ChevronsRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -22,6 +22,7 @@ const NAV = [
   { href: '/training',           label: 'Training',         icon: GraduationCap },
   { href: '/training/my',        label: 'My classes',       icon: ScrollText },
   { section: 'Operations' },
+  { href: '/follow-ups',         label: 'Follow-ups',       icon: Phone },
   { href: '/placements/timepoints', label: 'Placement timepoints', icon: CalendarDays },
   { href: '/pricing',            label: 'Pricing tool',     icon: Calculator },
   { href: '/development-fund',   label: 'Development fund', icon: PoundSterling },
