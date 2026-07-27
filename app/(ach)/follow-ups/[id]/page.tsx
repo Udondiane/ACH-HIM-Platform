@@ -44,7 +44,7 @@ export default async function FollowUpDispatchPage({ params }: { params: { id: s
   if (!row) notFound();
   const r = row as any;
 
-  const displayName = r.preferred_name || r.given_name || r.candidate_ref;
+  const displayName = r.given_name || r.candidate_ref;
   const isRetention = r.timepoint === 'exit_6mo' || r.timepoint === 'followup_12mo';
   const is12mo = r.timepoint === 'followup_12mo';
 

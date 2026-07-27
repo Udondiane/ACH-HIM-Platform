@@ -17,7 +17,7 @@ export default async function CaseStudyPage({ params }: { params: { id: string }
   const supabase = createClient();
   const { data: candidate } = await supabase
     .from('candidates')
-    .select('id, candidate_ref, given_name, family_name, preferred_name, status, career_goal_summary, country_of_origin, arrival_year, progression_type, progression_notes')
+    .select('*')
     .eq('id', params.id)
     .maybeSingle();
   if (!candidate) notFound();
@@ -43,7 +43,7 @@ export default async function CaseStudyPage({ params }: { params: { id: string }
   // Identity handling: anonymised name if by-name consent not granted
   const useName = !!consent.may_be_named;
   const displayName = useName
-    ? (cand.preferred_name || cand.given_name || cand.candidate_ref)
+    ? (cand.preferred_name || cand.given_name || cand.candidate_ref)  /* preferred_name optional */
     : `${cand.candidate_ref} (anonymised)`;
 
   const candAssessmentIds = new Set(assessments.map(a => a.id));
