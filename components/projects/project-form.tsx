@@ -277,43 +277,54 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
         })}
       </div>
 
-      {relevantActivities.length > 0 && (
-        <div className="pt-5 border-t-[0.5px] border-ach-border">
-          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">Programme activities</div>
-          <p className="text-[12px] text-ach-navy/60 mb-3">
-            Tick the activities this programme delivers. The assessment set is derived from this — you don&apos;t pick individual factors.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {relevantActivities.map(act => {
-              const selected = activitySet.has(act.id);
-              return (
-                <button
-                  key={act.id}
-                  type="button"
-                  onClick={() => toggleActivity(act.id)}
-                  className={`text-left p-3 rounded-[10px] border-[0.5px] transition-colors ${
-                    selected
-                      ? 'border-ach-navy bg-ach-navy text-ach-cream'
-                      : 'border-ach-border bg-white text-ach-navy/80 hover:bg-ach-page'
-                  }`}
-                  aria-pressed={selected}
-                >
-                  <div className="text-[13px] font-medium">{act.label}</div>
-                  <div className={`text-[11px] mt-0.5 ${selected ? 'text-ach-cream/75' : 'text-ach-navy/55'}`}>
-                    {act.hint}
-                  </div>
-                </button>
-              );
-            })}
+      <div className="pt-5 border-t-[0.5px] border-ach-border">
+        <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">Programme activities</div>
+        <p className="text-[12px] text-ach-navy/60 mb-3">
+          Tick the activities this programme delivers. The assessment set is derived from this — you don&apos;t pick individual factors.
+        </p>
+        {relevantActivities.length === 0 ? (
+          <div className="rounded-[10px] border border-dashed border-ach-border bg-ach-page/40 px-4 py-6 text-center">
+            <p className="text-[12.5px] text-ach-navy/60">
+              Pick at least one outcome or impact above to see the relevant activities appear here.
+            </p>
+            <p className="text-[11.5px] text-ach-navy/45 mt-1">
+              Activities are filtered to the domains you selected, so the set stays focused and manageable.
+            </p>
           </div>
-          <div className="text-[11px] text-ach-navy/55 mt-2">
-            {activitySet.size} activit{activitySet.size === 1 ? 'y' : 'ies'} ticked.
-          </div>
-          {[...activitySet].map(id => (
-            <input key={id} type="hidden" name="activities" value={id} />
-          ))}
-        </div>
-      )}
+        ) : (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {relevantActivities.map(act => {
+                const selected = activitySet.has(act.id);
+                return (
+                  <button
+                    key={act.id}
+                    type="button"
+                    onClick={() => toggleActivity(act.id)}
+                    className={`text-left p-3 rounded-[10px] border-[0.5px] transition-colors ${
+                      selected
+                        ? 'border-ach-navy bg-ach-navy text-ach-cream'
+                        : 'border-ach-border bg-white text-ach-navy/80 hover:bg-ach-page'
+                    }`}
+                    aria-pressed={selected}
+                  >
+                    <div className="text-[13px] font-medium">{act.label}</div>
+                    <div className={`text-[11px] mt-0.5 ${selected ? 'text-ach-cream/75' : 'text-ach-navy/55'}`}>
+                      {act.hint}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="text-[11px] text-ach-navy/55 mt-2">
+              {activitySet.size} activit{activitySet.size === 1 ? 'y' : 'ies'} ticked.
+            </div>
+            {[...activitySet].map(id => (
+              <input key={id} type="hidden" name="activities" value={id} />
+            ))}
+          </>
+        )}
+      </div>
 
       <input type="hidden" name="type" value={typeValue} />
       <input type="hidden" name="weight_ratio" value={ratioValue} />
