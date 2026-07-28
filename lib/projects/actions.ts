@@ -14,17 +14,17 @@ export type ActionResult =
 function fdToPlain(fd: FormData): Record<string, unknown> {
   const obj: Record<string, unknown> = {};
   for (const [k, v] of fd.entries()) {
-    // Collect any 'activities' form field (multiple checkboxes share the
-    // same name) into an array on the parsed object.
-    if (k === 'activities') {
-      const existing = obj.activities;
+    // Collect multi-value fields (checkbox groups) into arrays.
+    if (k === 'activities' || k === 'training_programme_ids') {
+      const existing = obj[k];
       if (Array.isArray(existing)) (existing as unknown[]).push(v);
-      else obj.activities = [v];
+      else obj[k] = [v];
     } else {
       obj[k] = v;
     }
   }
   if (!('activities' in obj)) obj.activities = [];
+  if (!('training_programme_ids' in obj)) obj.training_programme_ids = [];
   return obj;
 }
 
@@ -39,6 +39,18 @@ async function syncProjectActivities(
   if (activities.length === 0) return;
   const rows = activities.map(activity => ({ project_id: projectId, activity }));
   await supabase.from('project_activities').insert(rows as never);
+}
+
+/** Sync the project_training_programmes link rows to match the user's tick list. */
+async function syncProjectTrainingProgrammes(
+  supabase: ReturnType<typeof createClient>,
+  projectId: string,
+  programmeIds: string[],
+): Promise<void> {
+  await supabase.from('project_training_programmes').delete().eq('project_id', projectId);
+  if (programmeIds.length === 0) return;
+  const rows = programmeIds.map(programme_id => ({ project_id: projectId, programme_id }));
+  await supabase.from('project_training_programmes').insert(rows as never);
 }
 
 async function nextProjectRef(supabase: ReturnType<typeof createClient>): Promise<string> {
@@ -235,6 +247,7 @@ export async function createProjectAction(_prev: ActionResult | null, fd: FormDa
     cap_rights:     parsed.data.cap_rights,
   });
   await syncProjectActivities(supabase, row!.id, parsed.data.activities ?? []);
+  await syncProjectTrainingProgrammes(supabase, row!.id, (parsed.data as any).training_programme_ids ?? []);
   await syncPartnersFromFunderName(supabase, parsed.data.funder_name, parsed.data.funding_model);
   revalidatePath('/projects');
   revalidatePath('/partners');
@@ -267,6 +280,7 @@ export async function updateProjectAction(
     cap_rights:     parsed.data.cap_rights,
   });
   await syncProjectActivities(supabase, id, parsed.data.activities ?? []);
+  await syncProjectTrainingProgrammes(supabase, id, (parsed.data as any).training_programme_ids ?? []);
   await syncPartnersFromFunderName(supabase, parsed.data.funder_name, parsed.data.funding_model);
   revalidatePath('/projects');
   revalidatePath('/partners');
