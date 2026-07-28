@@ -108,9 +108,9 @@ export default async function TomsCrosswalkPage() {
   );
 }
 
-function Th({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+function Th({ children, className = '' }: { children?: React.ReactNode; className?: string }) {
   return <th className={`text-left px-3 py-3 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium ${className}`}>{children}</th>;
 }
-function Td({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+function Td({ children, className = '' }: { children?: React.ReactNode; className?: string }) {
   return <td className={`px-3 py-2.5 align-top ${className}`}>{children}</td>;
 }
