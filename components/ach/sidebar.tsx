@@ -32,6 +32,7 @@ const NAV = [
   { section: 'Methodology' },
   { href: '/admin/framework',    label: 'Framework library',icon: BookOpen },
   { href: '/toms-crosswalk',     label: 'TOMs crosswalk',   icon: ArrowLeftRight },
+  { href: '/admin/partner-question-sets', label: 'Partner question sets', icon: ScrollText },
 ] as const;
 
 const STORAGE_KEY = 'ach_sidebar_collapsed';
