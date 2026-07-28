@@ -360,7 +360,7 @@ export default async function AssessmentRunnerPage({
                             {fac.measurement_question}
                           </div>
                         )}
-                        {inds.length > 0 && (
+                        {inds.length > 0 && !fac.score_guides && (
                           <div className="mb-3 rounded-[8px] border-[0.5px] border-ach-border bg-ach-page/40 px-3 py-2">
                             <div className="text-[11px] uppercase tracking-[1.2px] text-ach-navy/60 mb-1.5">
                               What the assessor is listening for
