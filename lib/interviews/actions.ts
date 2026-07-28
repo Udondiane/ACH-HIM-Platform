@@ -34,12 +34,12 @@ function normalisePayload(input: ReturnType<typeof interviewSchema.parse>) {
   };
 }
 
-async function maybeAdvanceJourney(supabase: ReturnType<typeof createClient>, candidateId: string, kind: string, outcome: string) {
-  let nextStage: string | null = null;
-  if (kind === 'ach_selection' && outcome === 'proceed') nextStage = 'ach_interview_done';
-  else if (kind === 'partner_interview' && outcome === 'proceed') nextStage = 'partner_interview_done';
-  if (!nextStage) return;
-  await supabase.from('candidates').update({ journey_stage: nextStage } as never).eq('id', candidateId);
+// Interview outcomes previously wrote candidates.journey_stage, which was
+// removed in migration 051 as part of the status consolidation. Interview
+// results now stand alone; downstream status is driven by placement/assessment
+// events via the auto-status triggers.
+async function maybeAdvanceJourney(_supabase: ReturnType<typeof createClient>, _candidateId: string, _kind: string, _outcome: string) {
+  return;
 }
 
 export async function createInterviewAction(_prev: InterviewResult | null, fd: FormData): Promise<InterviewResult> {
@@ -119,8 +119,8 @@ export async function deleteInterviewAction(id: string, candidateId: string) {
   revalidatePath(`/candidates/${candidateId}/interviews`);
 }
 
-export async function updateJourneyStageAction(candidateId: string, stage: string) {
-  const supabase = createClient();
-  await supabase.from('candidates').update({ journey_stage: stage } as never).eq('id', candidateId);
+// journey_stage was removed in migration 051. This action is a no-op
+// retained so existing callers (if any remain) do not crash.
+export async function updateJourneyStageAction(candidateId: string, _stage: string) {
   revalidatePath(`/candidates/${candidateId}`);
 }

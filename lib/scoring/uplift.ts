@@ -155,7 +155,7 @@ export function computeFunnel(
       case 'other':                f.otherExits         += 1; break;
       case 'followable':           f.otherExits         += 1; break;
       default:
-        if (c.status === 'completed' || c.status === 'placed' || c.status === 'progressed') {
+        if (c.status === 'placed' || c.status === 'progressed') {
           f.completers += 1;
         } else if (c.status === 'withdrawn') {
           f.disengaged += 1;

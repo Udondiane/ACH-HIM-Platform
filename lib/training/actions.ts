@@ -51,9 +51,8 @@ export async function createTrainingAction(_prev: TrainingResult | null, fd: For
     .insert({ ...normalisePayload(parsed.data), recorded_by: user.user?.id ?? null } as never)
     .select('id').single();
   if (error) return { ok: false, error: error.message };
-  if (parsed.data.completion_status === 'in_progress' || parsed.data.completion_status === 'completed') {
-    await supabase.from('candidates').update({ journey_stage: 'training' } as never).eq('id', parsed.data.candidate_id);
-  }
+  // journey_stage removed in migration 051 — status is driven by placement + baseline
+  // events via triggers, not by training log entries.
   revalidatePath(`/candidates/${parsed.data.candidate_id}`);
   revalidatePath(`/candidates/${parsed.data.candidate_id}/training`);
   return { ok: true, id: (data as { id: string }).id };
