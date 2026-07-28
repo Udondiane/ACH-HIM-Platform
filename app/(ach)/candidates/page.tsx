@@ -258,7 +258,7 @@ function ProgrammeCard({
   const atRiskCount = candidates.filter(c => c.at_risk).length;
   const inProgrammeCount = candidates.filter(c => c.status === 'in_programme').length;
   const placedCount = candidates.filter(c => c.status === 'placed').length;
-  const exitedCount = candidates.filter(c => c.status === 'withdrawn' || c.status === 'completed').length;
+  const exitedCount = candidates.filter(c => c.status === 'withdrawn').length;
 
   const serviceLabel = SERVICE_TYPE_LABEL[serviceType] ?? serviceType;
 

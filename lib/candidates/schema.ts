@@ -1,14 +1,12 @@
 import { z } from 'zod';
 
 export const CANDIDATE_STATUSES = [
-  'applicant','enrolled','in_programme','completed','placed','progressed','withdrawn',
+  'applicant','in_programme','placed','progressed','withdrawn',
 ] as const;
 
 export const CANDIDATE_STATUS_LABELS: Record<typeof CANDIDATE_STATUSES[number], string> = {
   applicant:    'Applicant',
-  enrolled:     'Enrolled',
   in_programme: 'In programme',
-  completed:    'Completed programme',
   placed:       'Placed',
   progressed:   'Progressed',
   withdrawn:    'Withdrawn',

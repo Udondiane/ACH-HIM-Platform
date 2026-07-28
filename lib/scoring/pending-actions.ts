@@ -108,7 +108,7 @@ export function computePendingActions(
       }
     }
 
-    if (['completed', 'placed', 'progressed', 'withdrawn'].includes(c.status) && !c.exit_reason) {
+    if (['placed', 'progressed', 'withdrawn'].includes(c.status) && !c.exit_reason) {
       out.push({ kind: 'exit_reason_missing', candidateId: c.id, candidateRef: c.candidate_ref, cohortRef, href: `/candidates/${c.id}/edit` });
     }
   }

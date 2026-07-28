@@ -70,7 +70,6 @@ export async function bulkImportCandidatesAction(input: {
       career_goal_summary: m.career_goal_summary ?? null,
       notes:            m.notes ?? null,
       status:           'applicant',
-      journey_stage:    'applicant',
       application_source_data: Object.keys(r.application_source_data).length > 0 ? r.application_source_data : null,
     };
 
