@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Building2, Users, FolderKanban,
   PoundSterling, GraduationCap, CalendarDays,
-  ScrollText, Calculator, Quote, Phone, BookOpen, ArrowLeftRight, FileText,
+  ScrollText, Calculator, Quote, Phone, BookOpen, ArrowLeftRight, Library,
   ChevronsLeft, ChevronsRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -28,8 +28,8 @@ const NAV = [
   { href: '/development-fund',   label: 'Development fund', icon: PoundSterling },
   { section: 'Reports' },
   { href: '/aggregate',          label: 'Aggregate',        icon: LayoutDashboard },
+  { href: '/impact-library',     label: 'Impact library',   icon: Library },
   { href: '/featured-quotes',    label: 'Featured quotes',  icon: Quote },
-  { href: '/bids',               label: 'Bid packs',        icon: FileText },
   { section: 'Methodology' },
   { href: '/admin/framework',    label: 'Framework library',icon: BookOpen },
   { href: '/toms-crosswalk',     label: 'TOMs crosswalk',   icon: ArrowLeftRight },
