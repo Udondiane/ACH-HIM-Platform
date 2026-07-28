@@ -134,6 +134,9 @@ export default async function CohortDetailPage({ params }: { params: { id: strin
             <Link href={`/cohorts/${c.id}/capability-investor-report`}>
               <Button variant="secondary">Capability investor view</Button>
             </Link>
+            <Link href={`/cohorts/${c.id}/toms-claims`}>
+              <Button variant="secondary">TOMs £ claims</Button>
+            </Link>
             <Link href={`/cohorts/${c.id}/edit`}>
               <Button variant="secondary"><Pencil className="h-3.5 w-3.5" />Edit</Button>
             </Link>

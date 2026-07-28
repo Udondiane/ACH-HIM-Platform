@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Building2, Users, FolderKanban,
   PoundSterling, GraduationCap, CalendarDays,
-  ScrollText, Calculator, Quote, Phone, BookOpen,
+  ScrollText, Calculator, Quote, Phone, BookOpen, ArrowLeftRight,
   ChevronsLeft, ChevronsRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -31,6 +31,7 @@ const NAV = [
   { href: '/featured-quotes',    label: 'Featured quotes',  icon: Quote },
   { section: 'Methodology' },
   { href: '/admin/framework',    label: 'Framework library',icon: BookOpen },
+  { href: '/toms-crosswalk',     label: 'TOMs crosswalk',   icon: ArrowLeftRight },
 ] as const;
 
 const STORAGE_KEY = 'ach_sidebar_collapsed';
