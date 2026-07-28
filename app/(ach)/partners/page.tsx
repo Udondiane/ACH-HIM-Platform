@@ -8,10 +8,12 @@ import { PageHeader } from '@/components/ui/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PARTNER_TYPES, PARTNER_TYPE_LABELS } from '@/lib/partners/schema';
 
-type Search = { type?: string };
+type Search = { type?: string; archived?: string };
 
 export default async function PartnersListPage({ searchParams }: { searchParams?: Search }) {
   const supabase = createClient();
+  const showArchived = searchParams?.archived === '1';
+
   let query = supabase
     .from('partners')
     .select('id, name, type, types, status, sector, region, employee_count')
@@ -22,7 +24,16 @@ export default async function PartnersListPage({ searchParams }: { searchParams?
     query = query.contains('types', [searchParams.type]);
   }
 
+  if (!showArchived) {
+    query = query.neq('status', 'closed');
+  }
+
   const { data: partners, error } = await query;
+
+  const { count: archivedCount } = await supabase
+    .from('partners')
+    .select('id', { count: 'exact', head: true })
+    .eq('status', 'closed');
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -37,16 +48,30 @@ export default async function PartnersListPage({ searchParams }: { searchParams?
         }
       />
 
-      <div className="flex items-center gap-2 mb-5">
+      <div className="flex items-center gap-2 mb-5 flex-wrap">
         <FilterPill href="/partners" label="All" active={!searchParams?.type} />
         {PARTNER_TYPES.map(t => (
           <FilterPill
             key={t}
-            href={`/partners?type=${t}`}
+            href={`/partners?type=${t}${showArchived ? '&archived=1' : ''}`}
             label={PARTNER_TYPE_LABELS[t]}
             active={searchParams?.type === t}
           />
         ))}
+        {(archivedCount ?? 0) > 0 && (
+          <Link
+            href={showArchived
+              ? (searchParams?.type ? `/partners?type=${searchParams.type}` : '/partners')
+              : (searchParams?.type ? `/partners?type=${searchParams.type}&archived=1` : '/partners?archived=1')}
+            className={`ml-auto px-3 py-1 rounded-full text-[12px] border-[0.5px] transition-colors ${
+              showArchived
+                ? 'bg-ach-navy text-ach-cream border-ach-navy'
+                : 'bg-white text-ach-navy/60 border-ach-border hover:bg-ach-page'
+            }`}
+          >
+            {showArchived ? 'Hide archived' : `Show archived (${archivedCount})`}
+          </Link>
+        )}
       </div>
 
       {error && (
