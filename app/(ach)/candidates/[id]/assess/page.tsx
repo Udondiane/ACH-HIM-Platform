@@ -134,7 +134,7 @@ export default async function CandidateAssessChooserPage({
     <div className="max-w-3xl mx-auto">
       <PageHeader
         backHref={`/candidates/${params.id}`}
-        backLabel={`${c.candidate_ref} · ${c.given_name}`}
+        backLabel={c.candidate_ref}
         miniLabel="Candidate · Assessments"
         title="Run an assessment"
       />
