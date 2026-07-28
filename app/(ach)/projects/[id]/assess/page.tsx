@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { startAssessmentAction } from '@/lib/assessments/actions';
+import { CandidatePicker } from '@/components/candidates/candidate-picker';
 
 const TIMEPOINTS = [
   { id: 'baseline',      label: 'Baseline' },
@@ -74,15 +75,7 @@ export default async function StartAssessmentPage({ params }: { params: { id: st
             <form action={action} className="space-y-5">
               <div className="space-y-2">
                 <label className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Candidate</label>
-                <select
-                  name="candidate_id" required
-                  className="flex h-9 w-full rounded-[10px] border-[0.5px] border-ach-border bg-white px-3 py-2 text-[13px] text-ach-navy focus:outline-none focus:ring-1 focus:ring-ach-navy/40"
-                >
-                  <option value="">Choose a candidate…</option>
-                  {candidates.map((c: any) => (
-                    <option key={c.id} value={c.id}>{c.candidate_ref} · {c.given_name}</option>
-                  ))}
-                </select>
+                <CandidatePicker name="candidate_id" required options={candidates as any[]} />
               </div>
 
               <div className="space-y-2">
