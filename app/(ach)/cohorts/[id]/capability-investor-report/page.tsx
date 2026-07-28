@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { Card, CardContent } from '@/components/ui/card';
 import { PrintButton } from '@/components/ui/print-button';
 import { SnapshotButton } from '@/components/cohort-reports/snapshot-button';
+import { scoreToLevel, relativeGainPct, upliftNarrative } from '@/lib/scoring/interpret';
 
 export const metadata = { title: 'Capability investor report' };
 
@@ -163,11 +164,19 @@ export default async function CapabilityInvestorReportPage({ params }: { params:
             {overallUplift === null ? (
               <div className="text-[13px] text-ach-navy/60 italic">No baseline / exit pair available yet.</div>
             ) : (
-              <div className="grid grid-cols-3 gap-6">
-                <ScoreBlock label="Mean baseline" value={overallBaseline!} sub="across all measured domains" />
-                <ScoreBlock label="Mean exit" value={overallExit!} sub="end of programme timepoint" />
-                <ScoreBlock label="Uplift" value={overallUplift} sub="capability change over the programme" highlight />
-              </div>
+              <>
+                <div className="grid grid-cols-3 gap-6">
+                  <ScoreBlock label="Mean baseline" value={overallBaseline!} sub={`Level ${scoreToLevel(overallBaseline!).level} · ${scoreToLevel(overallBaseline!).label}`} />
+                  <ScoreBlock label="Mean exit" value={overallExit!} sub={`Level ${scoreToLevel(overallExit!).level} · ${scoreToLevel(overallExit!).label}`} />
+                  <ScoreBlock label="Uplift" value={overallUplift} sub={`${relativeGainPct(overallBaseline!, overallExit!) >= 0 ? '+' : ''}${relativeGainPct(overallBaseline!, overallExit!)}% on baseline`} highlight />
+                </div>
+                <div className="mt-4 text-[12.5px] text-ach-navy/80 leading-relaxed italic">
+                  {upliftNarrative(overallBaseline!, overallExit!)}
+                </div>
+                <div className="mt-4 pt-3 border-t border-ach-border/60 text-[11px] text-ach-navy/60 leading-relaxed">
+                  <span className="font-medium">What this measures.</span> Capability change is an outcome proxy — evidence that the intervention moved candidates on the domains we set out to measure. Domain-by-domain detail in section 2 shows where the change concentrated.
+                </div>
+              </>
             )}
           </CardContent>
         </Card>

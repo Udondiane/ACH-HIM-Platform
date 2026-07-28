@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Pencil, CalendarDays, UserPlus, Award } from 'lucide-react';
+import { Pencil, CalendarDays, UserPlus, Award, LineChart } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
@@ -94,6 +94,9 @@ export default async function ProgrammeDetailPage({ params }: { params: { id: st
           <div className="flex items-center gap-2">
             <Link href={`/training/sessions/new?programme=${p.id}`}>
               <Button variant="secondary"><CalendarDays className="h-3.5 w-3.5" />Schedule session</Button>
+            </Link>
+            <Link href={`/training/programmes/${p.id}/effectiveness`}>
+              <Button variant="secondary"><LineChart className="h-3.5 w-3.5" />Effectiveness</Button>
             </Link>
             <Link href={`/training/programmes/${p.id}/edit`}>
               <Button variant="secondary"><Pencil className="h-3.5 w-3.5" />Edit</Button>

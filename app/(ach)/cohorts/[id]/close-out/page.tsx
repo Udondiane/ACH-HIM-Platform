@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { SnapshotButton } from '@/components/cohort-reports/snapshot-button';
+import { scoreToLevel, relativeGainPct, upliftNarrative } from '@/lib/scoring/interpret';
 
 export const metadata = { title: 'Programme close-out report' };
 
@@ -150,26 +151,41 @@ export default async function CloseOutReportPage({ params }: { params: { id: str
               <div>
                 <div className="text-[11px] uppercase tracking-[1.2px] text-ach-navy/50 mb-1">Mean baseline score</div>
                 <div className="text-[28px] font-serif text-ach-navy">{meanBaseline.toFixed(2)}</div>
-                <div className="text-[11.5px] text-ach-navy/55">across all indicators, 0–5 scale</div>
+                <div className="text-[11.5px] text-ach-navy/55">
+                  Level {scoreToLevel(meanBaseline).level} · {scoreToLevel(meanBaseline).label}
+                </div>
               </div>
               <div>
                 <div className="text-[11px] uppercase tracking-[1.2px] text-ach-navy/50 mb-1">Mean exit score</div>
                 <div className="text-[28px] font-serif text-ach-navy">{meanExit.toFixed(2)}</div>
-                <div className="text-[11.5px] text-ach-navy/55">end of placement or equivalent timepoint</div>
+                <div className="text-[11.5px] text-ach-navy/55">
+                  Level {scoreToLevel(meanExit).level} · {scoreToLevel(meanExit).label}
+                </div>
               </div>
               <div>
                 <div className="text-[11px] uppercase tracking-[1.2px] text-ach-navy/50 mb-1">Uplift</div>
                 <div className={`text-[28px] font-serif ${uplift >= 0 ? 'text-ach-navy' : 'text-red-700'}`}>
                   {uplift >= 0 ? '+' : ''}{uplift.toFixed(2)}
                 </div>
-                <div className="text-[11.5px] text-ach-navy/55">indicative change over the programme window</div>
+                <div className="text-[11.5px] text-ach-navy/55">
+                  {relativeGainPct(meanBaseline, meanExit) >= 0 ? '+' : ''}
+                  {relativeGainPct(meanBaseline, meanExit)}% on baseline
+                </div>
               </div>
             </div>
+            {meanBaseline > 0 && meanExit > 0 && (
+              <div className="mt-4 text-[12.5px] text-ach-navy/80 leading-relaxed italic">
+                {upliftNarrative(meanBaseline, meanExit)}
+              </div>
+            )}
             {baselineAssessments.length === 0 && (
               <div className="mt-4 text-[12px] text-ach-navy/60 italic">
                 No baseline assessments in this cohort yet. Uplift will populate once baseline assessments are recorded.
               </div>
             )}
+            <div className="mt-4 pt-3 border-t border-ach-border/60 text-[11px] text-ach-navy/60 leading-relaxed">
+              <span className="font-medium">What this is measuring.</span> Capability change is an <em>outcome proxy</em> — stronger evidence than activity output (which we tracked in section 1), weaker than fully-triangulated impact (captured in the 12-month impact report). It shows how much candidates changed across the HIM domains over the programme window.
+            </div>
           </CardContent>
         </Card>
       </section>
