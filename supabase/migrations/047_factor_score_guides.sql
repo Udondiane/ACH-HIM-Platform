@@ -71,11 +71,11 @@ update public.factors set score_guides = $g${
 }$g$::jsonb where id = 'edu_p_mot';
 
 update public.factors set score_guides = $g${
-  "1": "Previous education not translated or assessed. Unclear how it fits UK system.",
-  "2": "Aware previous qualifications need translation but has not started the process.",
-  "3": "Qualifications translated and assessed. Understands their UK equivalent.",
-  "4": "Qualifications recognised and bridging plan in place if needed (top-up courses etc.).",
-  "5": "Full recognition achieved. Learning bridged into UK employment or further education."
+  "1": "No formal qualifications, or qualifications not translated / assessed. No clarity on how prior learning (formal or experiential) fits the UK system.",
+  "2": "Aware of what needs to happen — translation of qualifications, or documentation of prior experience through an APEL (Accreditation of Prior Experiential Learning) route — but has not started.",
+  "3": "Prior learning documented. Either qualifications translated and assessed, OR experiential learning captured in a UK-readable format (CV, portfolio, references). UK equivalent understood.",
+  "4": "Recognition achieved OR bridging plan in place. Knows which UK courses, functional skills, or qualifications are needed to close the gap for their goal.",
+  "5": "Fully bridged into UK employment or further education. Prior education gaps are no longer a barrier — either through recognition, top-up learning, or a demonstrated skills route."
 }$g$::jsonb where id = 'edu_p_back';
 
 update public.factors set score_guides = $g${
