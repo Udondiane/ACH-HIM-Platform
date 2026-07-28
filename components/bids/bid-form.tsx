@@ -37,7 +37,7 @@ export function BidForm({
   cancelHref: string;
   submitLabel?: string;
 }) {
-  const [state, formAction] = useFormState(action as any, null);
+  const [state, formAction] = useFormState<ActionResult, FormData>(action as any, null);
 
   const [focusSet, setFocusSet] = useState<Set<string>>(new Set((initial?.focus_domains ?? []) as string[]));
   const [projectSet, setProjectSet] = useState<Set<string>>(new Set((initial?.scoped_project_ids ?? []) as string[]));
@@ -52,7 +52,7 @@ export function BidForm({
 
   return (
     <form action={formAction} className="space-y-6">
-      {state && !state.ok && (
+      {state && !(state as any).ok && (
         <div className="rounded-[8px] border-[0.5px] border-red-300 bg-red-50 px-3 py-2 text-[12.5px] text-red-800">
           {(state as any).error}
         </div>
