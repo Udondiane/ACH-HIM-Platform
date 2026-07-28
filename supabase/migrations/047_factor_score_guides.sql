@@ -25,7 +25,7 @@ update public.factors set score_guides = $g${
   "2": "Can describe past work experience in simple sentences with prompting. Needs help with vocabulary.",
   "3": "Can describe past work experience clearly. Comfortable with everyday work vocabulary.",
   "4": "Can hold a work conversation confidently. Handles common interview questions.",
-  "5": "Fluent in work contexts. Could describe complex tasks and lead a meeting in English."
+  "5": "Fluent in work contexts. Could describe complex tasks in English."
 }$g$::jsonb where id = 'emp_p_lang';
 
 update public.factors set score_guides = $g${
