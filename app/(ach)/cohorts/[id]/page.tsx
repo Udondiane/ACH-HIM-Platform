@@ -123,10 +123,16 @@ export default async function CohortDetailPage({ params }: { params: { id: strin
               <Button variant="secondary"><GraduationCap className="h-3.5 w-3.5" />Training roster</Button>
             </Link>
             <Link href={`/cohorts/${c.id}/close-out`}>
-              <Button variant="secondary">Close-out report</Button>
+              <Button variant="secondary">Close-out</Button>
             </Link>
             <Link href={`/cohorts/${c.id}/impact-12mo`}>
-              <Button variant="secondary">12-month impact report</Button>
+              <Button variant="secondary">12-month impact</Button>
+            </Link>
+            <Link href={`/cohorts/${c.id}/grant-funder-report`}>
+              <Button variant="secondary">Grant funder view</Button>
+            </Link>
+            <Link href={`/cohorts/${c.id}/capability-investor-report`}>
+              <Button variant="secondary">Capability investor view</Button>
             </Link>
             <Link href={`/cohorts/${c.id}/edit`}>
               <Button variant="secondary"><Pencil className="h-3.5 w-3.5" />Edit</Button>
