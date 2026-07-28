@@ -37,7 +37,7 @@ update public.factors set score_guides = $g${
 }$g$::jsonb where id = 'emp_p_dig';
 
 update public.factors set score_guides = $g${
-  "1": "Believes UK work is out of reach. Avoids new tasks or challenges.",
+  "1": "Believes UK work is out of reach. Afraid of new tasks or challenges.",
   "2": "Willing to try but doubts own capability. Needs frequent encouragement.",
   "3": "Believes they can handle typical UK work tasks. Attempts unfamiliar work.",
   "4": "Confident in own capability. Sees challenges as manageable.",
