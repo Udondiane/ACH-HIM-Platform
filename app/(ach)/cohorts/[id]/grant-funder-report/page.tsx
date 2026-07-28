@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { Card, CardContent } from '@/components/ui/card';
 import { PrintButton } from '@/components/ui/print-button';
 import { SnapshotButton } from '@/components/cohort-reports/snapshot-button';
+import { scoreToLevel, relativeGainPct, upliftNarrative } from '@/lib/scoring/interpret';
 
 export const metadata = { title: 'Grant funder report' };
 
@@ -143,14 +144,22 @@ export default async function GrantFunderReportPage({ params }: { params: { id: 
         <Card>
           <CardContent className="pt-6">
             <div className="grid grid-cols-3 gap-6">
-              <ScoreBlock label="Mean baseline" value={meanBaseline} sub="across all indicators, 0–5 scale" />
-              <ScoreBlock label="Mean exit / follow-up" value={meanExit} sub="end of programme timepoint" />
+              <ScoreBlock label="Mean baseline" value={meanBaseline} sub={`Level ${scoreToLevel(meanBaseline).level} · ${scoreToLevel(meanBaseline).label}`} />
+              <ScoreBlock label="Mean exit / follow-up" value={meanExit} sub={`Level ${scoreToLevel(meanExit).level} · ${scoreToLevel(meanExit).label}`} />
               <ScoreBlock
                 label="Uplift"
                 value={uplift}
-                sub="change over the programme window"
+                sub={`${relativeGainPct(meanBaseline, meanExit) >= 0 ? '+' : ''}${relativeGainPct(meanBaseline, meanExit)}% on baseline`}
                 highlight
               />
+            </div>
+            {meanBaseline > 0 && meanExit > 0 && (
+              <div className="mt-4 text-[12.5px] text-ach-navy/80 leading-relaxed italic">
+                {upliftNarrative(meanBaseline, meanExit)}
+              </div>
+            )}
+            <div className="mt-4 pt-3 border-t border-ach-border/60 text-[11px] text-ach-navy/60 leading-relaxed">
+              <span className="font-medium">Output vs outcome.</span> Section 1 shows outputs — how much was delivered. Section 2 is an outcome — the change in beneficiaries at end of programme. Impact (whether the change held) is captured in a separate 12-month follow-up report.
             </div>
           </CardContent>
         </Card>

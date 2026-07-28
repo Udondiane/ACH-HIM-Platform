@@ -5,6 +5,7 @@ import { PrintButton } from '@/components/ui/print-button';
 import { createClient } from '@/lib/supabase/server';
 import { Card, CardContent } from '@/components/ui/card';
 import { SnapshotButton } from '@/components/cohort-reports/snapshot-button';
+import { scoreToLevel, relativeGainPct, upliftNarrative } from '@/lib/scoring/interpret';
 
 export const metadata = { title: '12-month impact report' };
 
@@ -203,6 +204,17 @@ export default async function ImpactReportPage({ params }: { params: { id: strin
                 No 12-month follow-up assessments recorded yet. Longitudinal comparison will populate once follow-ups are completed.
               </div>
             )}
+            {meanBaseline > 0 && meanFollowup > 0 && (
+              <div className="mt-4 text-[12.5px] text-ach-navy/80 leading-relaxed italic">
+                {upliftNarrative(meanBaseline, meanFollowup)}
+                {' '}Baseline: Level {scoreToLevel(meanBaseline).level} ({scoreToLevel(meanBaseline).label}).
+                {' '}Twelve months on: Level {scoreToLevel(meanFollowup).level} ({scoreToLevel(meanFollowup).label}).
+                {' '}Sustained change: {relativeGainPct(meanBaseline, meanFollowup) >= 0 ? '+' : ''}{relativeGainPct(meanBaseline, meanFollowup)}% on baseline.
+              </div>
+            )}
+            <div className="mt-4 pt-3 border-t border-ach-border/60 text-[11px] text-ach-navy/60 leading-relaxed">
+              <span className="font-medium">What this is measuring.</span> This is <em>impact</em> — outcome that held. Combined with the retention numbers in section 1 and the partner-verified progression narratives in section 3, this is the strongest evidence HIM produces.
+            </div>
           </CardContent>
         </Card>
       </section>
