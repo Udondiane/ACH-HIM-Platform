@@ -42,7 +42,7 @@ export default async function AssessmentRunnerPage({
     supabase.from('assessments').select('*, candidates(candidate_ref, given_name, preferred_locale)').eq('id', params.assessmentId).maybeSingle(),
     supabase.from('project_capabilities').select('domain, role, selected_factors').eq('project_id', params.id),
     Promise.all([
-      supabase.from('factors').select('id, name, conversion_factor_type, is_universal, measurement_method, measurement_question, behavioural_prompt'),
+      supabase.from('factors').select('id, name, conversion_factor_type, is_universal, measurement_method, measurement_question, behavioural_prompt, score_guides'),
       supabase.from('factor_domains').select('factor_id, domain_id'),
       supabase.from('indicators').select('id, factor_id, name, sort_order').order('sort_order'),
     ]),
@@ -370,6 +370,25 @@ export default async function AssessmentRunnerPage({
                                 <li key={i.id}>{i.name}</li>
                               ))}
                             </ul>
+                          </div>
+                        )}
+                        {fac.score_guides && typeof fac.score_guides === 'object' && (
+                          <div className="mb-3 rounded-[8px] border-[0.5px] border-ach-border bg-[#FBF2E0]/60 px-3 py-2">
+                            <div className="text-[11px] uppercase tracking-[1.2px] text-ach-navy/70 mb-1.5">
+                              Scoring anchors (1–5)
+                            </div>
+                            <div className="grid grid-cols-1 gap-y-1 text-[12px] text-ach-navy/85">
+                              {['1', '2', '3', '4', '5'].map(k => {
+                                const desc = (fac.score_guides as Record<string, string>)[k];
+                                if (!desc) return null;
+                                return (
+                                  <div key={k} className="flex gap-2">
+                                    <span className="font-semibold text-ach-navy w-4 shrink-0">{k}</span>
+                                    <span>{desc}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
                         )}
                         <FactorResponseField
