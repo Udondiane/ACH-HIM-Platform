@@ -103,6 +103,9 @@ export const projectSchema = z.object({
   /** Activity IDs from PROGRAMME_ACTIVITIES — what this project delivers.
    *  Drives which factors get measured. */
   activities: z.array(z.string()).optional().default([]),
+  /** UUIDs of reusable training programmes delivered as part of this project.
+   *  Persisted to project_training_programmes. */
+  training_programme_ids: z.array(z.string().uuid()).optional().default([]),
   type: z.enum(PROJECT_TYPES),
   weight_ratio: z.enum(WEIGHT_RATIOS),
   hybrid_option: z.enum(HYBRID_OPTIONS).optional().or(z.literal('')),

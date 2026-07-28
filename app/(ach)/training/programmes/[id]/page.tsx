@@ -21,7 +21,7 @@ export const dynamic = 'force-dynamic';
 export default async function ProgrammeDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
 
-  const [progRes, sessionsRes, enrolsRes, outcomesRes, factorsRes, mapRes, candidatesRes, attendanceRes, certRes] = await Promise.all([
+  const [progRes, sessionsRes, enrolsRes, outcomesRes, factorsRes, mapRes, candidatesRes, attendanceRes, certRes, usedInProjectsRes] = await Promise.all([
     supabase.from('training_programmes').select('*').eq('id', params.id).maybeSingle(),
     supabase.from('training_sessions').select('id, session_number, session_title, scheduled_date, scheduled_start, room, tutor_name, status').eq('programme_id', params.id).order('scheduled_date'),
     supabase.from('training_enrolments').select('id, candidate_id, status, enrolled_date, completed_date, candidates(id, candidate_ref, given_name, family_name)').eq('programme_id', params.id).order('enrolled_date', { ascending: false }),
@@ -31,6 +31,7 @@ export default async function ProgrammeDetailPage({ params }: { params: { id: st
     supabase.from('candidates').select('id, candidate_ref, given_name, family_name').eq('status', 'in_programme').order('candidate_ref').limit(200),
     supabase.from('training_attendance').select('candidate_id, status, session_id, training_sessions!inner(programme_id)').eq('training_sessions.programme_id', params.id),
     supabase.from('training_certificates').select('candidate_id').eq('programme_id', params.id),
+    supabase.from('project_training_programmes').select('project_id, projects(id, name, project_ref, status)').eq('programme_id', params.id),
   ]);
 
   if (!progRes.data) notFound();
@@ -115,6 +116,33 @@ export default async function ProgrammeDetailPage({ params }: { params: { id: st
           </dl>
         </CardContent>
       </Card>
+
+      {/* Used in projects */}
+      {(() => {
+        const usedIn = ((usedInProjectsRes.data as any[]) ?? []).map(r => r.projects).filter(Boolean);
+        if (usedIn.length === 0) return null;
+        return (
+          <Card className="mb-4">
+            <CardHeader>
+              <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Used as an activity in</div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center flex-wrap gap-2">
+                {usedIn.map((proj: any) => (
+                  <Link key={proj.id} href={`/projects/${proj.id}`} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-[10px] border-[0.5px] border-ach-border bg-white hover:bg-ach-page text-[12.5px] text-ach-navy">
+                    <span className="font-mono text-[11px] text-ach-navy/55">{proj.project_ref}</span>
+                    <span>{proj.name}</span>
+                    {proj.status && <span className="text-[10.5px] uppercase tracking-[1.1px] text-ach-navy/45">{proj.status}</span>}
+                  </Link>
+                ))}
+              </div>
+              <div className="text-[11.5px] text-ach-navy/55 mt-2">
+                Effectiveness for candidates who took this programme as part of these projects can be filtered on the effectiveness page.
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-4 mb-4">
         <Card>

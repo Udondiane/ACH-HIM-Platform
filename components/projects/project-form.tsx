@@ -25,9 +25,10 @@ interface Props {
   initial?: any;
   cancelHref: string;
   submitLabel?: string;
+  availableTrainingProgrammes?: Array<{ id: string; name: string; code?: string | null; category?: string | null }>;
 }
 
-export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save project' }: Props) {
+export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save project', availableTrainingProgrammes = [] }: Props) {
   const [state, formAction] = useFormState(action, null);
   const fe = (k: string) => state && !state.ok ? state.fieldErrors?.[k]?.[0] : undefined;
 
@@ -49,6 +50,16 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
   const [activitySet, setActivitySet] = useState<Set<string>>(
     new Set<string>(((initial?.activities ?? []) as string[]) || []),
   );
+  // Specific reusable training programmes delivered as part of this project.
+  const [linkedProgrammes, setLinkedProgrammes] = useState<Set<string>>(
+    new Set<string>(((initial?.linked_training_programmes ?? []) as string[]) || []),
+  );
+  function toggleProgramme(id: string) {
+    const next = new Set(linkedProgrammes);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setLinkedProgrammes(next);
+  }
   function toggleActivity(id: string) {
     const next = new Set(activitySet);
     if (next.has(id)) next.delete(id);
@@ -321,6 +332,57 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
             </div>
             {[...activitySet].map(id => (
               <input key={id} type="hidden" name="activities" value={id} />
+            ))}
+          </>
+        )}
+      </div>
+
+      {/* Linked training programmes — reusable trainings delivered as part of this project */}
+      <div className="pt-5 border-t-[0.5px] border-ach-border">
+        <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">Linked training programmes</div>
+        <p className="text-[12px] text-ach-navy/60 mb-3">
+          Tick the specific reusable training programmes delivered as part of this project (Customer Service, Health &amp; Safety, ESOL, etc.). Each links back to its own effectiveness view.
+        </p>
+        {availableTrainingProgrammes.length === 0 ? (
+          <div className="rounded-[10px] border border-dashed border-ach-border bg-ach-page/40 px-4 py-6 text-center">
+            <p className="text-[12.5px] text-ach-navy/60">
+              No training programmes defined yet.
+            </p>
+            <p className="text-[11.5px] text-ach-navy/45 mt-1">
+              Create them at <code className="font-mono text-[11px]">/training/programmes/new</code>, then come back to link them.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {availableTrainingProgrammes.map(tp => {
+                const selected = linkedProgrammes.has(tp.id);
+                return (
+                  <button
+                    key={tp.id}
+                    type="button"
+                    onClick={() => toggleProgramme(tp.id)}
+                    className={`text-left p-3 rounded-[10px] border-[0.5px] transition-colors ${
+                      selected
+                        ? 'border-ach-navy bg-ach-navy text-ach-cream'
+                        : 'border-ach-border bg-white text-ach-navy/80 hover:bg-ach-page'
+                    }`}
+                    aria-pressed={selected}
+                  >
+                    <div className="text-[13px] font-medium">{tp.name}</div>
+                    <div className={`text-[11px] mt-0.5 ${selected ? 'text-ach-cream/75' : 'text-ach-navy/55'}`}>
+                      {tp.code ? <span className="font-mono mr-1.5">{tp.code}</span> : null}
+                      {tp.category ?? '—'}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="text-[11px] text-ach-navy/55 mt-2">
+              {linkedProgrammes.size} training programme{linkedProgrammes.size === 1 ? '' : 's'} linked.
+            </div>
+            {[...linkedProgrammes].map(id => (
+              <input key={id} type="hidden" name="training_programme_ids" value={id} />
             ))}
           </>
         )}
