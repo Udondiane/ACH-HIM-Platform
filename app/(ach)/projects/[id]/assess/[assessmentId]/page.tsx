@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { IndicatorScorer } from '@/components/assessments/indicator-scorer';
 import { FactorResponseField } from '@/components/assessments/factor-response-field';
+import { QuoteMarker } from '@/components/featured-quotes/quote-marker';
 import { HimScoreCard } from '@/components/assessments/him-score-card';
 import { TranscriptModal } from '@/components/assessments/transcript-modal';
 import { AttachmentUploader } from '@/components/assessments/attachment-uploader';
@@ -46,7 +47,7 @@ export default async function AssessmentRunnerPage({
       supabase.from('factor_domains').select('factor_id, domain_id'),
       supabase.from('indicators').select('id, factor_id, name, sort_order').order('sort_order'),
     ]),
-    supabase.from('assessment_responses').select('indicator_id, numeric_value, narrative, observable_changes, practices').eq('assessment_id', params.assessmentId),
+    supabase.from('assessment_responses').select('id, indicator_id, numeric_value, narrative, observable_changes, practices, candidate_voice, feature_worthy').eq('assessment_id', params.assessmentId),
     supabase.from('assessment_attachments').select('id, file_name, mime_type, size_bytes, uploaded_at').eq('assessment_id', params.assessmentId).order('uploaded_at', { ascending: false }),
   ]);
 
@@ -101,13 +102,24 @@ export default async function AssessmentRunnerPage({
   const indicators = (indicatorsRes.data as any[]) ?? [];
   const frameworkError = factorsRes.error ?? factorDomainsRes.error ?? indicatorsRes.error;
   const frameworkEmpty = !frameworkError && factors.length === 0;
-  const respMap = new Map<string, { numeric_value: number | null; narrative: string | null; observable_changes: string | null; practices: string | null }>();
+  const respMap = new Map<string, {
+    id: string;
+    numeric_value: number | null;
+    narrative: string | null;
+    observable_changes: string | null;
+    practices: string | null;
+    candidate_voice: string | null;
+    feature_worthy: boolean;
+  }>();
   for (const r of (responses.data as any[]) ?? []) {
     respMap.set(r.indicator_id, {
+      id: r.id,
       numeric_value: r.numeric_value,
       narrative: r.narrative,
       observable_changes: r.observable_changes,
       practices: r.practices,
+      candidate_voice: r.candidate_voice ?? null,
+      feature_worthy: !!r.feature_worthy,
     });
   }
 
@@ -172,17 +184,20 @@ export default async function AssessmentRunnerPage({
       if (facIndicators.length === 0) continue;
       const primaryInd = facIndicators[0];
       if (!respMap.has(primaryInd.id)) {
-        await supabase.from('assessment_responses').insert({
+        const { data: inserted } = await supabase.from('assessment_responses').insert({
           assessment_id: params.assessmentId,
           indicator_id: primaryInd.id,
           numeric_value: 0,
           narrative: 'Auto-scored 0 at baseline — pre-placement, factor not yet meaningful.',
-        } as never);
+        } as never).select('id').single();
         respMap.set(primaryInd.id, {
+          id: (inserted as any)?.id ?? '',
           numeric_value: 0,
           narrative: 'Auto-scored 0 at baseline — pre-placement, factor not yet meaningful.',
           observable_changes: null,
           practices: null,
+          candidate_voice: null,
+          feature_worthy: false,
         });
       }
     }
@@ -403,21 +418,32 @@ export default async function AssessmentRunnerPage({
                         {primaryInd && (() => {
                           const r = respMap.get(primaryInd.id);
                           return (
-                            <IndicatorScorer
-                              assessmentId={params.assessmentId}
-                              indicator={{
-                                id: primaryInd.id,
-                                name: '',
-                                factor_id: fac.id,
-                                measurement_method: fac.measurement_method,
-                              }}
-                              initialValue={r?.numeric_value ?? null}
-                              initialNarrative={r?.narrative ?? null}
-                              initialObservableChanges={r?.observable_changes ?? null}
-                              initialPractices={r?.practices ?? null}
-                              locked={isLocked}
-                              timepoint={a.timepoint as 'baseline' | 'mid_3mo' | 'exit_6mo' | 'followup_12mo'}
-                            />
+                            <>
+                              <IndicatorScorer
+                                assessmentId={params.assessmentId}
+                                indicator={{
+                                  id: primaryInd.id,
+                                  name: '',
+                                  factor_id: fac.id,
+                                  measurement_method: fac.measurement_method,
+                                }}
+                                initialValue={r?.numeric_value ?? null}
+                                initialNarrative={r?.narrative ?? null}
+                                initialObservableChanges={r?.observable_changes ?? null}
+                                initialPractices={r?.practices ?? null}
+                                locked={isLocked}
+                                timepoint={a.timepoint as 'baseline' | 'mid_3mo' | 'exit_6mo' | 'followup_12mo'}
+                              />
+                              {r?.id && !isLocked && (
+                                <QuoteMarker
+                                  responseId={r.id as string}
+                                  candidateId={a.candidate_id}
+                                  cohortId={a.cohort_id ?? null}
+                                  initialCandidateVoice={r.candidate_voice ?? null}
+                                  initialFeatureWorthy={!!r.feature_worthy}
+                                />
+                              )}
+                            </>
                           );
                         })()}
                       </div>
