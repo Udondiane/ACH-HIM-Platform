@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Building2, Users, FolderKanban,
   PoundSterling, GraduationCap, CalendarDays,
-  ScrollText, Calculator, Quote, Phone, BookOpen, ArrowLeftRight,
+  ScrollText, Calculator, Quote, Phone, BookOpen, ArrowLeftRight, FileText,
   ChevronsLeft, ChevronsRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -29,6 +29,7 @@ const NAV = [
   { section: 'Reports' },
   { href: '/aggregate',          label: 'Aggregate',        icon: LayoutDashboard },
   { href: '/featured-quotes',    label: 'Featured quotes',  icon: Quote },
+  { href: '/bids',               label: 'Bid packs',        icon: FileText },
   { section: 'Methodology' },
   { href: '/admin/framework',    label: 'Framework library',icon: BookOpen },
   { href: '/toms-crosswalk',     label: 'TOMs crosswalk',   icon: ArrowLeftRight },
