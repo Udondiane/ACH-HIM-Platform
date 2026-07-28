@@ -1,76 +1,73 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 const STORAGE_KEY = 'ach_privacy_mode';
 const BODY_CLASS  = 'privacy-mode';
 
 /**
- * Toggle button that switches the app into "Privacy mode" — candidate
- * names are hidden and replaced with the candidate reference throughout
- * the app. Useful when screen-sharing during meetings, demos, or when
- * an unauthorised person may see the screen briefly.
+ * Silent privacy-mode listener.
  *
- * Setting is persisted in localStorage so it survives page navigations
- * and reloads. On mount, the toggle syncs its state from localStorage
- * and applies the body class immediately so the very first render after
- * a page load already reflects the user's chosen mode.
+ * No visible button. No visible cue. Toggle via keyboard shortcut:
+ *   Ctrl+Shift+P  (Mac and Windows)
  *
- * The visual swap is achieved via CSS rules in globals.css that key off
- * the `privacy-mode` class on <body>. Individual name displays should
- * use the CandidateIdentity component (or a matching pair of spans with
- * classes `identity-name` and `identity-ref`) so the swap works.
+ * When toggled, a small transient toast confirms the new state, then
+ * fades. On page load, privacy mode is ON by default (safer for demos
+ * and screen-sharing) unless the user previously turned it off in this
+ * browser.
+ *
+ * Rendering: an invisible element that owns the keyboard handler and
+ * the fading toast. The signature stays compatible with older callers
+ * that passed a `collapsed` prop.
  */
-export function PrivacyModeToggle({ collapsed = false }: { collapsed?: boolean }) {
-  const [on, setOn] = useState(false);
+export function PrivacyModeToggle(_props: { collapsed?: boolean } = {}) {
+  const [on, setOn] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
     const saved = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
-    const initial = saved === 'true';
+    // Default = privacy mode ON. Only OFF if user explicitly set it to 'false'.
+    const initial = saved === 'false' ? false : true;
     setOn(initial);
     if (typeof document !== 'undefined') {
       document.body.classList.toggle(BODY_CLASS, initial);
     }
   }, []);
 
-  const toggle = () => {
-    const next = !on;
-    setOn(next);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, String(next));
-    }
-    if (typeof document !== 'undefined') {
-      document.body.classList.toggle(BODY_CLASS, next);
-    }
-  };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      // Ctrl+Shift+P — works Mac + Windows without conflicting with common shortcuts
+      if (e.ctrlKey && e.shiftKey && (e.key === 'P' || e.key === 'p')) {
+        e.preventDefault();
+        setOn(prev => {
+          const next = !prev;
+          if (typeof window !== 'undefined') localStorage.setItem(STORAGE_KEY, String(next));
+          if (typeof document !== 'undefined') document.body.classList.toggle(BODY_CLASS, next);
+          setToastMsg(next ? 'Names hidden' : 'Names shown');
+          window.setTimeout(() => setToastMsg(null), 1500);
+          return next;
+        });
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
 
-  const Icon = on ? EyeOff : Eye;
-  const label = on ? 'Show names' : 'Hide names';
-  const title = on
-    ? 'Names are hidden — click to show'
-    : 'Show only candidate references (safe for screen sharing)';
+  if (!mounted) return null;
+
+  // Only render the tiny fading toast, and only briefly.
+  if (!toastMsg) return null;
 
   return (
-    <button
-      type="button"
-      onClick={toggle}
-      aria-label={label}
-      aria-pressed={on}
-      title={title}
-      suppressHydrationWarning
-      className={cn(
-        'border-t-[0.5px] border-ach-border flex items-center transition-colors',
-        'text-[11.5px] hover:bg-ach-page',
-        on ? 'text-[#8B3A4F] hover:text-[#8B3A4F]' : 'text-ach-navy/55 hover:text-ach-navy',
-        collapsed ? 'h-12 justify-center' : 'h-10 px-4 gap-2',
-      )}
+    <div
+      aria-live="polite"
+      className="fixed bottom-6 right-6 z-[100] pointer-events-none"
     >
-      <Icon className={cn('h-4 w-4 shrink-0', collapsed ? '' : 'h-3.5 w-3.5')} />
-      {!collapsed && <span>{mounted ? label : 'Hide names'}</span>}
-    </button>
+      <div className="rounded-[8px] bg-ach-navy text-ach-cream text-[12px] px-3 py-1.5 shadow-lg opacity-90">
+        {toastMsg}
+      </div>
+    </div>
   );
 }
