@@ -44,7 +44,7 @@ export default async function NewPlacementPage({ params }: { params: { id: strin
     <div className="max-w-3xl mx-auto">
       <PageHeader
         backHref={`/candidates/${params.id}`}
-        backLabel={`${candidate.candidate_ref} · ${candidate.given_name}`}
+        backLabel={candidate.candidate_ref}
         miniLabel="Placement"
         title="Record a placement"
         description="Capture role, employer, salary band, and start date. The three milestones (placement / 6-month / 12-month retention) are auto-generated for the milestones page."
