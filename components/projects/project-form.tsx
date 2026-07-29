@@ -25,10 +25,9 @@ interface Props {
   initial?: any;
   cancelHref: string;
   submitLabel?: string;
-  availableTrainingProgrammes?: Array<{ id: string; name: string; code?: string | null; category?: string | null }>;
 }
 
-export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save project', availableTrainingProgrammes = [] }: Props) {
+export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save project' }: Props) {
   const [state, formAction] = useFormState(action, null);
   const fe = (k: string) => state && !state.ok ? state.fieldErrors?.[k]?.[0] : undefined;
 
@@ -46,20 +45,11 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
   const [coreSet, setCoreSet] = useState<Set<CapDomain>>(initialCore);
   const [optionalSet, setOptionalSet] = useState<Set<CapDomain>>(initialOptional);
 
-  // Activities the project delivers. Drives which factors get measured.
+  // Activities the project delivers. Drives which factors get measured
+  // AND which training programmes are auto-spawned (isTraining flag).
   const [activitySet, setActivitySet] = useState<Set<string>>(
     new Set<string>(((initial?.activities ?? []) as string[]) || []),
   );
-  // Specific reusable training programmes delivered as part of this project.
-  const [linkedProgrammes, setLinkedProgrammes] = useState<Set<string>>(
-    new Set<string>(((initial?.linked_training_programmes ?? []) as string[]) || []),
-  );
-  function toggleProgramme(id: string) {
-    const next = new Set(linkedProgrammes);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    setLinkedProgrammes(next);
-  }
   function toggleActivity(id: string) {
     const next = new Set(activitySet);
     if (next.has(id)) next.delete(id);
@@ -337,74 +327,9 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
         )}
       </div>
 
-      {/* Linked training programmes — trainings delivered as part of this project */}
-      <div className="pt-5 border-t-[0.5px] border-ach-border">
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Linked training programmes</div>
-          <Link
-            href="/training/programmes/new"
-            target="_blank"
-            rel="noopener"
-            className="text-[11.5px] text-ach-navy/70 underline underline-offset-2 hover:text-ach-navy"
-          >
-            + New training programme
-          </Link>
-        </div>
-        <p className="text-[12px] text-ach-navy/60 mb-3">
-          Tick the specific training programmes delivered as part of this project (Customer Service, Health &amp; Safety, ESOL, etc.). Each links back to its own effectiveness view.
-        </p>
-        {availableTrainingProgrammes.length === 0 ? (
-          <div className="rounded-[10px] border border-dashed border-ach-border bg-ach-page/40 px-4 py-6 text-center">
-            <p className="text-[12.5px] text-ach-navy/60 mb-3">
-              No training programmes defined yet.
-            </p>
-            <Link
-              href="/training/programmes/new"
-              target="_blank"
-              rel="noopener"
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] bg-ach-navy text-ach-cream hover:bg-ach-navy/90 transition-colors"
-            >
-              + Create training programme
-            </Link>
-            <p className="text-[11px] text-ach-navy/45 mt-2">
-              Opens in a new tab. Come back here to tick it once created.
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {availableTrainingProgrammes.map(tp => {
-                const selected = linkedProgrammes.has(tp.id);
-                return (
-                  <button
-                    key={tp.id}
-                    type="button"
-                    onClick={() => toggleProgramme(tp.id)}
-                    className={`text-left p-3 rounded-[10px] border-[0.5px] transition-colors ${
-                      selected
-                        ? 'border-ach-navy bg-ach-navy text-ach-cream'
-                        : 'border-ach-border bg-white text-ach-navy/80 hover:bg-ach-page'
-                    }`}
-                    aria-pressed={selected}
-                  >
-                    <div className="text-[13px] font-medium">{tp.name}</div>
-                    <div className={`text-[11px] mt-0.5 ${selected ? 'text-ach-cream/75' : 'text-ach-navy/55'}`}>
-                      {tp.code ? <span className="font-mono mr-1.5">{tp.code}</span> : null}
-                      {tp.category ?? '—'}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="text-[11px] text-ach-navy/55 mt-2">
-              {linkedProgrammes.size} training programme{linkedProgrammes.size === 1 ? '' : 's'} linked.
-            </div>
-            {[...linkedProgrammes].map(id => (
-              <input key={id} type="hidden" name="training_programme_ids" value={id} />
-            ))}
-          </>
-        )}
-      </div>
+      {/* Training programmes are auto-created from ticked training activities
+          (English, Digital, Customer service, H&S, Cultural awareness,
+          Employability coaching). No separate tick section needed. */}
 
       <input type="hidden" name="type" value={typeValue} />
       <input type="hidden" name="weight_ratio" value={ratioValue} />

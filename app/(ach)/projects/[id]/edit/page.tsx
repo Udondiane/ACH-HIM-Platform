@@ -57,19 +57,15 @@ export default async function EditProjectPage({ params }: { params: { id: string
   }
   const p = projectRes.data as any;
 
-  const [cohortCountRes, assessmentCountRes, activitiesRes, linkedProgrammesRes, availableProgrammesRes] = await Promise.all([
+  const [cohortCountRes, assessmentCountRes, activitiesRes] = await Promise.all([
     supabase.from('cohorts').select('id', { count: 'exact', head: true }).eq('project_id', params.id),
     supabase.from('assessments').select('id', { count: 'exact', head: true }).eq('project_id', params.id),
     supabase.from('project_activities').select('activity').eq('project_id', params.id),
-    supabase.from('project_training_programmes').select('programme_id').eq('project_id', params.id),
-    supabase.from('training_programmes').select('id, name, code, category').eq('status', 'active').order('name'),
   ]);
   const cohortCount = cohortCountRes.count ?? 0;
   const assessmentCount = assessmentCountRes.count ?? 0;
   const activities = ((activitiesRes.data as { activity: string }[] | null) ?? []).map(r => r.activity);
   p.activities = activities;
-  p.linked_training_programmes = ((linkedProgrammesRes.data as { programme_id: string }[] | null) ?? []).map(r => r.programme_id);
-  const availableProgrammes = (availableProgrammesRes.data as any[]) ?? [];
 
   // Bind the project ID to the server actions so they remain proper server
   // actions when passed across the server/client boundary. The previous
@@ -93,7 +89,6 @@ export default async function EditProjectPage({ params }: { params: { id: string
             initial={p}
             cancelHref={`/projects/${params.id}`}
             submitLabel="Save changes"
-            availableTrainingProgrammes={availableProgrammes}
           />
         </CardContent>
       </Card>

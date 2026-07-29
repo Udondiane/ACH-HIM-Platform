@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 import { projectSchema, deriveCapabilitiesFromAnswers, CAP_DOMAINS, type CapAnswer, type CapDomain } from './schema';
 import { classify, type ClassificationResponses } from '@/lib/scoring/classification';
 import type { DomainId } from '@/lib/scoring/types';
+import { PROGRAMME_ACTIVITIES, TRAINING_ACTIVITY_IDS } from '@/lib/activities/definitions';
 
 export type ActionResult =
   | { ok: true; id?: string }
@@ -51,6 +52,68 @@ async function syncProjectTrainingProgrammes(
   if (programmeIds.length === 0) return;
   const rows = programmeIds.map(programme_id => ({ project_id: projectId, programme_id }));
   await supabase.from('project_training_programmes').insert(rows as never);
+}
+
+/**
+ * Auto-spawn training programmes from ticked activities.
+ *
+ * For each activity in `activities` that is flagged as isTraining, ensure
+ * a training_programmes row exists that is spawned from this (project,
+ * activity) pair, and that it is linked via project_training_programmes.
+ * Idempotent: re-saving the project does not create duplicates thanks to
+ * the unique index on (spawned_from_project_id, source_activity_id).
+ *
+ * Auto-spawned programmes that are no longer ticked are unlinked from
+ * the project but NOT deleted — enrolments and sessions may already exist
+ * on them, and quietly deleting a training programme could destroy data
+ * ACH still needs. The programme is left as an orphan (spawned_from_project_id
+ * still set) and can be manually archived from /training/programmes if
+ * ACH decides.
+ */
+async function autoSpawnTrainingProgrammesFromActivities(
+  supabase: ReturnType<typeof createClient>,
+  projectId: string,
+  projectRef: string,
+  activities: string[],
+): Promise<void> {
+  const trainingActivities = activities.filter(a => TRAINING_ACTIVITY_IDS.has(a));
+
+  for (const activityId of trainingActivities) {
+    const def = PROGRAMME_ACTIVITIES.find(a => a.id === activityId);
+    if (!def) continue;
+
+    // Idempotency: does one already exist for this (project, activity)?
+    const { data: existing } = await supabase
+      .from('training_programmes')
+      .select('id')
+      .eq('spawned_from_project_id', projectId)
+      .eq('source_activity_id', activityId)
+      .maybeSingle();
+
+    let programmeId = (existing as { id: string } | null)?.id;
+
+    if (!programmeId) {
+      const { data: created, error } = await supabase
+        .from('training_programmes')
+        .insert({
+          name: `${def.label} — ${projectRef}`,
+          category: def.label,
+          source_activity_id: activityId,
+          spawned_from_project_id: projectId,
+          status: 'active',
+        } as never)
+        .select('id')
+        .single();
+      if (error) continue;
+      programmeId = (created as { id: string }).id;
+    }
+
+    // Ensure the join row exists (upsert by composite PK).
+    await supabase.from('project_training_programmes').upsert({
+      project_id: projectId,
+      programme_id: programmeId,
+    } as never, { onConflict: 'project_id,programme_id' });
+  }
 }
 
 async function nextProjectRef(supabase: ReturnType<typeof createClient>): Promise<string> {
@@ -248,12 +311,14 @@ export async function createProjectAction(_prev: ActionResult | null, fd: FormDa
   });
   await syncProjectActivities(supabase, row!.id, parsed.data.activities ?? []);
   await syncProjectTrainingProgrammes(supabase, row!.id, (parsed.data as any).training_programme_ids ?? []);
+  await autoSpawnTrainingProgrammesFromActivities(supabase, row!.id, ref, parsed.data.activities ?? []);
   await syncPartnersFromFunderName(supabase, parsed.data.funder_name, parsed.data.funding_model);
   revalidatePath('/projects');
   revalidatePath('/partners');
   revalidatePath('/cohorts/new');
   revalidatePath('/cohorts');
   revalidatePath('/dashboard');
+  revalidatePath('/training/programmes');
   redirect(`/projects/${row!.id}`);
 }
 
@@ -281,10 +346,12 @@ export async function updateProjectAction(
   });
   await syncProjectActivities(supabase, id, parsed.data.activities ?? []);
   await syncProjectTrainingProgrammes(supabase, id, (parsed.data as any).training_programme_ids ?? []);
+  await autoSpawnTrainingProgrammesFromActivities(supabase, id, ref, parsed.data.activities ?? []);
   await syncPartnersFromFunderName(supabase, parsed.data.funder_name, parsed.data.funding_model);
   revalidatePath('/projects');
   revalidatePath('/partners');
   revalidatePath(`/projects/${id}`);
+  revalidatePath('/training/programmes');
   return { ok: true, id };
 }
 
