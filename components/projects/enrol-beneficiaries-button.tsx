@@ -81,6 +81,28 @@ export function EnrolBeneficiariesButton({ projectId, available }: Props) {
         placeholder="Search by name or reference…"
         className="w-full rounded-[10px] border-[0.5px] border-ach-border bg-white px-3 py-2 text-[12.5px] text-ach-navy placeholder:text-ach-navy/40 focus:outline-none focus:ring-1 focus:ring-ach-navy/40 mb-2"
       />
+      {filtered.length > 0 && (() => {
+        const allFilteredSelected = filtered.every(c => selected.has(c.id));
+        const toggleAll = () => {
+          const next = new Set(selected);
+          if (allFilteredSelected) {
+            for (const c of filtered) next.delete(c.id);
+          } else {
+            for (const c of filtered) next.add(c.id);
+          }
+          setSelected(next);
+        };
+        return (
+          <div className="flex items-center justify-between text-[11.5px] text-ach-navy/70 mb-1.5">
+            <button type="button" onClick={toggleAll} className="underline underline-offset-2 hover:text-ach-navy">
+              {allFilteredSelected
+                ? `Deselect all${query ? ' matching' : ''} (${filtered.length})`
+                : `Select all${query ? ' matching' : ''} (${filtered.length})`}
+            </button>
+            <span className="tabular-nums text-ach-navy/50">{selected.size} selected</span>
+          </div>
+        );
+      })()}
       <div className="max-h-64 overflow-y-auto border-[0.5px] border-ach-border rounded-[8px] mb-3">
         {filtered.length === 0 ? (
           <div className="text-[12.5px] text-ach-navy/55 p-3">No matching candidates.</div>
