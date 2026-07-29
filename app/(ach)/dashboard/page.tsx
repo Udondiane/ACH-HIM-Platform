@@ -27,7 +27,7 @@ async function safeFetch<T>(fn: () => any, fallback: T): Promise<T> {
 export default async function AchDashboardPage() {
   const supabase = createClient();
 
-  const [assessments, responses, indicators, factorDomains, placements, retentionChecks, hactProxies, candidates, cohortCandidates] = await Promise.all([
+  const [assessments, responses, indicators, factorDomains, placements, retentionChecks, hactProxies, candidates, cohortCandidates, projectsNearEnd] = await Promise.all([
     safeFetch<any[]>(() => supabase.from('assessments').select('id, candidate_id, timepoint').limit(3000), []),
     safeFetch<any[]>(() => supabase.from('assessment_responses').select('assessment_id, indicator_id, numeric_value').limit(6000), []),
     safeFetch<any[]>(() => supabase.from('indicators').select('id, factor_id'), []),
@@ -37,7 +37,23 @@ export default async function AchDashboardPage() {
     safeFetch<any[]>(() => supabase.from('bid_framework_domain_proxies').select('domain_id, proxy_value_pence').eq('framework_key', 'hact_wellbeing_2019'), []),
     safeFetch<any[]>(() => supabase.from('candidates').select('id, status'), []),
     safeFetch<any[]>(() => supabase.from('cohort_candidates').select('candidate_id'), []),
+    safeFetch<any[]>(() => supabase.from('projects').select('id, project_ref, name, end_date, status, completed_at').neq('status', 'completed').not('end_date', 'is', null).order('end_date', { ascending: true }), []),
   ]);
+
+  // Projects nearing their end date (within 21 days) — surface as a
+  // reminder to run the end-of-project close-out narrative.
+  const today = new Date();
+  const todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const twentyOneOut = new Date(todayMid);
+  twentyOneOut.setDate(twentyOneOut.getDate() + 21);
+  const projectsNeedingCloseOut = (projectsNearEnd as any[])
+    .map((p: any) => ({ ...p, endDate: new Date(`${p.end_date}T00:00:00`) }))
+    .filter((p: any) => p.endDate <= twentyOneOut)
+    .map((p: any) => {
+      const days = Math.round((p.endDate.getTime() - todayMid.getTime()) / (1000 * 60 * 60 * 24));
+      return { ...p, daysUntilEnd: days };
+    })
+    .slice(0, 4);
 
   // Lookups
   const indToFactor = new Map(indicators.map((i: any) => [i.id, i.factor_id]));
@@ -159,6 +175,38 @@ export default async function AchDashboardPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Reminder: projects near end date — nudge to run close-out narrative */}
+      {projectsNeedingCloseOut.length > 0 && (
+        <Card className="mb-4 border-ach-navy/25">
+          <CardContent className="pt-4 pb-4">
+            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">Projects nearing end · close-out due</div>
+            <ul className="space-y-1.5">
+              {projectsNeedingCloseOut.map((p: any) => {
+                const overdue = p.daysUntilEnd < 0;
+                const label = overdue
+                  ? `${Math.abs(p.daysUntilEnd)}d overdue`
+                  : p.daysUntilEnd === 0
+                    ? 'ends today'
+                    : `in ${p.daysUntilEnd}d`;
+                return (
+                  <li key={p.id} className="flex items-center justify-between text-[13px]">
+                    <Link href={`/projects/${p.id}`} className="text-ach-navy hover:underline">
+                      <span className="text-ach-navy/60 font-mono text-[11.5px] mr-2">{p.project_ref}</span>
+                      {p.name}
+                    </Link>
+                    <span className={`text-[11.5px] tabular-nums px-2 py-0.5 rounded-full ${
+                      overdue ? 'bg-ach-rose/15 text-[#8B3A4F]' : 'bg-ach-page text-ach-navy/70'
+                    }`}>
+                      {label}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       {/* SECTION 2 — IMPACT SIGNATURE */}
       <Card className="mb-4">

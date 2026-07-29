@@ -9,10 +9,10 @@ import { Button } from '@/components/ui/button';
 
 interface CohortOpt { id: string; label: string; }
 
-export function ImportCandidatesClient({ cohorts }: { cohorts: CohortOpt[] }) {
+export function ImportCandidatesClient({ cohorts, defaultCohortId }: { cohorts: CohortOpt[]; defaultCohortId?: string }) {
   const [rows, setRows] = useState<ImportRow[]>([]);
   const [ticked, setTicked] = useState<Set<number>>(new Set());
-  const [cohortId, setCohortId] = useState<string>('');
+  const [cohortId, setCohortId] = useState<string>(defaultCohortId ?? '');
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<{ created: number; skipped: number; failed: number } | null>(null);
   const [err, setErr] = useState<string | null>(null);

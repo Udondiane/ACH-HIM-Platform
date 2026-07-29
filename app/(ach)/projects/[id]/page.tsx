@@ -166,6 +166,9 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
         actions={
           <div className="flex items-center gap-2 flex-wrap">
             <EnrolBeneficiariesButton projectId={p.id} available={(availableCandidates.data as any[]) ?? []} />
+            <Link href={`/candidates/import?projectId=${p.id}`}>
+              <Button variant="secondary">Bulk upload</Button>
+            </Link>
             <CompleteProjectButton
               projectId={p.id}
               isCompleted={p.status === 'completed'}
