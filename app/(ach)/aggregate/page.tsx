@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { CapabilityRadar } from '@/components/charts/capability-radar';
 import { CapabilityBar } from '@/components/charts/capability-bar';
 import { WordCloud } from '@/components/charts/word-cloud';
-import { computeUplift, computeFunnel } from '@/lib/scoring/uplift';
+import { computeUplift } from '@/lib/scoring/uplift';
 
 const DOMAIN_LABELS: Record<string, string> = {
   employment: 'Employment',
@@ -61,12 +61,6 @@ export default async function AggregateDashboardPage() {
     if (!code?.proxy_value_pence || code.play !== 'QUANT') return s;
     return s + Number(c.quantity) * code.proxy_value_pence;
   }, 0);
-
-  // Network funnel across ALL cohorts
-  const funnel = computeFunnel(allCohortCands.map((cc: any) => ({
-    exit_reason: cc.candidates?.exit_reason ?? null,
-    status: cc.candidates?.status ?? 'applicant',
-  })));
 
   // Per-project uplift, ITT basis, headline KPI
   const projectRows = allProjects.map(p => {
@@ -128,8 +122,6 @@ export default async function AggregateDashboardPage() {
   const barItt = networkUplift.map(u => ({ domain: u.domain, score: u.upliftItt ?? 0, role: 'core' as const }));
   const barCompleters = networkUplift.map(u => ({ domain: u.domain, score: u.upliftCompleters ?? 0, role: 'core' as const }));
 
-  const completionRate = funnel.starters > 0 ? (funnel.completers / funnel.starters) * 100 : 0;
-  const placedRate = funnel.starters > 0 ? ((funnel.placedWithPartner + funnel.placedElsewhere) / funnel.starters) * 100 : 0;
   const hasAnyAssessmentData = flatResponses.some(r => r.numeric_value != null);
 
   return (
@@ -145,27 +137,6 @@ export default async function AggregateDashboardPage() {
         <Kpi label="Candidates" value={String(totalCandidates)} />
         <Kpi label="TOMs £ social value" value={`£${Math.round(tomsTotalPence / 100).toLocaleString()}`} sub={`£${Math.round(quantTomsPence / 100).toLocaleString()} quantitative`} />
       </div>
-
-      <Card className="mb-5">
-        <CardHeader>
-          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Network completion funnel</div>
-          <div className="text-[12.5px] text-ach-navy/60 mt-0.5">All cohorts combined, dropouts visible. {completionRate.toFixed(0)}% completion, {placedRate.toFixed(0)}% placed somewhere.</div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
-            <FunnelStat label="Starters" value={funnel.starters} />
-            <FunnelStat label="Completers" value={funnel.completers} sub={`${completionRate.toFixed(0)}%`} />
-            <FunnelStat label="Placed (any)" value={funnel.placedWithPartner + funnel.placedElsewhere} sub={`${funnel.placedWithPartner} partner / ${funnel.placedElsewhere} other`} />
-            <FunnelStat label="Into education" value={funnel.intoEducation} />
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <FunnelStat label="Health / personal" value={funnel.healthOrPersonal} muted />
-            <FunnelStat label="Disengaged" value={funnel.disengaged} muted />
-            <FunnelStat label="Other" value={funnel.otherExits} muted />
-            <FunnelStat label="Still in programme" value={funnel.stillInProgramme} muted />
-          </div>
-        </CardContent>
-      </Card>
 
       {hasAnyAssessmentData && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
@@ -257,16 +228,6 @@ function Kpi({ label, value, sub }: { label: string; value: string; sub?: string
         {sub && <div className="text-[11.5px] text-ach-navy/55 mt-1.5">{sub}</div>}
       </CardContent>
     </Card>
-  );
-}
-
-function FunnelStat({ label, value, sub, muted }: { label: string; value: number; sub?: string; muted?: boolean }) {
-  return (
-    <div className={`rounded-[12px] border-[0.5px] p-3 ${muted ? 'border-ach-border bg-ach-page/40' : 'border-ach-border bg-white'}`}>
-      <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">{label}</div>
-      <div className={`text-[19px] font-medium tracking-[-0.5px] mt-1 tabular-nums ${muted ? 'text-ach-navy/70' : 'text-ach-navy'}`}>{value}</div>
-      {sub && <div className="text-[11px] text-ach-navy/55 mt-0.5">{sub}</div>}
-    </div>
   );
 }
 
