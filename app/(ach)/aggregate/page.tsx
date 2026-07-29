@@ -142,7 +142,7 @@ export default async function AggregateDashboardPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
         <Kpi label="Projects" value={String(totalProjects)} sub={`${allProjects.filter((p: any) => p.status === 'active').length} active`} />
         <Kpi label="Cohorts" value={String(totalCohorts)} sub={`${allCohorts.filter((c: any) => c.status === 'in_progress' || c.status === 'recruiting').length} live`} />
-        <Kpi label="Candidates" value={String(totalCandidates)} sub={`${totalAssessmentResponses} assessment responses`} />
+        <Kpi label="Candidates" value={String(totalCandidates)} />
         <Kpi label="TOMs £ social value" value={`£${Math.round(tomsTotalPence / 100).toLocaleString()}`} sub={`£${Math.round(quantTomsPence / 100).toLocaleString()} quantitative`} />
       </div>
 
