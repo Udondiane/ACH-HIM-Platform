@@ -193,17 +193,13 @@ export function OutcomesTracker({ projectId, beneficiaries, outcomes, recorded }
         <div className="fixed inset-0 bg-black/25 flex items-center justify-center z-50" onClick={() => setOtherModal(null)}>
           <div className="bg-white rounded-[12px] p-5 max-w-md w-full mx-4" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-3">
-              <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Record unexpected outcome</div>
+              <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Enter an unexpected outcome</div>
               <button onClick={() => setOtherModal(null)} className="text-ach-navy/60 hover:text-ach-navy"><X className="h-4 w-4" /></button>
             </div>
-            <p className="text-[12px] text-ach-navy/60 mb-3">
-              An outcome the project didn't design for. One line, no jargon.
-            </p>
             <textarea
               value={otherText}
               onChange={e => setOtherText(e.target.value)}
               rows={3}
-              placeholder="e.g. Introduced two peers to their MP; opened a bank account for the first time."
               className="w-full rounded-[10px] border-[0.5px] border-ach-border bg-white px-3 py-2 text-[13px] text-ach-navy focus:outline-none focus:ring-1 focus:ring-ach-navy/40 mb-3"
             />
             <div className="flex items-center gap-2">

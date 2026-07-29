@@ -137,25 +137,27 @@ export const TRAINING_ACTIVITY_IDS: Set<string> = new Set(
 
 /**
  * The outcome label that appears on the beneficiary tick-list when this
- * activity is delivered as part of a project. What the ACH staff member
- * would say when confirming the beneficiary reached the intended result.
+ * activity is delivered as part of a project. Outcomes are what CHANGED
+ * for the beneficiary as a result of the intervention — not the activity
+ * itself. e.g. "Passed English course" (outcome) vs "Attended ESOL
+ * classes" (output/activity).
  */
 export const ACTIVITY_OUTCOME_LABELS: Record<string, string> = {
-  english_training:            'Passed English course',
-  digital_skills_training:     'Completed Digital skills training',
-  customer_service_training:   'Completed Customer service training',
+  english_training:            'English proficiency demonstrated',
+  digital_skills_training:     'Digital skills demonstrated',
+  customer_service_training:   'Customer service qualified',
   health_safety_training:      'Health & Safety certified',
-  cultural_awareness_training: 'Completed Cultural awareness training',
-  employability_coaching:      'Completed employability coaching',
-  career_goal_setting:         'Career goal agreed',
+  cultural_awareness_training: 'Workplace confidence built',
+  employability_coaching:      'Interview-ready',
+  career_goal_setting:         'Career plan in place',
   direct_job_placement:        'Job started',
   in_work_support:             'Retained in work (6 months+)',
-  mentorship_peer_connection:  'Matched with mentor / peer',
-  wraparound_support:          'Wellbeing / pastoral support delivered',
-  housing_support:             'Housing situation improved',
-  legal_advice:                'Rights / legal advice delivered',
-  community_participation:     'Participated in community activity',
-  employer_engagement:         'Employer engagement completed',
+  mentorship_peer_connection:  'Sustained mentor relationship',
+  wraparound_support:          'Wellbeing improved',
+  housing_support:             'Housing improved',
+  legal_advice:                'Rights / immigration status secured',
+  community_participation:     'Actively participating in community',
+  employer_engagement:         'Employer changed inclusive practices',
 };
 
 /** Build the outcome tick-list for a project from its ticked activities. */
