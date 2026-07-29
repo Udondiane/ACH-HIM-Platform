@@ -60,10 +60,9 @@ export default async function FrameworkLibraryPage() {
         title="HIM framework library"
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
         <Stat label="Domains" value={String(domains.length)} subline="capability areas" />
         <Stat label="Metrics" value={String(factors.length)} />
-        <Stat label="Indicators" value={String(totalIndicators)} />
         <Stat label="Methodology" value="HIM v1.0" />
       </div>
 
