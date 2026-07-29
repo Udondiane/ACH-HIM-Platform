@@ -31,6 +31,7 @@ const NAV = [
   { href: '/impact-library',     label: 'Impact library',   icon: Library },
   { href: '/featured-quotes',    label: 'Featured quotes',  icon: Quote },
   { href: '/demo/outcomes-report', label: 'Sample impact report', icon: Sparkles },
+  { href: '/demo/b2e-programme-report', label: 'B2E · programme summary', icon: Sparkles },
   { section: 'Methodology' },
   { href: '/admin/framework',    label: 'Framework library',icon: BookOpen },
   { href: '/toms-crosswalk',     label: 'TOMs crosswalk',   icon: ArrowLeftRight },
