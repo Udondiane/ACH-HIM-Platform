@@ -380,7 +380,7 @@ export default async function AssessmentRunnerPage({
                             {fac.measurement_question}
                           </div>
                         )}
-                        {inds.length > 0 && !fac.score_guides && (
+                        {inds.length > 0 && (
                           <div className="mb-3 rounded-[8px] border-[0.5px] border-ach-border bg-ach-page/40 px-3 py-2">
                             <div className="text-[11px] uppercase tracking-[1.2px] text-ach-navy/60 mb-1.5">
                               What the assessor is listening for
@@ -392,25 +392,30 @@ export default async function AssessmentRunnerPage({
                             </ul>
                           </div>
                         )}
-                        {fac.score_guides && typeof fac.score_guides === 'object' && (
-                          <div className="mb-3 rounded-[8px] border-[0.5px] border-ach-border bg-[#FBF2E0]/60 px-3 py-2">
-                            <div className="text-[11px] uppercase tracking-[1.2px] text-ach-navy/70 mb-1.5">
-                              Scoring anchors (1–5)
-                            </div>
-                            <div className="grid grid-cols-1 gap-y-1 text-[12px] text-ach-navy/85">
-                              {['1', '2', '3', '4', '5'].map(k => {
-                                const desc = (fac.score_guides as Record<string, string>)[k];
-                                if (!desc) return null;
-                                return (
-                                  <div key={k} className="flex gap-2">
-                                    <span className="font-semibold text-ach-navy w-4 shrink-0">{k}</span>
-                                    <span>{desc}</span>
-                                  </div>
-                                );
-                              })}
-                            </div>
+                        <div className="mb-3 rounded-[8px] border-[0.5px] border-ach-border bg-[#FBF2E0]/60 px-3 py-2">
+                          <div className="text-[11px] uppercase tracking-[1.2px] text-ach-navy/70 mb-1.5">
+                            Scoring anchors (1–5)
                           </div>
-                        )}
+                          <div className="grid grid-cols-1 gap-y-1 text-[12px] text-ach-navy/85">
+                            {(fac.score_guides && typeof fac.score_guides === 'object'
+                              ? ['1', '2', '3', '4', '5']
+                                  .map(k => ({ k, desc: (fac.score_guides as Record<string, string>)[k] }))
+                                  .filter(x => !!x.desc)
+                              : [
+                                  { k: '1', desc: 'Not yet — cannot do this or actively avoids it.' },
+                                  { k: '2', desc: 'With support — can do this only when guided or prompted.' },
+                                  { k: '3', desc: 'Independently — can do this on their own.' },
+                                  { k: '4', desc: 'Confidently — does this without hesitation, with quality.' },
+                                  { k: '5', desc: 'Teaches or leads — supports others on this.' },
+                                ]
+                            ).map(x => (
+                              <div key={x.k} className="flex gap-2">
+                                <span className="font-semibold text-ach-navy w-4 shrink-0">{x.k}</span>
+                                <span>{x.desc}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                         <FactorResponseField
                           assessmentId={params.assessmentId}
                           factorId={fac.id}
