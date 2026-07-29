@@ -39,7 +39,7 @@ export default async function CandidateImportPage({ searchParams }: { searchPara
         backLabel={projectContext?.name ?? 'Candidates'}
         miniLabel="Bulk import"
         title={projectContext ? `Bulk upload beneficiaries to ${projectContext.name ?? 'project'}` : 'Import candidates from application form'}
-        description="Upload a CSV or Excel export (from Microsoft Forms, Google Forms, or any spreadsheet). ACH picks which rows to import. Unrecognised columns are preserved on each candidate record."
+        description="Upload a CSV or Excel export from Microsoft Forms, Google Forms, or any spreadsheet."
       />
       <Card>
         <CardContent className="pt-6">
