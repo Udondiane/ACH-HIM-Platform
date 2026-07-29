@@ -167,7 +167,7 @@ export default async function ProjectOutcomesReportPage({ params }: { params: { 
           <CardContent className="space-y-3">
             {p.end_narrative_what_worked && <Narrative label="What worked well" text={p.end_narrative_what_worked} />}
             {p.end_narrative_challenges && <Narrative label="Challenges encountered" text={p.end_narrative_challenges} />}
-            {p.end_narrative_unexpected && <Narrative label="Unexpected outcomes" text={p.end_narrative_unexpected} />}
+            {p.end_narrative_unexpected && <Narrative label="Unexpected impact" text={p.end_narrative_unexpected} />}
           </CardContent>
         </Card>
       )}

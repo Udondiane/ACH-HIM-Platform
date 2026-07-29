@@ -55,10 +55,6 @@ export function CompleteProjectButton({ projectId, isCompleted, initial }: Props
         <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Close-out narrative</div>
         <button onClick={() => setOpen(false)} className="text-ach-navy/60 hover:text-ach-navy"><X className="h-3.5 w-3.5" /></button>
       </div>
-      <p className="text-[12px] text-ach-navy/60 mb-3">
-        Three short answers that go into the outcomes report alongside the quantitative HIM data.
-        Skip a field if there's nothing to say.
-      </p>
       <form action={submit} className="space-y-3">
         <Field label="What worked well">
           <textarea
@@ -76,7 +72,7 @@ export function CompleteProjectButton({ projectId, isCompleted, initial }: Props
             className="w-full rounded-[10px] border-[0.5px] border-ach-border bg-white px-3 py-2 text-[12.5px] text-ach-navy focus:outline-none focus:ring-1 focus:ring-ach-navy/40"
           />
         </Field>
-        <Field label="Anything unexpected">
+        <Field label="Unexpected impact">
           <textarea
             name="unexpected"
             defaultValue={initial?.unexpected ?? ''}
