@@ -34,13 +34,13 @@ const TOTALS = {
 };
 
 const DOMAINS = [
-  { label: 'Employment',           hint: 'work, earnings, quality',        baseline: 2.1, exit: 3.9 },
-  { label: 'Education & Skills',   hint: 'language, digital, vocational',  baseline: 2.3, exit: 3.7 },
-  { label: 'Belonging & Identity', hint: 'cultural comfort, self-worth',   baseline: 2.5, exit: 3.6 },
-  { label: 'Health & Wellbeing',   hint: 'mental, physical, care access',  baseline: 2.7, exit: 3.4 },
-  { label: 'Social Participation', hint: 'networks, civic life',           baseline: 2.4, exit: 3.3 },
-  { label: 'Housing',              hint: 'security, quality',              baseline: 2.6, exit: 3.1 },
-  { label: 'Rights & Citizenship', hint: 'status, rights, voice',          baseline: 2.9, exit: 3.4 },
+  { label: 'Employment',           hint: 'work, earnings, quality',        baseline: 0, exit: 0 },
+  { label: 'Education & Skills',   hint: 'language, digital, vocational',  baseline: 0, exit: 0 },
+  { label: 'Belonging & Identity', hint: 'cultural comfort, self-worth',   baseline: 0, exit: 0 },
+  { label: 'Health & Wellbeing',   hint: 'mental, physical, care access',  baseline: 0, exit: 0 },
+  { label: 'Social Participation', hint: 'networks, civic life',           baseline: 0, exit: 0 },
+  { label: 'Housing',              hint: 'security, quality',              baseline: 0, exit: 0 },
+  { label: 'Rights & Citizenship', hint: 'status, rights, voice',          baseline: 0, exit: 0 },
 ];
 
 export default function BridgeProgrammeReportPage() {
@@ -113,19 +113,15 @@ export default function BridgeProgrammeReportPage() {
                 {d.label}
                 <span className="block text-[11px] text-ach-navy/55 mt-px">{d.hint}</span>
               </div>
-              <div className="relative h-5 bg-ach-page rounded-[3px] overflow-hidden border-[0.5px] border-ach-border/70">
-                <div className="absolute inset-y-0 left-0 bg-ach-navy/25" style={{ width: `${(d.baseline / 5) * 100}%` }} />
-                <div className="absolute inset-y-0 left-0 bg-[#B8843C]" style={{ width: `${(d.exit / 5) * 100}%` }} />
-              </div>
-              <div className="text-[12px] font-mono tabular-nums text-right text-ach-navy/60">
-                {d.baseline.toFixed(1)} → {d.exit.toFixed(1)}
-                <strong className="text-[#1B6D6A] font-semibold ml-1.5">+{(d.exit - d.baseline).toFixed(1)}</strong>
+              <div className="relative h-5 bg-ach-page rounded-[3px] overflow-hidden border-[0.5px] border-ach-border/70" />
+              <div className="text-[12px] font-mono tabular-nums text-right text-ach-navy/45 italic">
+                no data
               </div>
             </div>
           ))}
         </div>
-        <div className="text-[11px] text-ach-navy/50 mt-4 italic">
-          Illustrative aggregate. Individual assessments drive per-cohort figures live in HIM.
+        <div className="text-[12px] text-ach-navy/60 mt-5 pt-4 border-t border-dotted border-ach-border italic max-w-[70ch]">
+          HIM went live for Bridge to Employment mid-way through this reporting window. Baseline → exit figures will populate as the pilot cohort completes its assessments. Assessments recorded before HIM existed are not comparable and are excluded.
         </div>
       </SectionCard>
 
@@ -182,70 +178,6 @@ export default function BridgeProgrammeReportPage() {
               </tr>
             </tbody>
           </table>
-        </div>
-      </SectionCard>
-
-      {/* Financial reality */}
-      <SectionCard title="Financial reality" sub="What employers paid vs true cost per cohort">
-        <div className="overflow-x-auto">
-          <table className="w-full text-[13px]">
-            <thead className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-mono">
-              <tr className="border-b border-ach-border">
-                <th className="text-left py-2 font-medium">Employer</th>
-                <th className="text-right py-2 font-medium">Paid per cohort</th>
-                <th className="text-right py-2 font-medium">Grant subsidy</th>
-                <th className="text-right py-2 font-medium">True cost</th>
-                <th className="text-right py-2 font-medium">Coverage</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-dotted divide-ach-border/70">
-              <FinRow name="IKEA" paid="£8,000" grant="£22,591" cost="£30,591" pct="26%" highlight />
-              <FinRow name="Pret A Manger" paid="£0" grant="£22,591" cost="£22,591" pct="0%" />
-              <FinRow name="Visit West (10 hotels)" paid="£0" grant="£22,591" cost="£22,591" pct="0%" />
-              <FinRow name="Bristol Waste" paid="£0" grant="£22,591" cost="£22,591" pct="0%" />
-            </tbody>
-          </table>
-        </div>
-        <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <BoxStat k="True cost per candidate" v="£1,670" s="loaded cost" />
-          <BoxStat k="Price floor per candidate" v="£2,171" s="loaded + 30% sustainability" />
-          <BoxStat k="Corporate rate per candidate" v="£4,341" s="IKEA / Pret target" />
-        </div>
-        <div className="text-[12.5px] text-[#8B3A4F] bg-ach-rose/10 rounded-[6px] px-4 py-3 border-l-2 border-ach-rose/50 mt-5">
-          <span className="font-medium">⚠ Comic Relief grant ends October 2026.</span> IKEA's £8,000 currently covers ~26% of the true cost. Pret, Visit West and Bristol Waste pay £0. Fee negotiation is existential.
-        </div>
-      </SectionCard>
-
-      {/* Featured quotes */}
-      <SectionCard title="In beneficiaries' words" sub="Consented · anonymised where requested">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <blockquote className="border-l-2 border-[#B8843C] pl-4 py-1">
-            <p className="font-serif italic text-[15px] leading-[1.45] text-ach-navy m-0">
-              "The classes taught me the English I needed on the floor. Not textbook English — real conversations. That is what makes a difference."
-            </p>
-            <div className="text-[11.5px] text-ach-navy/55 mt-2">— Pret Bristol cohort · Started shift Nov 2024</div>
-          </blockquote>
-          <blockquote className="border-l-2 border-[#B8843C] pl-4 py-1">
-            <p className="font-serif italic text-[15px] leading-[1.45] text-ach-navy m-0">
-              "On my first shift my manager said 'you sound like you belong here'. I hadn't heard that in a long time."
-            </p>
-            <div className="text-[11.5px] text-ach-navy/55 mt-2">— Pret / IKEA joint cohort · Started July 2025</div>
-          </blockquote>
-        </div>
-      </SectionCard>
-
-      {/* Programme reflections */}
-      <SectionCard title="Programme reflections" sub="Aggregated learning · Oct 2023 → Apr 2026">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <NarrativeBlock label="What worked well">
-            Paid placements, welfare support, and matching English delivery to workplace vocabulary drive completion. Trial shifts are the strongest predictor of employer conversion. Pret Bristol's 80% employment rate confirms the model works when vacancy timing aligns.
-          </NarrativeBlock>
-          <NarrativeBlock label="Challenges encountered">
-            Visit West Cohort 2 hit a vacancy-timing mismatch. Bristol Waste requires pre-programme H&S screening. MEL response rates are low — Salesforce duplication and inconsistent 6-month follow-up limit long-term proof.
-          </NarrativeBlock>
-          <NarrativeBlock label="Unexpected impact">
-            Two beneficiaries have progressed to peer-mentoring the next cohort. One is now a Pret cultural-awareness co-trainer. Employer ED&I training is emerging as a viable standalone service line (Burges Salmon, NHS, JLR interest).
-          </NarrativeBlock>
         </div>
       </SectionCard>
 
@@ -307,37 +239,6 @@ function FunnelStep({ n, label, hint, val, pct, last }: { n: string; label: stri
       </div>
       <div className="font-serif text-[22px] tabular-nums text-ach-navy">{val}</div>
       <div className="font-mono text-[11px] text-ach-navy/60 text-right min-w-[110px]">{pct}</div>
-    </div>
-  );
-}
-
-function FinRow({ name, paid, grant, cost, pct, highlight }: { name: string; paid: string; grant: string; cost: string; pct: string; highlight?: boolean }) {
-  return (
-    <tr>
-      <td className={`py-2.5 ${highlight ? 'text-ach-navy font-medium' : 'text-ach-navy'}`}>{name}</td>
-      <td className="py-2.5 text-right tabular-nums text-ach-navy">{paid}</td>
-      <td className="py-2.5 text-right tabular-nums text-ach-navy/70">{grant}</td>
-      <td className="py-2.5 text-right tabular-nums text-ach-navy/70">{cost}</td>
-      <td className="py-2.5 text-right tabular-nums font-mono text-[12px] text-ach-navy/70">{pct}</td>
-    </tr>
-  );
-}
-
-function BoxStat({ k, v, s }: { k: string; v: string; s?: string }) {
-  return (
-    <div className="rounded-[6px] border border-ach-border bg-ach-page/30 px-4 py-3">
-      <div className="text-[10.5px] uppercase tracking-[1.4px] font-mono text-ach-navy/55">{k}</div>
-      <div className="font-serif text-[22px] tabular-nums text-ach-navy tracking-[-0.01em] leading-none mt-1.5">{v}</div>
-      {s && <div className="text-[11.5px] text-ach-navy/55 mt-1">{s}</div>}
-    </div>
-  );
-}
-
-function NarrativeBlock({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <div className="text-[10.5px] uppercase tracking-[1.4px] font-mono text-ach-navy/55 mb-2">{label}</div>
-      <p className="text-[13.5px] leading-[1.5] text-ach-navy/85 m-0">{children}</p>
     </div>
   );
 }
