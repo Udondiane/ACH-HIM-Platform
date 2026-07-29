@@ -26,7 +26,7 @@ export function CompleteProjectButton({ projectId, isCompleted, initial }: Props
     return (
       <Button
         type="button"
-        variant={isCompleted ? 'secondary' : 'default'}
+        variant={isCompleted ? 'secondary' : 'primary'}
         onClick={() => setOpen(true)}
       >
         <CheckCircle2 className="h-3.5 w-3.5" />
