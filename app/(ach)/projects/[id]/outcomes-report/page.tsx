@@ -225,7 +225,7 @@ function DomainBar({ label, baseline, exit }: { label: string; baseline: number 
       <div className="flex items-baseline justify-between mb-1">
         <div className="text-[12px] text-ach-navy">{label}</div>
         <div className="text-[11.5px] tabular-nums text-ach-navy/70">
-          {baseline !== null ? scoreToLevel(baseline) : '—'} → {exit !== null ? scoreToLevel(exit) : '—'}
+          {baseline !== null ? scoreToLevel(baseline).label : '—'} → {exit !== null ? scoreToLevel(exit).label : '—'}
         </div>
       </div>
       <div className="relative h-2 rounded-full bg-ach-page overflow-hidden">
