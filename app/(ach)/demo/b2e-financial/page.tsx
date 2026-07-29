@@ -109,17 +109,6 @@ export default function B2eFinancialPage() {
         </div>
       </SectionCard>
 
-      <SectionCard title="Annual funding gap" sub="Grant ends October 2026">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <BoxStat k="B2E gap" v="£24,522" s="4 cohorts at SME rate closes it" />
-          <BoxStat k="IAG gap" v="£44,074" s="Statutory commissioning target" />
-          <BoxStat k="Shared / infra gap" v="£9,568" s="Cross-subsidy from primary lines" />
-        </div>
-        <div className="mt-5 text-[13px] text-ach-navy/80 leading-relaxed max-w-[70ch]">
-          <span className="font-medium text-ach-navy">Total annual gap: £78,164.</span> Realistic gap-closing potential from fee renegotiation, two new paying employers, ED&amp;I training as standalone, and formalised DWP commissioning: <span className="font-medium text-ach-navy">£190–285k / year</span>. Sufficient headroom for infrastructure + a modest surplus.
-        </div>
-      </SectionCard>
-
       <div className="flex items-center justify-between pt-5 mt-6 border-t border-ach-border font-mono text-[10.5px] uppercase tracking-[1.4px] text-ach-navy/55">
         <div className="text-ach-navy">ACH · Financial analysis · Internal</div>
         <div>v1.0 · Apr 2026</div>
