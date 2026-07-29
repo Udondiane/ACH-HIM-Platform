@@ -61,9 +61,6 @@ export default function B2eFinancialPage() {
           <BoxStat k="Price floor per candidate" v="£2,171" s="loaded + 30% sustainability margin" />
           <BoxStat k="Corporate rate per candidate" v="£4,341" s="IKEA / Pret target" highlight />
         </div>
-        <div className="text-[12.5px] text-ach-navy/70 leading-relaxed">
-          <strong className="text-ach-navy">The floor of £2,171 per candidate</strong> is where ACH stops losing money on a cohort. Anything below is quiet subsidy from ACH to the employer. The corporate rate reflects the full value delivered — screened talent, retention support, ED&amp;I evidence, CSR narrative.
-        </div>
       </SectionCard>
 
       <SectionCard title="Per-cohort cost breakdown" sub="Where the £16,696 goes">
