@@ -55,6 +55,10 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
   const [partnerProvidesData, setPartnerProvidesData] = useState<boolean>(
     !!initial?.partner_provides_standard_data,
   );
+  // 'Other activity' checkbox — reveals the custom activities textarea.
+  const [showCustomActivities, setShowCustomActivities] = useState<boolean>(
+    !!(initial?.custom_activities && initial.custom_activities.trim().length > 0),
+  );
   function toggleActivity(id: string) {
     const next = new Set(activitySet);
     if (next.has(id)) next.delete(id);
@@ -365,6 +369,38 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
             {[...activitySet].map(id => (
               <input key={id} type="hidden" name="activities" value={id} />
             ))}
+
+            {/* Other / custom activities — anything not covered by the
+                predefined taxonomy. Free-text, one per line. Recorded on
+                the project and echoed on the outcomes report. Does not
+                drive factor measurement or training auto-spawn. */}
+            <div className="mt-4 rounded-[10px] border border-dashed border-ach-border bg-ach-page/30 px-4 py-3">
+              <label className="flex items-start gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showCustomActivities}
+                  onChange={e => setShowCustomActivities(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 border-ach-border text-ach-navy focus:ring-ach-navy/40 rounded"
+                />
+                <span className="text-[12.5px]">
+                  <span className="text-ach-navy font-medium">Other activity (not in the list)</span>
+                  <span className="block text-ach-navy/60 mt-0.5 text-[11.5px]">
+                    Tick to record any activity ACH is delivering that isn&apos;t in the taxonomy above. One per line.
+                  </span>
+                </span>
+              </label>
+              {showCustomActivities && (
+                <div className="mt-3 pl-6">
+                  <textarea
+                    name="custom_activities"
+                    defaultValue={initial?.custom_activities ?? ''}
+                    rows={3}
+                    placeholder="e.g. Winter clothing distribution&#10;Family reunification support"
+                    className="w-full rounded-[10px] border-[0.5px] border-ach-border bg-white px-3 py-2 text-[12.5px] text-ach-navy placeholder:text-ach-navy/40 focus:outline-none focus:ring-1 focus:ring-ach-navy/40"
+                  />
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>
