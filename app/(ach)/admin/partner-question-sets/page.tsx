@@ -14,9 +14,9 @@ async function safeFetch<T>(fn: () => any, fallback: T): Promise<T> {
 }
 
 const TIMEPOINT_LABELS: Record<string, string> = {
-  exit_3mo: '3-month exit',
-  retention_6mo: '6-month retention',
-  retention_12mo: '12-month retention',
+  exit_3mo: 'At the end of placement (3 months)',
+  retention_6mo: '6 months from the start date of Placement',
+  retention_12mo: '12 months from the start date of Placement',
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -24,6 +24,8 @@ const TYPE_LABELS: Record<string, string> = {
   yes_no: 'Yes / no',
   likert_1_5: '1–5 scale',
   text_short: 'Short answer',
+  choice: 'Choice',
+  date: 'Date',
 };
 
 export default async function PartnerQuestionSetsPage() {
@@ -32,7 +34,7 @@ export default async function PartnerQuestionSetsPage() {
   const [sets, items] = await Promise.all([
     safeFetch<any[]>(() => supabase.from('partner_question_sets').select('key, label, description').order('key'), []),
     safeFetch<any[]>(
-      () => supabase.from('partner_question_items').select('id, set_key, timepoint, ordering, prompt, response_type, guidance, is_required').order('ordering'),
+      () => supabase.from('partner_question_items').select('id, set_key, timepoint, ordering, prompt, response_type, options, guidance, is_required').order('ordering'),
       [],
     ),
   ]);
@@ -55,7 +57,7 @@ export default async function PartnerQuestionSetsPage() {
       {sets.length === 0 ? (
         <Card>
           <CardContent className="pt-6 text-[13px] text-ach-navy/70">
-            No question sets defined yet. Run migration 048 to seed the default three (workforce, wellbeing, housing).
+            No question sets defined yet. Run migration 058 to seed the workforce partner question set.
           </CardContent>
         </Card>
       ) : (
@@ -100,6 +102,13 @@ export default async function PartnerQuestionSetsPage() {
                                   )}
                                 </div>
                               </div>
+                              {q.options && (
+                                <div className="text-[11.5px] text-ach-navy/70 mt-1.5 flex flex-wrap gap-1.5">
+                                  {String(q.options).split('|').map((opt: string, i: number) => (
+                                    <span key={i} className="inline-block px-2 py-0.5 rounded-full bg-ach-page border-[0.5px] border-ach-border">{opt.trim()}</span>
+                                  ))}
+                                </div>
+                              )}
                               {q.guidance && (
                                 <div className="text-[11.5px] text-ach-navy/55 italic mt-1">{q.guidance}</div>
                               )}
