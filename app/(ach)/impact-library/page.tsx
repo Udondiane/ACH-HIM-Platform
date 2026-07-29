@@ -165,7 +165,7 @@ export default async function ImpactLibraryPage({
   // Copy-ready snippets
   const domainInfo = DOMAINS.find(d => d.key === activeDomain)!;
   const headlineSnippet = meanBaseline !== null && meanExit !== null
-    ? `Across ${stats?.candsWithBoth.length ?? 0} candidates assessed on ${domainInfo.short}, mean capability rose from ${meanBaseline.toFixed(2)} to ${meanExit.toFixed(2)} on the HIM 0-5 scale — a ${relativeGainPct(meanBaseline, meanExit) >= 0 ? '+' : ''}${relativeGainPct(meanBaseline, meanExit)}% change on baseline. That is Level ${scoreToLevel(meanBaseline).level} (${scoreToLevel(meanBaseline).label}) to Level ${scoreToLevel(meanExit).level} (${scoreToLevel(meanExit).label}).`
+    ? `Across ${stats?.candsWithBoth.length ?? 0} beneficiaries assessed on ${domainInfo.short}, mean capability rose from ${meanBaseline.toFixed(2)} to ${meanExit.toFixed(2)} on the HIM 0-5 scale — a ${relativeGainPct(meanBaseline, meanExit) >= 0 ? '+' : ''}${relativeGainPct(meanBaseline, meanExit)}% change on baseline. That is Level ${scoreToLevel(meanBaseline).level} (${scoreToLevel(meanBaseline).label}) to Level ${scoreToLevel(meanExit).level} (${scoreToLevel(meanExit).label}).`
     : `Impact evidence on ${domainInfo.short} pending assessment data.`;
 
   const financialSnippet = (estValueGbp !== null && peopleMoved > 0)
@@ -179,7 +179,7 @@ export default async function ImpactLibraryPage({
       <PageHeader
         miniLabel="Reports"
         title="Impact library"
-        description="ACH’s impact evidence organised by HIM domain. Grab headlines, financial value, case studies, and beneficiary voices to support any bid or funder conversation."
+        description="ACH’s impact evidence, organised by HIM domain. Use to support bid and grant applications."
       />
 
       {/* Domain tabs */}
@@ -273,7 +273,7 @@ export default async function ImpactLibraryPage({
           </div>
           {strongCandidatesForDomain.length === 0 ? (
             <div className="text-[13px] text-ach-navy/60 italic">
-              No candidates with case-study consent AND strong uplift on this domain yet. Once assessors capture data and candidates grant consent, they appear here.
+              No beneficiaries with case-study consent AND strong uplift on this domain yet. Once assessors capture data and beneficiaries grant consent, they appear here.
             </div>
           ) : (
             <div className="space-y-2">

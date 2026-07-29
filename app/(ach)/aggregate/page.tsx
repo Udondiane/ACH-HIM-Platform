@@ -5,7 +5,6 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CapabilityRadar } from '@/components/charts/capability-radar';
-import { CapabilityBar } from '@/components/charts/capability-bar';
 import { WordCloud } from '@/components/charts/word-cloud';
 import { computeUplift } from '@/lib/scoring/uplift';
 
@@ -49,6 +48,8 @@ export default async function AggregateDashboardPage() {
   const totalProjects = allProjects.length;
   const totalCohorts = allCohorts.length;
   const totalCandidates = allCandidates.length;
+  const withdrawn = allCandidates.filter((c: any) => c.status === 'withdrawn').length;
+  const activeBeneficiaries = totalCandidates - withdrawn;
   const totalAssessmentResponses = allResponses.length;
   const codeMap = new Map(allCodes.map(c => [c.id, c]));
   const tomsTotalPence = allClaims.reduce((s, c) => {
@@ -119,9 +120,6 @@ export default async function AggregateDashboardPage() {
     exit: u.exitAvgCompleters,
     current: u.exitAvgCompleters,
   }));
-  const barItt = networkUplift.map(u => ({ domain: u.domain, score: u.upliftItt ?? 0, role: 'core' as const }));
-  const barCompleters = networkUplift.map(u => ({ domain: u.domain, score: u.upliftCompleters ?? 0, role: 'core' as const }));
-
   const hasAnyAssessmentData = flatResponses.some(r => r.numeric_value != null);
 
   return (
@@ -134,43 +132,20 @@ export default async function AggregateDashboardPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
         <Kpi label="Projects" value={String(totalProjects)} sub={`${allProjects.filter((p: any) => p.status === 'active').length} active`} />
         <Kpi label="Cohorts" value={String(totalCohorts)} sub={`${allCohorts.filter((c: any) => c.status === 'in_progress' || c.status === 'recruiting').length} live`} />
-        <Kpi label="Candidates" value={String(totalCandidates)} />
+        <Kpi label="Beneficiaries" value={String(activeBeneficiaries)} sub={withdrawn > 0 ? `${withdrawn} withdrawn` : undefined} />
         <Kpi label="TOMs £ social value" value={`£${Math.round(tomsTotalPence / 100).toLocaleString()}`} sub={`£${Math.round(quantTomsPence / 100).toLocaleString()} quantitative`} />
       </div>
 
       {hasAnyAssessmentData && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5">
-          <Card>
-            <CardHeader>
-              <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Network capability radar</div>
-              <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Baseline vs Exit across all candidates.</div>
-            </CardHeader>
-            <CardContent>
-              <CapabilityRadar data={radarData} mode="comparison" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Uplift — completers vs ITT</div>
-              <div className="text-[11.5px] text-ach-navy/55 mt-0.5">
-                Completers = uplift averaged only over candidates with both a baseline and an exit assessment.
-                ITT (intention-to-treat) = uplift averaged over everyone who started, with dropouts held at their baseline score. Reporting both prevents survivorship bias.
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-1">
-                <div>
-                  <div className="text-[10.5px] text-ach-navy/55 text-center mb-1">Completers</div>
-                  <CapabilityBar data={barCompleters} height={220} />
-                </div>
-                <div>
-                  <div className="text-[10.5px] text-ach-navy/55 text-center mb-1">ITT</div>
-                  <CapabilityBar data={barItt} height={220} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <Card className="mb-5">
+          <CardHeader>
+            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Network capability radar</div>
+            <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Baseline vs Exit across all beneficiaries.</div>
+          </CardHeader>
+          <CardContent>
+            <CapabilityRadar data={radarData} mode="comparison" />
+          </CardContent>
+        </Card>
       )}
 
       <Card className="mb-5">
