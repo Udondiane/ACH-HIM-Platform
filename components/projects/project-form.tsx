@@ -50,6 +50,11 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
   const [activitySet, setActivitySet] = useState<Set<string>>(
     new Set<string>(((initial?.activities ?? []) as string[]) || []),
   );
+  // Partner-data-provider checkbox: shows only for hybrid / commercial
+  // funding models; unhides the email-list textarea when ticked.
+  const [partnerProvidesData, setPartnerProvidesData] = useState<boolean>(
+    !!initial?.partner_provides_standard_data,
+  );
   function toggleActivity(id: string) {
     const next = new Set(activitySet);
     if (next.has(id)) next.delete(id);
@@ -173,7 +178,7 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
                 placeholder: 'e.g. Comic Relief, Esmée Fairbairn, Bristol City Council',
               };
           return (
-            <div className="mt-3">
+            <div className="mt-3 space-y-3">
               <Field label={meta.label} error={fe('funder_name')} hint={meta.hint}>
                 <Input
                   name="funder_name"
@@ -181,6 +186,43 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
                   placeholder={meta.placeholder}
                 />
               </Field>
+
+              {(fundingModel === 'commercial' || fundingModel === 'hybrid') && (
+                <div className="rounded-[10px] border-[0.5px] border-ach-border bg-ach-page/40 px-4 py-3">
+                  <label className="flex items-start gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="partner_provides_standard_data"
+                      defaultChecked={!!initial?.partner_provides_standard_data}
+                      onChange={e => setPartnerProvidesData(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 border-ach-border text-ach-navy focus:ring-ach-navy/40 rounded"
+                    />
+                    <span className="text-[12.5px]">
+                      <span className="text-ach-navy font-medium">Corporate partner will provide standard performance data</span>
+                      <span className="block text-ach-navy/60 mt-0.5 text-[11.5px]">
+                        Tick when the partner has agreed to supply retention / promotion / satisfaction data at 3, 6, 12-month timepoints. HIM will send them the standard question set.
+                      </span>
+                    </span>
+                  </label>
+                  {partnerProvidesData && (
+                    <div className="mt-3 pl-6">
+                      <Field
+                        label="Data-provider email address(es)"
+                        error={fe('data_provider_emails')}
+                        hint="One email per line. Each will be sent the standard partner question set when data is due."
+                      >
+                        <textarea
+                          name="data_provider_emails"
+                          defaultValue={initial?.data_provider_emails ?? ''}
+                          rows={2}
+                          placeholder="alex.smith@ikea.co.uk&#10;jenna.james@ikea.co.uk"
+                          className="w-full rounded-[10px] border-[0.5px] border-ach-border bg-white px-3 py-2 text-[12.5px] text-ach-navy placeholder:text-ach-navy/40 focus:outline-none focus:ring-1 focus:ring-ach-navy/40 font-mono"
+                        />
+                      </Field>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           );
         })()}

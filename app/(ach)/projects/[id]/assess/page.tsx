@@ -20,6 +20,22 @@ export default async function StartAssessmentPage({ params }: { params: { id: st
   if (!project) notFound();
   const p = project as any;
 
+  // Baseline lockout: computed from project.start_date + baseline_window_days.
+  // After that date, the baseline option is disabled here and rejected by the
+  // server action. Later timepoints (3mo/6mo/12mo) remain available.
+  const windowDays = typeof p.baseline_window_days === 'number' ? p.baseline_window_days : 3;
+  let baselineLocked = false;
+  let baselineDeadline: string | null = null;
+  if (p.start_date) {
+    const start = new Date(`${p.start_date}T00:00:00`);
+    const end = new Date(start);
+    end.setDate(end.getDate() + windowDays);
+    baselineDeadline = end.toISOString().slice(0, 10);
+    const today = new Date();
+    const todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    baselineLocked = todayMid > end;
+  }
+
   // Candidates available: anyone enrolled in any cohort that runs this project.
   const { data: cohortIds } = await supabase
     .from('cohorts').select('id').eq('project_id', params.id);
@@ -81,16 +97,33 @@ export default async function StartAssessmentPage({ params }: { params: { id: st
               <div className="space-y-2">
                 <label className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Timepoint</label>
                 <div className="grid grid-cols-2 gap-2">
-                  {TIMEPOINTS.map((t, i) => (
-                    <label key={t.id} className="flex items-center gap-2 p-3 rounded-[10px] border-[0.5px] border-ach-border cursor-pointer hover:bg-ach-page">
-                      <input
-                        type="radio" name="timepoint" value={t.id} defaultChecked={i === 0}
-                        className="h-4 w-4 border-ach-border text-ach-navy focus:ring-ach-navy/40"
-                      />
-                      <span className="text-[13px] text-ach-navy">{t.label}</span>
-                    </label>
-                  ))}
+                  {TIMEPOINTS.map((t, i) => {
+                    const locked = t.id === 'baseline' && baselineLocked;
+                    return (
+                      <label
+                        key={t.id}
+                        className={`flex items-center gap-2 p-3 rounded-[10px] border-[0.5px] ${
+                          locked
+                            ? 'border-ach-border bg-ach-page/40 cursor-not-allowed opacity-60'
+                            : 'border-ach-border cursor-pointer hover:bg-ach-page'
+                        }`}
+                      >
+                        <input
+                          type="radio" name="timepoint" value={t.id}
+                          defaultChecked={i === 0 && !locked}
+                          disabled={locked}
+                          className="h-4 w-4 border-ach-border text-ach-navy focus:ring-ach-navy/40"
+                        />
+                        <span className={`text-[13px] ${locked ? 'text-ach-navy/50' : 'text-ach-navy'}`}>{t.label}</span>
+                      </label>
+                    );
+                  })}
                 </div>
+                {baselineLocked && (
+                  <div className="text-[11.5px] text-[#8B3A4F] bg-ach-rose/10 rounded-[10px] px-3 py-2 border-[0.5px] border-ach-rose/30 mt-2">
+                    Baseline window closed on {baselineDeadline ? new Date(baselineDeadline).toLocaleDateString('en-GB') : '—'} ({windowDays} days after project start). Baseline can no longer be recorded — later timepoints are still available.
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-2 pt-2">

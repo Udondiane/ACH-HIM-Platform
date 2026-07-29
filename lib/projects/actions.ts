@@ -26,6 +26,8 @@ function fdToPlain(fd: FormData): Record<string, unknown> {
   }
   if (!('activities' in obj)) obj.activities = [];
   if (!('training_programme_ids' in obj)) obj.training_programme_ids = [];
+  // Unchecked checkboxes are omitted by the browser — coerce to false.
+  if (!('partner_provides_standard_data' in obj)) obj.partner_provides_standard_data = false;
   return obj;
 }
 
@@ -181,8 +183,34 @@ function normalisePayload(input: ReturnType<typeof projectSchema.parse>, ref: st
     capability_questionnaire: capabilityQuestionnaire,
     start_date: input.start_date || null,
     end_date: input.end_date || null,
+    baseline_window_days: input.baseline_window_days,
     status: input.status,
+    partner_provides_standard_data: input.partner_provides_standard_data,
   };
+}
+
+/** Persist the newline-separated email list captured on the project form
+ *  into project_data_providers. Replace-all semantics so unticking removes
+ *  the list. */
+async function syncDataProviders(
+  supabase: ReturnType<typeof createClient>,
+  projectId: string,
+  provides: boolean,
+  rawEmails: string | null | undefined,
+): Promise<void> {
+  await supabase.from('project_data_providers').delete().eq('project_id', projectId);
+  if (!provides || !rawEmails) return;
+  const emails = rawEmails
+    .split(/[\n,;]+/)
+    .map(e => e.trim())
+    .filter(e => /.+@.+\..+/.test(e));
+  if (emails.length === 0) return;
+  // De-duplicate case-insensitively — matches the DB unique index.
+  const seen = new Set<string>();
+  const rows = emails
+    .filter(e => { const k = e.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; })
+    .map(email => ({ project_id: projectId, email }));
+  if (rows.length > 0) await supabase.from('project_data_providers').insert(rows as never);
 }
 
 async function syncCapabilitiesFromAnswers(
@@ -313,6 +341,7 @@ export async function createProjectAction(_prev: ActionResult | null, fd: FormDa
   await syncProjectTrainingProgrammes(supabase, row!.id, (parsed.data as any).training_programme_ids ?? []);
   await autoSpawnTrainingProgrammesFromActivities(supabase, row!.id, ref, parsed.data.activities ?? []);
   await syncPartnersFromFunderName(supabase, parsed.data.funder_name, parsed.data.funding_model);
+  await syncDataProviders(supabase, row!.id, parsed.data.partner_provides_standard_data, parsed.data.data_provider_emails);
   revalidatePath('/projects');
   revalidatePath('/partners');
   revalidatePath('/cohorts/new');
@@ -348,6 +377,7 @@ export async function updateProjectAction(
   await syncProjectTrainingProgrammes(supabase, id, (parsed.data as any).training_programme_ids ?? []);
   await autoSpawnTrainingProgrammesFromActivities(supabase, id, ref, parsed.data.activities ?? []);
   await syncPartnersFromFunderName(supabase, parsed.data.funder_name, parsed.data.funding_model);
+  await syncDataProviders(supabase, id, parsed.data.partner_provides_standard_data, parsed.data.data_provider_emails);
   revalidatePath('/projects');
   revalidatePath('/partners');
   revalidatePath(`/projects/${id}`);
@@ -494,6 +524,33 @@ async function ensureDefaultCohortForProject(
  * cohort — so staff never have to manually create a cohort or wire up
  * partner sponsorships just to enrol people.
  */
+/**
+ * Mark a project as completed. Captures the three end-of-project narrative
+ * answers alongside the completion timestamp so the outcomes report has its
+ * qualitative spine. Idempotent — re-running just refreshes the narrative
+ * and the timestamp.
+ */
+export async function markProjectCompletedAction(
+  projectId: string,
+  narrative: { what_worked: string; challenges: string; unexpected: string },
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from('projects')
+    .update({
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+      end_narrative_what_worked: narrative.what_worked || null,
+      end_narrative_challenges: narrative.challenges || null,
+      end_narrative_unexpected: narrative.unexpected || null,
+    } as never)
+    .eq('id', projectId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath(`/projects/${projectId}/outcomes-report`);
+  return { ok: true };
+}
+
 export async function enrolBeneficiariesToProjectAction(
   projectId: string,
   candidateIds: string[],
