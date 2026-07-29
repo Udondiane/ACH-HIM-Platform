@@ -82,6 +82,7 @@ export async function createCohortAction(_prev: ActionResult | null, fd: FormDat
 
     if (!error) {
       const row = data as { id: string };
+      await inheritPartnersFromProject(supabase, row.id, parsed.data.project_id);
       revalidatePath('/cohorts');
       revalidatePath('/dashboard');
       redirect(`/cohorts/${row.id}`);
@@ -95,6 +96,44 @@ export async function createCohortAction(_prev: ActionResult | null, fd: FormDat
   }
 
   return { ok: false, error: 'Could not allocate a unique cohort reference. Please try a different name.' };
+}
+
+/**
+ * When a cohort is created, inherit every partner that was named on
+ * the parent project's funder_name (upserted into the partners table
+ * by syncPartnersFromFunderName). Staff no longer has to manually
+ * link partners to each cohort — the project already knows who's
+ * involved.
+ */
+async function inheritPartnersFromProject(
+  supabase: ReturnType<typeof createClient>,
+  cohortId: string,
+  projectId: string | null | undefined,
+): Promise<void> {
+  if (!projectId || projectId === '__none__') return;
+  const { data: proj } = await supabase
+    .from('projects').select('funder_name').eq('id', projectId).maybeSingle();
+  const funderName = (proj as { funder_name: string | null } | null)?.funder_name;
+  if (!funderName) return;
+  const names = funderName
+    .split(/[,&+]|\s+and\s+/i)
+    .map(n => n.replace(/\([^)]*\)/g, '').trim())
+    .filter(n => n.length > 1);
+  if (names.length === 0) return;
+  const { data: partnerRows } = await supabase
+    .from('partners').select('id, name').in('name', names);
+  const partners = (partnerRows as { id: string; name: string }[] | null) ?? [];
+  if (partners.length === 0) return;
+  await supabase.from('cohort_partners').upsert(
+    partners.map(pr => ({
+      cohort_id: cohortId,
+      partner_id: pr.id,
+      sponsorship_count: 0,
+      engagement_fee: 0,
+      is_lead_partner: false,
+    })) as never,
+    { onConflict: 'cohort_id,partner_id' },
+  );
 }
 
 export async function updateCohortAction(
