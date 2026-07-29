@@ -57,7 +57,8 @@ export async function startAssessmentAction(
     // Auto-create default cohort for the project.
     const { data: projRow } = await supabase
       .from('projects').select('project_ref, start_date, end_date').eq('id', projectId).single();
-    const p = projRow as { project_ref: string; start_date: string | null; end_date: string | null };
+    const p = projRow as unknown as { project_ref: string; start_date: string | null; end_date: string | null } | null;
+    if (!p) return { ok: false, error: 'Project not found.' };
     const { data: newCohort } = await supabase
       .from('cohorts')
       .insert({
