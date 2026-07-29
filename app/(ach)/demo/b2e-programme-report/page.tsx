@@ -104,8 +104,8 @@ export default function BridgeProgrammeReportPage() {
         </div>
       </SectionCard>
 
-      {/* HIM impact signature */}
-      <SectionCard title="HIM impact signature" sub="Mean baseline → exit across all cohorts · 0–5 scale">
+      {/* Capability change */}
+      <SectionCard title="Capability change" sub="Mean baseline → exit across all cohorts · 0–5 scale">
         <div className="space-y-3.5">
           {DOMAINS.map(d => (
             <div key={d.label} className="grid grid-cols-[190px_1fr_140px] gap-4 items-center max-md:grid-cols-[130px_1fr_100px]">

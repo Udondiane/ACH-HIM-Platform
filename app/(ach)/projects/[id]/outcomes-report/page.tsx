@@ -137,7 +137,7 @@ export default async function ProjectOutcomesReportPage({ params }: { params: { 
 
       <Card className="mb-4">
         <CardHeader>
-          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">HIM impact signature</div>
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Capability change</div>
           <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Baseline vs exit scores per domain (0–5 scale).</div>
         </CardHeader>
         <CardContent className="space-y-2">
