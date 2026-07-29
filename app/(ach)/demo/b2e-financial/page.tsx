@@ -33,25 +33,28 @@ export default function B2eFinancialPage() {
         </div>
       </div>
 
-      <SectionCard title="What employers paid vs true cost per cohort" sub="Per-cohort economics">
+      <SectionCard title="What employers paid vs true cost per cohort" sub="True cost is £16,696 loaded per cohort regardless of payer">
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
             <thead className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-mono">
               <tr className="border-b border-ach-border">
                 <th className="text-left py-2 font-medium">Employer</th>
                 <th className="text-right py-2 font-medium">Paid per cohort</th>
-                <th className="text-right py-2 font-medium">Grant subsidy</th>
+                <th className="text-right py-2 font-medium">Gap subsidised by grant</th>
                 <th className="text-right py-2 font-medium">True cost</th>
-                <th className="text-right py-2 font-medium">Coverage</th>
+                <th className="text-right py-2 font-medium">Employer coverage</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-dotted divide-ach-border/70">
-              <FinRow name="IKEA" paid="£8,000" grant="£22,591" cost="£30,591" pct="26%" highlight />
-              <FinRow name="Pret A Manger" paid="£0" grant="£22,591" cost="£22,591" pct="0%" />
-              <FinRow name="Visit West (10 hotels)" paid="£0" grant="£22,591" cost="£22,591" pct="0%" />
-              <FinRow name="Bristol Waste" paid="£0" grant="£22,591" cost="£22,591" pct="0%" />
+              <FinRow name="IKEA" paid="£8,000" grant="£8,696" cost="£16,696" pct="48%" highlight />
+              <FinRow name="Pret A Manger" paid="£0" grant="£16,696" cost="£16,696" pct="0%" />
+              <FinRow name="Visit West (10 hotels)" paid="£0" grant="£16,696" cost="£16,696" pct="0%" />
+              <FinRow name="Bristol Waste" paid="£0" grant="£16,696" cost="£16,696" pct="0%" />
             </tbody>
           </table>
+        </div>
+        <div className="text-[12px] text-ach-navy/60 mt-4 italic max-w-[70ch]">
+          A cohort costs £16,696 to run whether an employer contributes or not. IKEA's £8,000 halves the grant subsidy ACH would otherwise absorb — the others rely on the grant fully. When the grant ends in October 2026, the "gap subsidised by grant" column becomes the fee ACH must recover from each employer.
         </div>
       </SectionCard>
 
