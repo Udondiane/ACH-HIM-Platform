@@ -204,7 +204,7 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
                     <span className="text-[12.5px]">
                       <span className="text-ach-navy font-medium">Corporate partner will provide standard performance data</span>
                       <span className="block text-ach-navy/60 mt-0.5 text-[11.5px]">
-                        Tick when the partner has agreed to supply retention / promotion / satisfaction data at 3, 6, 12-month timepoints. HIM will send them the standard question set.
+                        Corporate partner has agreed to provide required data to measure the social impact of the programme.
                       </span>
                     </span>
                   </label>

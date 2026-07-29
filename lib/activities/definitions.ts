@@ -136,36 +136,52 @@ export const TRAINING_ACTIVITY_IDS: Set<string> = new Set(
 );
 
 /**
- * The outcome label that appears on the beneficiary tick-list when this
- * activity is delivered as part of a project. Outcomes are what CHANGED
- * for the beneficiary as a result of the intervention — not the activity
- * itself. e.g. "Passed English course" (outcome) vs "Attended ESOL
- * classes" (output/activity).
+ * "Passed X course" outcomes — surfaced only when the matching training
+ * activity is ticked on the project. Each is a concrete beneficiary-level
+ * result of that training.
  */
-export const ACTIVITY_OUTCOME_LABELS: Record<string, string> = {
-  english_training:            'English proficiency demonstrated',
-  digital_skills_training:     'Digital skills demonstrated',
-  customer_service_training:   'Customer service qualified',
-  health_safety_training:      'Health & Safety certified',
-  cultural_awareness_training: 'Workplace confidence built',
-  employability_coaching:      'Interview-ready',
-  career_goal_setting:         'Career plan in place',
-  direct_job_placement:        'Job started',
-  in_work_support:             'Retained in work (6 months+)',
-  mentorship_peer_connection:  'Sustained mentor relationship',
-  wraparound_support:          'Wellbeing improved',
-  housing_support:             'Housing improved',
-  legal_advice:                'Rights / immigration status secured',
-  community_participation:     'Actively participating in community',
-  employer_engagement:         'Employer changed inclusive practices',
+export const TRAINING_OUTCOME_LABELS: Record<string, string> = {
+  english_training:            'Passed English course',
+  digital_skills_training:     'Passed Digital skills course',
+  customer_service_training:   'Passed Customer service course',
+  health_safety_training:      'Passed Health & Safety course',
+  cultural_awareness_training: 'Passed Cultural awareness course',
 };
 
-/** Build the outcome tick-list for a project from its ticked activities. */
+/**
+ * Employability and progression outcomes surfaced for every project.
+ * Concrete verb-based results — "what happened for the beneficiary".
+ * Independent of which activities are ticked because a beneficiary can
+ * reach any of these through many routes.
+ */
+export const FIXED_BENEFICIARY_OUTCOMES: { key: string; label: string }[] = [
+  { key: 'got_job_offer',         label: 'Got a job offer' },
+  { key: 'got_placement',         label: 'Got placement' },
+  { key: 'started_job',           label: 'Started a job' },
+  { key: 'started_vocational',    label: 'Started vocational training' },
+  { key: 'started_further_ed',    label: 'Started further education' },
+  { key: 'started_apprenticeship', label: 'Started apprenticeship' },
+  { key: 'retained_6mo',          label: 'Retained in job (6 months+)' },
+  { key: 'retained_12mo',         label: 'Retained in job (12 months+)' },
+  { key: 'promoted',              label: 'Promoted / moved to a better role' },
+];
+
+/**
+ * Build the outcome tick-list for a project. Includes:
+ *   1. "Passed X course" outcomes for each ticked training activity
+ *   2. The fixed employability/progression outcomes
+ *   3. An 'other' bucket for unexpected outcomes
+ */
 export function outcomesForActivities(activityIds: string[]): { key: string; label: string }[] {
-  const list = activityIds
-    .map(id => ({ key: id, label: ACTIVITY_OUTCOME_LABELS[id] ?? PROGRAMME_ACTIVITY_LABELS[id] ?? id }))
-    .filter(o => !!o.label);
-  // Always include an 'other' bucket for unexpected outcomes.
+  const list: { key: string; label: string }[] = [];
+  for (const id of activityIds) {
+    const label = TRAINING_OUTCOME_LABELS[id];
+    if (label) list.push({ key: id, label });
+  }
+  list.push(...FIXED_BENEFICIARY_OUTCOMES);
   list.push({ key: 'other', label: 'Other outcome (specify in notes)' });
   return list;
 }
+
+/** Retained for backward compatibility with the outcomes report page. */
+export const ACTIVITY_OUTCOME_LABELS: Record<string, string> = TRAINING_OUTCOME_LABELS;
