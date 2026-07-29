@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Building2, Users, FolderKanban,
   PoundSterling, GraduationCap, CalendarDays,
   ScrollText, Calculator, Quote, Phone, BookOpen, ArrowLeftRight, Library,
-  ChevronsLeft, ChevronsRight,
+  ChevronsLeft, ChevronsRight, Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PrivacyModeToggle } from '@/components/ui/privacy-mode-toggle';
@@ -30,6 +30,7 @@ const NAV = [
   { href: '/aggregate',          label: 'Aggregate',        icon: LayoutDashboard },
   { href: '/impact-library',     label: 'Impact library',   icon: Library },
   { href: '/featured-quotes',    label: 'Featured quotes',  icon: Quote },
+  { href: '/demo/outcomes-report', label: 'Sample impact report', icon: Sparkles },
   { section: 'Methodology' },
   { href: '/admin/framework',    label: 'Framework library',icon: BookOpen },
   { href: '/toms-crosswalk',     label: 'TOMs crosswalk',   icon: ArrowLeftRight },
