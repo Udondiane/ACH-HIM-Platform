@@ -1,7 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useTransition } from 'react';
-import { UserPlus, Check, X } from 'lucide-react';
+import { UserPlus, Check, X, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { enrolBeneficiariesToProjectAction } from '@/lib/projects/actions';
 
@@ -52,7 +53,7 @@ export function EnrolBeneficiariesButton({ projectId, available }: Props) {
   if (!open) {
     return (
       <div className="inline-flex items-center gap-2">
-        <Button type="button" onClick={() => setOpen(true)} disabled={available.length === 0}>
+        <Button type="button" variant="secondary" onClick={() => setOpen(true)}>
           <UserPlus className="h-3.5 w-3.5" />Enrol beneficiaries
         </Button>
         {msg && <span className="text-[11.5px] text-emerald-800">{msg}</span>}
@@ -61,11 +62,19 @@ export function EnrolBeneficiariesButton({ projectId, available }: Props) {
   }
 
   return (
-    <div className="rounded-[10px] border-[0.5px] border-ach-border bg-white p-3 min-w-[340px] shadow-lg">
+    <div className="rounded-[10px] border-[0.5px] border-ach-border bg-white p-3 min-w-[360px] shadow-lg">
       <div className="flex items-center justify-between mb-2">
-        <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Select beneficiaries to enrol</div>
+        <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Enrol beneficiaries</div>
         <button onClick={() => setOpen(false)} className="text-ach-navy/60 hover:text-ach-navy"><X className="h-3.5 w-3.5" /></button>
       </div>
+      <Link
+        href={`/candidates/import?projectId=${projectId}`}
+        className="flex items-center gap-2 rounded-[10px] border border-dashed border-ach-border bg-ach-page/40 px-3 py-2 mb-3 text-[12.5px] text-ach-navy hover:bg-ach-page transition-colors"
+      >
+        <Upload className="h-3.5 w-3.5 text-ach-navy/70" />
+        <span>Have a list already? <span className="underline underline-offset-2">Upload CSV or Excel →</span></span>
+      </Link>
+      <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">Or pick from existing beneficiaries</div>
       <input
         value={query}
         onChange={e => setQuery(e.target.value)}
