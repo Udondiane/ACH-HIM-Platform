@@ -53,9 +53,6 @@ export default function B2eFinancialPage() {
             </tbody>
           </table>
         </div>
-        <div className="text-[12px] text-ach-navy/60 mt-4 italic max-w-[70ch]">
-          A cohort costs £16,696 to run whether an employer contributes or not. IKEA's £8,000 halves the grant subsidy ACH would otherwise absorb — the others rely on the grant fully. When the grant ends in October 2026, the "gap subsidised by grant" column becomes the fee ACH must recover from each employer.
-        </div>
       </SectionCard>
 
       <SectionCard title="Per-candidate economics" sub="Loaded → floor → market">
