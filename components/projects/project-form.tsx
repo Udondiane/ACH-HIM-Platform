@@ -337,19 +337,37 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
         )}
       </div>
 
-      {/* Linked training programmes — reusable trainings delivered as part of this project */}
+      {/* Linked training programmes — trainings delivered as part of this project */}
       <div className="pt-5 border-t-[0.5px] border-ach-border">
-        <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">Linked training programmes</div>
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Linked training programmes</div>
+          <Link
+            href="/training/programmes/new"
+            target="_blank"
+            rel="noopener"
+            className="text-[11.5px] text-ach-navy/70 underline underline-offset-2 hover:text-ach-navy"
+          >
+            + New training programme
+          </Link>
+        </div>
         <p className="text-[12px] text-ach-navy/60 mb-3">
-          Tick the specific reusable training programmes delivered as part of this project (Customer Service, Health &amp; Safety, ESOL, etc.). Each links back to its own effectiveness view.
+          Tick the specific training programmes delivered as part of this project (Customer Service, Health &amp; Safety, ESOL, etc.). Each links back to its own effectiveness view.
         </p>
         {availableTrainingProgrammes.length === 0 ? (
           <div className="rounded-[10px] border border-dashed border-ach-border bg-ach-page/40 px-4 py-6 text-center">
-            <p className="text-[12.5px] text-ach-navy/60">
+            <p className="text-[12.5px] text-ach-navy/60 mb-3">
               No training programmes defined yet.
             </p>
-            <p className="text-[11.5px] text-ach-navy/45 mt-1">
-              Create them at <code className="font-mono text-[11px]">/training/programmes/new</code>, then come back to link them.
+            <Link
+              href="/training/programmes/new"
+              target="_blank"
+              rel="noopener"
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[12px] bg-ach-navy text-ach-cream hover:bg-ach-navy/90 transition-colors"
+            >
+              + Create training programme
+            </Link>
+            <p className="text-[11px] text-ach-navy/45 mt-2">
+              Opens in a new tab. Come back here to tick it once created.
             </p>
           </div>
         ) : (
