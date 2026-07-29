@@ -137,19 +137,9 @@ export function CohortForm({ action, initial, cancelHref, submitLabel = 'Save co
         </Field>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <Field label="Structure" error={fe('structure')}>
-          <Select name="structure" defaultValue={initial?.structure ?? 'multi_partner'}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {COHORT_STRUCTURES.map(s => <SelectItem key={s} value={s}>{COHORT_STRUCTURE_LABELS[s]}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </Field>
-        <Field label="Location" error={fe('location')}>
-          <Input name="location" defaultValue={initial?.location ?? ''} placeholder="Bristol" />
-        </Field>
-      </div>
+      <Field label="Location" error={fe('location')}>
+        <Input name="location" defaultValue={initial?.location ?? ''} placeholder="Bristol" />
+      </Field>
 
       <Field
         label="Programme type"
@@ -164,9 +154,27 @@ export function CohortForm({ action, initial, cancelHref, submitLabel = 'Save co
         </Select>
       </Field>
 
-      <Field label="Sector focus" error={fe('sector_focus')}>
-        <Input name="sector_focus" defaultValue={initial?.sector_focus ?? ''} placeholder="Hospitality, Retail, Construction" />
-      </Field>
+      {/* Workforce-specific fields — collapsed by default so non-workforce
+          programmes (housing, wellbeing, etc.) aren't visually dominated
+          by fields they'll never fill in. */}
+      <details className="rounded-[10px] border border-dashed border-ach-border bg-ach-page/30 px-4 py-3">
+        <summary className="cursor-pointer text-[12px] text-ach-navy/70 select-none">
+          Workforce-specific settings <span className="text-ach-navy/45">(structure, sector focus)</span>
+        </summary>
+        <div className="pt-3 space-y-4">
+          <Field label="Structure" error={fe('structure')}>
+            <Select name="structure" defaultValue={initial?.structure ?? 'multi_partner'}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {COHORT_STRUCTURES.map(s => <SelectItem key={s} value={s}>{COHORT_STRUCTURE_LABELS[s]}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Sector focus" error={fe('sector_focus')}>
+            <Input name="sector_focus" defaultValue={initial?.sector_focus ?? ''} placeholder="Hospitality, Retail, Construction" />
+          </Field>
+        </div>
+      </details>
 
       <div className="grid grid-cols-3 gap-4">
         <Field label="Start date" error={fe('start_date')}>

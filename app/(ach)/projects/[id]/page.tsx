@@ -10,6 +10,7 @@ import { CapabilityRadar } from '@/components/charts/capability-radar';
 import { CapabilityBar } from '@/components/charts/capability-bar';
 import { WordCloud } from '@/components/charts/word-cloud';
 import { ProjectExportButton } from '@/components/projects/project-export-button';
+import { EnrolBeneficiariesButton } from '@/components/projects/enrol-beneficiaries-button';
 import { FUNDING_MODEL_LABELS, type FundingModel } from '@/lib/projects/schema';
 import { COHORT_STATUS_LABELS } from '@/lib/cohorts/schema';
 
@@ -63,7 +64,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
   }
   const p = project as any;
 
-  const [capabilities, assessments, cohorts, responses, factorsAll, factorDomainsAll] = await Promise.all([
+  const [capabilities, assessments, cohorts, responses, factorsAll, factorDomainsAll, availableCandidates] = await Promise.all([
     supabase.from('project_capabilities').select('domain, role, selected_factors').eq('project_id', params.id),
     supabase.from('assessments')
       .select('id, timepoint, assessed_on, status, candidate_id, candidates(candidate_ref, given_name)')
@@ -81,6 +82,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
       .eq('assessments.project_id', params.id),
     supabase.from('factors').select('id, name, conversion_factor_type, measurement_question, behavioural_prompt'),
     supabase.from('factor_domains').select('factor_id, domain_id'),
+    supabase.from('candidates').select('id, candidate_ref, given_name, family_name').in('status', ['applicant', 'in_programme']).order('candidate_ref').limit(300),
   ]);
 
   const caps = (capabilities.data as any[]) ?? [];
@@ -162,6 +164,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
         description={p.description ?? undefined}
         actions={
           <div className="flex items-center gap-2">
+            <EnrolBeneficiariesButton projectId={p.id} available={(availableCandidates.data as any[]) ?? []} />
             <ProjectExportButton projectId={p.id} projectRef={p.project_ref} />
             <Link href={`/projects/${p.id}/edit`}>
               <Button variant="secondary"><Pencil className="h-3.5 w-3.5" />Edit</Button>
@@ -217,12 +220,20 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
       </div>
 
       <Card className="mb-4">
-        <CardHeader>
-          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Capability selection</div>
-        </CardHeader>
-        <CardContent>
-          <CapabilityPicker projectId={p.id} initial={caps} />
-        </CardContent>
+        <details>
+          <summary className="cursor-pointer list-none px-5 py-3 flex items-center justify-between hover:bg-ach-page/40 transition-colors rounded-t-[12px]">
+            <div>
+              <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Capability selection</div>
+              <div className="text-[12px] text-ach-navy/70 mt-0.5 tabular-nums">
+                {caps.filter((c: any) => c.role === 'core').length} Core · {caps.filter((c: any) => c.role === 'optional').length} Optional · {7 - caps.length} Excluded
+              </div>
+            </div>
+            <span className="text-[11px] text-ach-navy/50 group-open:hidden">Expand to change</span>
+          </summary>
+          <div className="px-5 pb-5 pt-1 border-t-[0.5px] border-ach-border">
+            <CapabilityPicker projectId={p.id} initial={caps} />
+          </div>
+        </details>
       </Card>
 
       {hasAnyAssessmentData && (

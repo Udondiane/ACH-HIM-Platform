@@ -408,3 +408,111 @@ export async function setProjectFactorsAction(
   revalidatePath(`/projects/${projectId}`);
   return { ok: true };
 }
+
+/**
+ * Ensure a default cohort exists for the project. If none, create one
+ * named "Main — <project ref>" and auto-link every partner already on
+ * the project (via funder_name → partners). Returns the cohort id.
+ *
+ * Idempotent: reruns return the existing default without duplicating.
+ * "Default" here means the oldest cohort under the project — if staff
+ * later add named cohorts (e.g. Q3 intake), the default stays as the
+ * first row and we don't create a new one.
+ */
+async function ensureDefaultCohortForProject(
+  supabase: ReturnType<typeof createClient>,
+  projectId: string,
+): Promise<string | null> {
+  const { data: existing } = await supabase
+    .from('cohorts')
+    .select('id')
+    .eq('project_id', projectId)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (existing) return (existing as { id: string }).id;
+
+  const { data: project } = await supabase
+    .from('projects')
+    .select('project_ref, name, funder_name, start_date, end_date')
+    .eq('id', projectId)
+    .single();
+  if (!project) return null;
+  const p = project as { project_ref: string; name: string; funder_name: string | null; start_date: string | null; end_date: string | null };
+
+  const cohortRef = `${p.project_ref}-MAIN`;
+  const { data: created, error: cErr } = await supabase
+    .from('cohorts')
+    .insert({
+      cohort_ref: cohortRef,
+      name: `Main — ${p.project_ref}`,
+      project_id: projectId,
+      structure: 'multi_partner',
+      service_type: 'full_programme',
+      status: 'recruiting',
+      start_date: p.start_date,
+      end_date: p.end_date,
+    } as never)
+    .select('id')
+    .single();
+  if (cErr) return null;
+  const cohortId = (created as { id: string }).id;
+
+  // Auto-link every partner named in project.funder_name (they were
+  // upserted by syncPartnersFromFunderName on project save). Match
+  // case-insensitively on partner name.
+  if (p.funder_name) {
+    const names = p.funder_name
+      .split(/[,&+]|\s+and\s+/i)
+      .map(n => n.replace(/\([^)]*\)/g, '').trim())
+      .filter(n => n.length > 1);
+    if (names.length > 0) {
+      const { data: partnerRows } = await supabase
+        .from('partners')
+        .select('id, name')
+        .in('name', names);
+      const partners = (partnerRows as { id: string; name: string }[] | null) ?? [];
+      if (partners.length > 0) {
+        await supabase.from('cohort_partners').insert(
+          partners.map(p => ({
+            cohort_id: cohortId,
+            partner_id: p.id,
+            sponsorship_count: 0,
+            engagement_fee: 0,
+            is_lead_partner: false,
+          })) as never,
+        );
+      }
+    }
+  }
+  return cohortId;
+}
+
+/**
+ * Add candidates to a project. Auto-creates a default cohort if the
+ * project has none, and inherits the project's partners onto that
+ * cohort — so staff never have to manually create a cohort or wire up
+ * partner sponsorships just to enrol people.
+ */
+export async function enrolBeneficiariesToProjectAction(
+  projectId: string,
+  candidateIds: string[],
+): Promise<{ ok: true; count: number; cohortId: string } | { ok: false; error: string }> {
+  if (candidateIds.length === 0) return { ok: false, error: 'Pick at least one candidate.' };
+  const supabase = createClient();
+  const cohortId = await ensureDefaultCohortForProject(supabase, projectId);
+  if (!cohortId) return { ok: false, error: 'Could not create or find a cohort for this project.' };
+
+  await supabase.from('cohort_candidates').upsert(
+    candidateIds.map(candidate_id => ({
+      cohort_id: cohortId,
+      candidate_id,
+      sponsoring_partner_id: null,
+    })) as never,
+    { onConflict: 'cohort_id,candidate_id' },
+  );
+  revalidatePath(`/projects/${projectId}`);
+  revalidatePath(`/cohorts/${cohortId}`);
+  revalidatePath('/dashboard');
+  return { ok: true, count: candidateIds.length, cohortId };
+}
