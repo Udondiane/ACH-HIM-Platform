@@ -137,7 +137,6 @@ export default async function AggregateDashboardPage() {
       <PageHeader
         miniLabel="Reports"
         title="Aggregate dashboard"
-        description="Network-wide view across every project and cohort. Cross-project HIM uplift, completion funnel honesty, and total TOMs social value claimed."
       />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
