@@ -132,19 +132,19 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
           focusedGroup
             ? (focusedGroup.project?.name
                 ? `${focusedGroup.project.name} · ${SERVICE_TYPE_LABEL[focusedGroup.serviceType] ?? focusedGroup.serviceType}`
-                : 'Unassigned candidates')
+                : 'Unassigned beneficiaries')
             : isAllView
-              ? 'All candidates'
-              : 'Candidates'
+              ? 'All beneficiaries'
+              : 'Beneficiaries'
         }
         backHref={focusedGroup || isAllView ? '/candidates' : undefined}
         backLabel={focusedGroup || isAllView ? 'Programmes' : undefined}
         description={
           focusedGroup
-            ? `Candidates running through ${focusedGroup.project?.name ?? 'no programme'}${focusedGroup.project ? ` (${SERVICE_TYPE_LABEL[focusedGroup.serviceType] ?? focusedGroup.serviceType})` : ''}.`
+            ? `Beneficiaries running through ${focusedGroup.project?.name ?? 'no programme'}${focusedGroup.project ? ` (${SERVICE_TYPE_LABEL[focusedGroup.serviceType] ?? focusedGroup.serviceType})` : ''}.`
             : isAllView
-              ? 'Every candidate across every programme. Use the filters to narrow.'
-              : 'Programme participants grouped by the project (and service shape) they are running through. Pick a card to drill in, or view all candidates flat.'
+              ? 'Every beneficiary across every programme. Use the filters to narrow.'
+              : 'Programme participants grouped by the project (and service shape) they are running through. Pick a card to drill in, or view all beneficiaries flat.'
         }
         actions={
           <div className="flex items-center gap-2">
@@ -157,7 +157,7 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
               <Button variant="secondary"><Plus className="h-4 w-4" />Import from CSV / Excel</Button>
             </Link>
             <Link href="/candidates/new">
-              <Button><Plus className="h-4 w-4" />Add candidate</Button>
+              <Button><Plus className="h-4 w-4" />Add beneficiary</Button>
             </Link>
           </div>
         }
@@ -186,11 +186,11 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
         <Card>
           <EmptyState
             icon={<Users className="h-10 w-10" />}
-            title="No candidates yet"
-            description="Add your first candidate to begin tracking capability assessments, placements, and progression."
+            title="No beneficiaries yet"
+            description="Add your first beneficiary to begin tracking capability assessments, placements, and progression."
             action={
               <Link href="/candidates/new">
-                <Button><Plus className="h-4 w-4" />Add candidate</Button>
+                <Button><Plus className="h-4 w-4" />Add beneficiary</Button>
               </Link>
             }
           />
@@ -201,7 +201,7 @@ export default async function CandidatesListPage({ searchParams }: { searchParam
           <Card>
             <EmptyState
               icon={<Users className="h-8 w-8" />}
-              title="No candidates match the filter"
+              title="No beneficiaries match the filter"
               description="Clear the filter or choose a different programme."
             />
           </Card>
