@@ -215,7 +215,7 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
                           name="data_provider_emails"
                           defaultValue={initial?.data_provider_emails ?? ''}
                           rows={2}
-                          placeholder="alex.smith@ikea.co.uk&#10;jenna.james@ikea.co.uk"
+                          placeholder="alex.smith@example.com&#10;jenna.james@example.com"
                           className="w-full rounded-[10px] border-[0.5px] border-ach-border bg-white px-3 py-2 text-[12.5px] text-ach-navy placeholder:text-ach-navy/40 focus:outline-none focus:ring-1 focus:ring-ach-navy/40 font-mono"
                         />
                       </Field>
