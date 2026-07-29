@@ -11,6 +11,7 @@ import { CapabilityBar } from '@/components/charts/capability-bar';
 import { WordCloud } from '@/components/charts/word-cloud';
 import { ProjectExportButton } from '@/components/projects/project-export-button';
 import { EnrolBeneficiariesButton } from '@/components/projects/enrol-beneficiaries-button';
+import { CompleteProjectButton } from '@/components/projects/complete-project-button';
 import { FUNDING_MODEL_LABELS, type FundingModel } from '@/lib/projects/schema';
 import { COHORT_STATUS_LABELS } from '@/lib/cohorts/schema';
 
@@ -163,8 +164,20 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
         title={p.name}
         description={p.description ?? undefined}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <EnrolBeneficiariesButton projectId={p.id} available={(availableCandidates.data as any[]) ?? []} />
+            <CompleteProjectButton
+              projectId={p.id}
+              isCompleted={p.status === 'completed'}
+              initial={{
+                what_worked: p.end_narrative_what_worked,
+                challenges: p.end_narrative_challenges,
+                unexpected: p.end_narrative_unexpected,
+              }}
+            />
+            <Link href={`/projects/${p.id}/outcomes-report`}>
+              <Button variant="secondary">Outcomes report</Button>
+            </Link>
             <ProjectExportButton projectId={p.id} projectRef={p.project_ref} />
             <Link href={`/projects/${p.id}/edit`}>
               <Button variant="secondary"><Pencil className="h-3.5 w-3.5" />Edit</Button>

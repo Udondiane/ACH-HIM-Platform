@@ -124,8 +124,16 @@ export const projectSchema = z.object({
   cap_rights:     capAnswerSchema,
   start_date: dateOrEmpty,
   end_date: dateOrEmpty,
-  baseline_window_days: z.coerce.number().int().min(1).max(180).default(14),
+  baseline_window_days: z.coerce.number().int().min(1).max(180).default(3),
   status: z.string().default('active'),
+  partner_provides_standard_data: z.coerce.boolean().default(false),
+  /** Newline-separated list of email addresses collected on the project form
+   *  when partner_provides_standard_data is ticked. Persisted to
+   *  project_data_providers table as one row per address. */
+  data_provider_emails: z.string().trim().max(2000).optional().or(z.literal('')),
+  end_narrative_what_worked: z.string().trim().max(4000).optional().or(z.literal('')),
+  end_narrative_challenges: z.string().trim().max(4000).optional().or(z.literal('')),
+  end_narrative_unexpected: z.string().trim().max(4000).optional().or(z.literal('')),
 });
 
 export function deriveCapabilitiesFromAnswers(answers: Partial<Record<CapDomain, CapAnswer | ''>>): {

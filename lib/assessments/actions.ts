@@ -35,9 +35,7 @@ export async function startAssessmentAction(
     redirect(`/projects/${projectId}/assess/${(existing as { id: string }).id}`);
   }
 
-  // Look up the candidate's cohort. (Baseline-window gating is intentionally
-  // off in demo mode so every timepoint can be opened freely; the timing
-  // context is still loaded for the UI banner.)
+  // Look up the candidate's cohort.
   const { data: cc } = await supabase
     .from('cohort_candidates')
     .select('cohort_id, intervention_start_date, cohorts(intervention_start_date)')
@@ -45,6 +43,28 @@ export async function startAssessmentAction(
     .maybeSingle();
   const ccRow = cc as { cohort_id?: string; intervention_start_date?: string | null; cohorts?: { intervention_start_date?: string | null } } | null;
   const cohortId = ccRow?.cohort_id ?? null;
+
+  // Baseline hard lockout: refuse to start a baseline once the project's
+  // baseline window has closed. Window is computed from project.start_date +
+  // project.baseline_window_days. Later timepoints remain unaffected.
+  if (timepoint === 'baseline') {
+    const { data: proj } = await supabase
+      .from('projects')
+      .select('start_date, baseline_window_days')
+      .eq('id', projectId)
+      .maybeSingle();
+    const projRow = proj as { start_date: string | null; baseline_window_days: number | null } | null;
+    if (projRow?.start_date) {
+      const start = new Date(`${projRow.start_date}T00:00:00`);
+      const end = new Date(start);
+      end.setDate(end.getDate() + (projRow.baseline_window_days ?? 3));
+      const today = new Date();
+      const todayMid = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      if (todayMid > end) {
+        return { ok: false, error: `Baseline window closed on ${end.toISOString().slice(0, 10)}. Later timepoints are still available.` };
+      }
+    }
+  }
 
   const { data, error } = await supabase
     .from('assessments')
