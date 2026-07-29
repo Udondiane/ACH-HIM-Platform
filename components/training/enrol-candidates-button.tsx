@@ -85,8 +85,8 @@ export function EnrolCandidatesButton({ programmeId, available }: Props) {
             }`}
           >
             <div>
-              <span className="text-ach-navy">{c.candidate_ref}</span>
-              <span className="text-ach-navy/60 ml-2">
+              <span className="text-ach-navy identity-ref">{c.candidate_ref}</span>
+              <span className="text-ach-navy/60 ml-2 identity-name">
                 {[c.given_name, c.family_name].filter(Boolean).join(' ')}
               </span>
             </div>
