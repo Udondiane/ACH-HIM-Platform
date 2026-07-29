@@ -28,7 +28,7 @@ export default async function ProgrammeDetailPage({ params }: { params: { id: st
     supabase.from('training_learning_outcomes').select('*').eq('programme_id', params.id).order('sort_order'),
     supabase.from('factors').select('id, name, conversion_factor_type'),
     supabase.from('training_learning_outcome_map').select('learning_outcome_id, factor_id, evidence_weight'),
-    supabase.from('candidates').select('id, candidate_ref, given_name, family_name').eq('status', 'in_programme').order('candidate_ref').limit(200),
+    supabase.from('candidates').select('id, candidate_ref, given_name, family_name').in('status', ['applicant', 'in_programme']).order('candidate_ref').limit(200),
     supabase.from('training_attendance').select('candidate_id, status, session_id, training_sessions!inner(programme_id)').eq('training_sessions.programme_id', params.id),
     supabase.from('training_certificates').select('candidate_id').eq('programme_id', params.id),
     supabase.from('project_training_programmes').select('project_id, projects(id, name, project_ref, status)').eq('programme_id', params.id),
