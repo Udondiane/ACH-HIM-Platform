@@ -1,6 +1,6 @@
-import { BookOpen, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { FrameworkBrowser } from '@/components/admin/framework-browser';
@@ -58,7 +58,6 @@ export default async function FrameworkLibraryPage() {
       <PageHeader
         miniLabel="Admin · Reference"
         title="HIM framework library"
-        description="The complete capability framework as encoded in the platform — every domain, factor, measurement question, behavioural prompt, and observable indicator. Methodology reference for caseworkers, trainers, evaluators, and auditors."
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-5">
@@ -67,24 +66,6 @@ export default async function FrameworkLibraryPage() {
         <Stat label="Indicators" value={String(totalIndicators)} subline="observable scoring items" />
         <Stat label="Methodology" value="HIM v1.0" subline="May 2026 reference set" />
       </div>
-
-      <Card className="mb-4">
-        <CardHeader>
-          <div className="flex items-start gap-3">
-            <BookOpen className="h-5 w-5 text-ach-navy/55 mt-0.5 shrink-0" />
-            <div>
-              <div className="text-[15px] font-medium text-ach-navy">How to read this</div>
-              <div className="text-[12.5px] text-ach-navy/65 mt-1 max-w-3xl">
-                Each factor sits within a domain and has a <span className="font-medium">conversion type</span> (Personal,
-                Social, or Environmental). The <span className="font-medium">measurement question</span> documents what
-                the factor is measuring at a methodology level. The <span className="font-medium">behavioural prompt</span>
-                {' '}is what caseworkers read verbatim to candidates. The <span className="font-medium">indicators</span>
-                {' '}are the observable items each scored 0-5 (or Yes/No) during assessment.
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
 
       {factors.length === 0 ? (
         <Card>
