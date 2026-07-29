@@ -72,6 +72,20 @@ async function syncProjectTrainingProgrammes(
  * still set) and can be manually archived from /training/programmes if
  * ACH decides.
  */
+/**
+ * ACH typically delivers ONE combined training programme per project
+ * that covers the ticked training activities as modules — not a
+ * separate programme per activity. So we spawn a single programme
+ * per project whose description lists the modules it covers.
+ *
+ * Idempotency key: (spawned_from_project_id, source_activity_id='combined').
+ * On resave with a changed activity list, we update the name/description
+ * of the existing programme rather than creating a new one.
+ *
+ * If no training activities are ticked, we do NOT create a programme
+ * and we don't delete an existing one either — the training row may
+ * already have enrolments and sessions ACH still needs.
+ */
 async function autoSpawnTrainingProgrammesFromActivities(
   supabase: ReturnType<typeof createClient>,
   projectId: string,
@@ -79,43 +93,53 @@ async function autoSpawnTrainingProgrammesFromActivities(
   activities: string[],
 ): Promise<void> {
   const trainingActivities = activities.filter(a => TRAINING_ACTIVITY_IDS.has(a));
+  if (trainingActivities.length === 0) return;
 
-  for (const activityId of trainingActivities) {
-    const def = PROGRAMME_ACTIVITIES.find(a => a.id === activityId);
-    if (!def) continue;
+  const moduleLabels = trainingActivities
+    .map(id => PROGRAMME_ACTIVITIES.find(a => a.id === id)?.label)
+    .filter((l): l is string => !!l);
 
-    // Idempotency: does one already exist for this (project, activity)?
-    const { data: existing } = await supabase
+  const programmeName = `Training programme — ${projectRef}`;
+  const description = `Covers: ${moduleLabels.join(', ')}.`;
+
+  // Look up the single combined programme for this project.
+  const { data: existingRows } = await supabase
+    .from('training_programmes')
+    .select('id')
+    .eq('spawned_from_project_id', projectId)
+    .eq('source_activity_id', 'combined');
+  const existingRow = (existingRows as { id: string }[] | null)?.[0];
+
+  let programmeId: string;
+  if (existingRow) {
+    programmeId = existingRow.id;
+    // Refresh description in case the ticked modules changed.
+    await supabase.from('training_programmes').update({
+      name: programmeName,
+      description,
+      category: 'Combined training',
+    } as never).eq('id', programmeId);
+  } else {
+    const { data: created, error } = await supabase
       .from('training_programmes')
+      .insert({
+        name: programmeName,
+        description,
+        category: 'Combined training',
+        source_activity_id: 'combined',
+        spawned_from_project_id: projectId,
+        status: 'active',
+      } as never)
       .select('id')
-      .eq('spawned_from_project_id', projectId)
-      .eq('source_activity_id', activityId)
-      .maybeSingle();
-
-    let programmeId = (existing as { id: string } | null)?.id;
-
-    if (!programmeId) {
-      const { data: created, error } = await supabase
-        .from('training_programmes')
-        .insert({
-          name: `${def.label} — ${projectRef}`,
-          category: def.label,
-          source_activity_id: activityId,
-          spawned_from_project_id: projectId,
-          status: 'active',
-        } as never)
-        .select('id')
-        .single();
-      if (error) continue;
-      programmeId = (created as { id: string }).id;
-    }
-
-    // Ensure the join row exists (upsert by composite PK).
-    await supabase.from('project_training_programmes').upsert({
-      project_id: projectId,
-      programme_id: programmeId,
-    } as never, { onConflict: 'project_id,programme_id' });
+      .single();
+    if (error) return;
+    programmeId = (created as { id: string }).id;
   }
+
+  await supabase.from('project_training_programmes').upsert({
+    project_id: projectId,
+    programme_id: programmeId,
+  } as never, { onConflict: 'project_id,programme_id' });
 }
 
 async function nextProjectRef(supabase: ReturnType<typeof createClient>): Promise<string> {
