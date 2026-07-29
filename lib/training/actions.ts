@@ -167,6 +167,21 @@ export async function createProgrammeAction(_prev: Result | null, fd: FormData):
   return { ok: true };
 }
 
+/**
+ * Delete a training programme. Cascades to training_sessions, enrolments,
+ * attendance, certificates, and the project_training_programmes link
+ * (all set as ON DELETE CASCADE in the schema). Use only when the
+ * programme was created in error — for a completed programme, use
+ * archive (status='archived') instead.
+ */
+export async function deleteProgrammeAction(id: string): Promise<Result> {
+  const supabase = createClient();
+  const { error } = await supabase.from('training_programmes').delete().eq('id', id);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath('/training');
+  redirect('/training');
+}
+
 export async function updateProgrammeAction(id: string, _prev: Result | null, fd: FormData): Promise<Result> {
   const parsed = programmeSchema.safeParse(fdToObj(fd));
   if (!parsed.success) return { ok: false, error: 'Please fix the highlighted fields.', fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
