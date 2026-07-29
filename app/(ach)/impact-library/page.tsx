@@ -207,24 +207,6 @@ export default async function ImpactLibraryPage({
         </div>
       </div>
 
-      {/* Framework switcher */}
-      <div className="mb-6 flex items-center gap-3 flex-wrap">
-        <span className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/55 font-medium">Financial framework:</span>
-        {(frameworks as any[]).map((f: any) => (
-          <Link
-            key={f.key}
-            href={`/impact-library?domain=${activeDomain}&framework=${f.key}`}
-            className={`text-[12.5px] px-2.5 py-1 rounded-[6px] border transition-colors ${
-              f.key === activeFramework
-                ? 'border-ach-navy bg-ach-navy text-ach-cream'
-                : 'border-ach-border text-ach-navy hover:bg-ach-page'
-            }`}
-          >
-            {f.label}
-          </Link>
-        ))}
-      </div>
-
       {/* Headline stat */}
       <Card className="mb-4">
         <CardContent className="pt-5">
