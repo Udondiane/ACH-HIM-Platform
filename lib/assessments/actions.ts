@@ -35,14 +35,53 @@ export async function startAssessmentAction(
     redirect(`/projects/${projectId}/assess/${(existing as { id: string }).id}`);
   }
 
-  // Look up the candidate's cohort.
-  const { data: cc } = await supabase
-    .from('cohort_candidates')
-    .select('cohort_id, intervention_start_date, cohorts(intervention_start_date)')
-    .eq('candidate_id', candidateId)
-    .maybeSingle();
-  const ccRow = cc as { cohort_id?: string; intervention_start_date?: string | null; cohorts?: { intervention_start_date?: string | null } } | null;
-  const cohortId = ccRow?.cohort_id ?? null;
+  // Look up the candidate's cohort under THIS project. If they aren't in
+  // one yet, ensure a default cohort exists for the project and enrol
+  // them into it — matches the behaviour of 'Enrol beneficiaries'.
+  const { data: projectCohorts } = await supabase
+    .from('cohorts').select('id, cohort_ref').eq('project_id', projectId)
+    .order('created_at', { ascending: true });
+  const projectCohortRows = ((projectCohorts as { id: string; cohort_ref: string }[] | null) ?? []);
+  let cohortId: string | null = null;
+
+  if (projectCohortRows.length > 0) {
+    const projCohortIds = projectCohortRows.map(c => c.id);
+    const { data: existingLink } = await supabase
+      .from('cohort_candidates')
+      .select('cohort_id')
+      .eq('candidate_id', candidateId)
+      .in('cohort_id', projCohortIds)
+      .maybeSingle();
+    cohortId = (existingLink as { cohort_id?: string } | null)?.cohort_id ?? projectCohortRows[0].id;
+  } else {
+    // Auto-create default cohort for the project.
+    const { data: projRow } = await supabase
+      .from('projects').select('project_ref, start_date, end_date').eq('id', projectId).single();
+    const p = projRow as { project_ref: string; start_date: string | null; end_date: string | null };
+    const { data: newCohort } = await supabase
+      .from('cohorts')
+      .insert({
+        cohort_ref: `${p.project_ref}-MAIN`,
+        name: `Main — ${p.project_ref}`,
+        project_id: projectId,
+        structure: 'multi_partner',
+        service_type: 'full_programme',
+        status: 'recruiting',
+        start_date: p.start_date,
+        end_date: p.end_date,
+      } as never)
+      .select('id').single();
+    cohortId = (newCohort as { id: string } | null)?.id ?? null;
+  }
+
+  // Enrol the candidate into the resolved cohort if not already linked.
+  if (cohortId) {
+    await supabase.from('cohort_candidates').upsert({
+      cohort_id: cohortId,
+      candidate_id: candidateId,
+      sponsoring_partner_id: null,
+    } as never, { onConflict: 'cohort_id,candidate_id' });
+  }
 
   // Baseline hard lockout: refuse to start a baseline once the project's
   // baseline window has closed. Window is computed from project.start_date +

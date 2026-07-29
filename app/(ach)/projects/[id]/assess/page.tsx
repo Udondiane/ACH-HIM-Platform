@@ -36,26 +36,36 @@ export default async function StartAssessmentPage({ params }: { params: { id: st
     baselineLocked = todayMid > end;
   }
 
-  // Candidates available: anyone enrolled in any cohort that runs this project.
+  // Candidates available: anyone enrolled on this project (via any cohort)
+  // OR any applicant/in-programme beneficiary in the pool. Assessment
+  // no longer requires prior cohort linkage — a default cohort is
+  // auto-created on save if the project has none, matching how
+  // 'Enrol beneficiaries' behaves.
   const { data: cohortIds } = await supabase
     .from('cohorts').select('id').eq('project_id', params.id);
   const ids = ((cohortIds as { id: string }[] | null) ?? []).map(c => c.id);
 
-  const { data: cohortCandidates } = ids.length > 0
+  const enrolledRes = ids.length > 0
     ? await supabase.from('cohort_candidates')
-        .select('candidate_id, candidates(id, candidate_ref, given_name)')
+        .select('candidate_id, candidates(id, candidate_ref, given_name, family_name)')
         .in('cohort_id', ids)
     : { data: [] as any[] };
 
-  // Deduplicate candidates that might appear via more than one cohort linkage.
+  const poolRes = await supabase.from('candidates')
+    .select('id, candidate_ref, given_name, family_name')
+    .in('status', ['applicant', 'in_programme'])
+    .order('candidate_ref')
+    .limit(300);
+
   const seen = new Set<string>();
-  const candidates = ((cohortCandidates as any[] | null) ?? [])
-    .map(cc => cc.candidates)
-    .filter((c): c is { id: string; candidate_ref: string; given_name: string } => {
-      if (!c || seen.has(c.id)) return false;
-      seen.add(c.id);
-      return true;
-    });
+  const candidates: { id: string; candidate_ref: string; given_name?: string | null; family_name?: string | null }[] = [];
+  for (const cc of ((enrolledRes.data as any[]) ?? [])) {
+    const c = cc.candidates;
+    if (c && !seen.has(c.id)) { seen.add(c.id); candidates.push(c); }
+  }
+  for (const c of ((poolRes.data as any[]) ?? [])) {
+    if (c && !seen.has(c.id)) { seen.add(c.id); candidates.push(c); }
+  }
 
   async function action(formData: FormData) {
     'use server';
@@ -80,8 +90,7 @@ export default async function StartAssessmentPage({ params }: { params: { id: st
         <Card>
           <CardContent className="pt-6">
             <p className="text-[13px] text-ach-navy/70">
-              This project isn&apos;t linked to a cohort with enrolled candidates yet. Add candidates
-              to the project&apos;s cohort first, then return here.
+              No beneficiaries in the pool yet. Add one from the Beneficiaries tab or bulk upload from the project page, then return here.
             </p>
           </CardContent>
         </Card>
