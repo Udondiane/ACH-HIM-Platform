@@ -148,9 +148,14 @@ export default async function AssessmentRunnerPage({
   ]);
   const projectActivities = ((projectActivitiesRes.data as { activity: string }[] | null) ?? []).map(r => r.activity);
   const activityFactorsAll = (activityFactorsRes.data as { activity: string; factor_id: string }[] | null) ?? [];
-  const activatedFactorIds = projectActivities.length === 0
-    ? null
+  // Only apply the activity-based filter when the mapping actually resolves to
+  // factors. If activity_factors is empty (e.g. after a framework reseed that
+  // hasn't been re-mapped yet), fall back to showing every factor in the
+  // domain — safer than rendering an empty assessment.
+  const activityDerivedIds = projectActivities.length === 0
+    ? new Set<string>()
     : new Set(activityFactorsAll.filter(af => projectActivities.includes(af.activity)).map(af => af.factor_id));
+  const activatedFactorIds = activityDerivedIds.size > 0 ? activityDerivedIds : null;
 
   const factorsById = new Map(factors.map(f => [f.id, f]));
   const domainFactors: Record<DomainId, any[]> = {} as Record<DomainId, any[]>;
