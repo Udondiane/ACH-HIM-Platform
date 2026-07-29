@@ -26,11 +26,12 @@ async function safeFetch<T>(fn: () => any, fallback: T): Promise<T> {
 export default async function AchDashboardPage() {
   const supabase = createClient();
 
-  const [assessments, responses, indicators, factorDomains] = await Promise.all([
+  const [assessments, responses, indicators, factorDomains, benefOutcomes] = await Promise.all([
     safeFetch<any[]>(() => supabase.from('assessments').select('id, timepoint').limit(3000), []),
     safeFetch<any[]>(() => supabase.from('assessment_responses').select('assessment_id, indicator_id, numeric_value').limit(6000), []),
     safeFetch<any[]>(() => supabase.from('indicators').select('id, factor_id'), []),
     safeFetch<any[]>(() => supabase.from('factor_domains').select('factor_id, domain_id'), []),
+    safeFetch<any[]>(() => supabase.from('beneficiary_outcomes').select('candidate_id, outcome_key, outcome_label').limit(5000), []),
   ]);
 
   const indToFactor = new Map(indicators.map((i: any) => [i.id, i.factor_id]));
@@ -68,6 +69,23 @@ export default async function AchDashboardPage() {
 
   const hasAnyData = domainRows.some(r => r.baseline !== null || r.exit !== null);
 
+  // Aggregate outcomes across ACH — one row per outcome_key with a
+  // distinct-beneficiary count (a beneficiary might have the same outcome
+  // ticked on multiple projects; count them once).
+  const outcomeAgg = new Map<string, { label: string; beneficiaries: Set<string> }>();
+  for (const o of (benefOutcomes as any[])) {
+    const key = o.outcome_key;
+    if (!key || key === 'other') continue;
+    const entry = outcomeAgg.get(key) ?? { label: o.outcome_label ?? key, beneficiaries: new Set<string>() };
+    entry.beneficiaries.add(o.candidate_id);
+    outcomeAgg.set(key, entry);
+  }
+  const outcomeRows = Array.from(outcomeAgg.entries())
+    .map(([key, v]) => ({ key, label: v.label, count: v.beneficiaries.size }))
+    .sort((a, b) => b.count - a.count);
+  const totalOtherOutcomes = (benefOutcomes as any[]).filter(o => o.outcome_key === 'other').length;
+  const hasOutcomeData = outcomeRows.length > 0 || totalOtherOutcomes > 0;
+
   return (
     <div className="max-w-5xl mx-auto">
       <PageHeader
@@ -85,12 +103,38 @@ export default async function AchDashboardPage() {
         </Card>
       )}
 
-      <Card>
+      <Card className="mb-4">
         <CardContent className="pt-5 pb-5">
           <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-4">The seven HIM domains</div>
           <div className="space-y-3">
             {domainRows.map(row => <DomainRow key={row.key} row={row} />)}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="pt-5 pb-5">
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-1">Outcomes reached</div>
+          <div className="text-[11.5px] text-ach-navy/55 mb-4">Beneficiaries who have reached each outcome across every ACH project.</div>
+          {!hasOutcomeData ? (
+            <div className="text-[13px] text-ach-navy/55 italic">Outcomes will appear here as they are ticked on project pages.</div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {outcomeRows.map(o => (
+                  <div key={o.key} className="flex items-center justify-between rounded-[10px] border-[0.5px] border-ach-border bg-white px-3 py-2">
+                    <div className="text-[12.5px] text-ach-navy">{o.label}</div>
+                    <div className="text-[15px] font-medium tabular-nums text-ach-navy">{o.count}</div>
+                  </div>
+                ))}
+              </div>
+              {totalOtherOutcomes > 0 && (
+                <div className="text-[11.5px] text-ach-navy/55 mt-3">
+                  Plus <span className="font-medium text-ach-navy/75 tabular-nums">{totalOtherOutcomes}</span> unexpected outcome{totalOtherOutcomes === 1 ? '' : 's'} recorded.
+                </div>
+              )}
+            </>
+          )}
         </CardContent>
       </Card>
 
