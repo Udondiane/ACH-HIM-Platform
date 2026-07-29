@@ -62,9 +62,9 @@ export default async function FrameworkLibraryPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-5">
         <Stat label="Domains" value={String(domains.length)} subline="capability areas" />
-        <Stat label="Factors" value={String(factors.length)} subline="verbatim from reference taxonomy" />
-        <Stat label="Indicators" value={String(totalIndicators)} subline="observable scoring items" />
-        <Stat label="Methodology" value="HIM v1.0" subline="May 2026 reference set" />
+        <Stat label="Factors" value={String(factors.length)} />
+        <Stat label="Indicators" value={String(totalIndicators)} />
+        <Stat label="Methodology" value="HIM v1.0" />
       </div>
 
       {factors.length === 0 ? (
