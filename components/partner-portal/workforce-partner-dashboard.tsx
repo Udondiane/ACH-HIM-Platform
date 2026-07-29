@@ -215,6 +215,7 @@ export async function WorkforcePartnerDashboard({ partner, hideHeader }: { partn
         <KpiCard
           label="Countries of origin represented"
           value={String(countryBreakdown.length)}
+          sub="Diversity contribution"
         />
       </div>
 
