@@ -131,6 +131,9 @@ export const projectSchema = z.object({
    *  when partner_provides_standard_data is ticked. Persisted to
    *  project_data_providers table as one row per address. */
   data_provider_emails: z.string().trim().max(2000).optional().or(z.literal('')),
+  /** Free-text list of activities not covered by PROGRAMME_ACTIVITIES,
+   *  one per line. Doesn't drive factor measurement or training spawn. */
+  custom_activities: z.string().trim().max(2000).optional().or(z.literal('')),
   end_narrative_what_worked: z.string().trim().max(4000).optional().or(z.literal('')),
   end_narrative_challenges: z.string().trim().max(4000).optional().or(z.literal('')),
   end_narrative_unexpected: z.string().trim().max(4000).optional().or(z.literal('')),

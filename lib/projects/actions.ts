@@ -186,6 +186,7 @@ function normalisePayload(input: ReturnType<typeof projectSchema.parse>, ref: st
     baseline_window_days: input.baseline_window_days,
     status: input.status,
     partner_provides_standard_data: input.partner_provides_standard_data,
+    custom_activities: input.custom_activities || null,
   };
 }
 
