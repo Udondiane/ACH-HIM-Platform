@@ -67,7 +67,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
   }
   const p = project as any;
 
-  const [capabilities, assessments, cohorts, responses, factorsAll, factorDomainsAll, availableCandidates, projectActivitiesRes, beneficiaryOutcomesRes] = await Promise.all([
+  const [capabilities, assessments, cohorts, responses, factorsAll, factorDomainsAll, availableCandidates, projectActivitiesRes, beneficiaryOutcomesRes, projectTrainingsRes] = await Promise.all([
     supabase.from('project_capabilities').select('domain, role, selected_factors').eq('project_id', params.id),
     supabase.from('assessments')
       .select('id, timepoint, assessed_on, status, candidate_id, candidates(candidate_ref, given_name)')
@@ -88,6 +88,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
     supabase.from('candidates').select('id, candidate_ref, given_name, family_name').in('status', ['applicant', 'in_programme']).order('candidate_ref').limit(300),
     supabase.from('project_activities').select('activity').eq('project_id', params.id),
     supabase.from('beneficiary_outcomes').select('candidate_id, outcome_key, outcome_label, notes').eq('project_id', params.id),
+    supabase.from('project_training_programmes').select('programme_id, training_programmes(id, name, category, status, source_activity_id, total_sessions, duration_hours)').eq('project_id', params.id),
   ]);
 
   // Beneficiaries enrolled on this project (via any of its cohorts).
@@ -106,6 +107,9 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
   const projectActivityIds = ((projectActivitiesRes.data as { activity: string }[] | null) ?? []).map(r => r.activity);
   const outcomeCatalog = outcomesForActivities(projectActivityIds);
   const beneficiaryOutcomes = (beneficiaryOutcomesRes.data as any[]) ?? [];
+  const linkedTrainings = ((projectTrainingsRes.data as any[]) ?? [])
+    .map(row => row.training_programmes)
+    .filter(Boolean);
 
   const caps = (capabilities.data as any[]) ?? [];
   const allFactors = (factorsAll.data as any[]) ?? [];
@@ -284,6 +288,41 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
           />
         </CardContent>
       </Card>
+
+      {linkedTrainings.length > 0 && (
+        <Card className="mb-4">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Linked training programmes</div>
+                <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Auto-created from the training activities you ticked. Enrol learners, schedule sessions, take attendance in each.</div>
+              </div>
+              <Link href="/training" className="text-[11.5px] text-ach-navy/70 underline underline-offset-2 hover:text-ach-navy">All training →</Link>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+              {linkedTrainings.map((tp: any) => (
+                <Link
+                  key={tp.id}
+                  href={`/training/programmes/${tp.id}`}
+                  className="rounded-[10px] border-[0.5px] border-ach-border bg-white hover:bg-ach-page p-3 transition-colors"
+                >
+                  <div className="text-[13px] font-medium text-ach-navy leading-tight">{tp.name}</div>
+                  <div className="text-[11.5px] text-ach-navy/60 mt-1">
+                    {tp.category ?? '—'}
+                    {tp.total_sessions ? ` · ${tp.total_sessions} sessions` : ''}
+                    {tp.duration_hours ? ` · ${tp.duration_hours}h` : ''}
+                  </div>
+                  <div className="mt-2">
+                    <Badge>{tp.status}</Badge>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {hasAnyAssessmentData && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">

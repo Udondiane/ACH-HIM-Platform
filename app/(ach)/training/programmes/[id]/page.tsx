@@ -14,6 +14,7 @@ import {
 import { CandidateIdentity } from '@/components/ui/candidate-identity';
 import { EnrolCandidatesButton } from '@/components/training/enrol-candidates-button';
 import { LearningOutcomeManager } from '@/components/training/learning-outcome-manager';
+import { DeleteProgrammeButton } from '@/components/training/delete-programme-button';
 import { CertificateIssuer } from '@/components/training/certificate-issuer';
 
 export const dynamic = 'force-dynamic';
@@ -92,7 +93,7 @@ export default async function ProgrammeDetailPage({ params }: { params: { id: st
         title={p.name}
         description={p.description ?? undefined}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Link href={`/training/sessions/new?programme=${p.id}`}>
               <Button variant="secondary"><CalendarDays className="h-3.5 w-3.5" />Schedule session</Button>
             </Link>
@@ -102,6 +103,12 @@ export default async function ProgrammeDetailPage({ params }: { params: { id: st
             <Link href={`/training/programmes/${p.id}/edit`}>
               <Button variant="secondary"><Pencil className="h-3.5 w-3.5" />Edit</Button>
             </Link>
+            <DeleteProgrammeButton
+              programmeId={p.id}
+              programmeName={p.name}
+              enrolmentCount={enrolments.length}
+              sessionCount={sessions.length}
+            />
           </div>
         }
       />
