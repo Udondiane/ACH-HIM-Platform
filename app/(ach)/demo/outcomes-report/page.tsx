@@ -66,12 +66,12 @@ export default function SampleOutcomesReportPage() {
           <HeroStat k="Beneficiaries" v="12" s="10 completed · 83%" />
           <HeroStat k="Placed in work" v="5" s="42% of starters" />
           <HeroStat k="Salary secured" v="£112k" s="£22.4k avg · into local economy" />
-          <HeroStat k="Estimated social value" v="£184k" s="HACT UK Social Value Bank" />
+          <HeroStat k="Estimated SROI" v="£184k" s="Beneficiary + partner + local economy" />
         </div>
       </div>
 
       {/* HIM signature */}
-      <SectionCard title="HIM impact signature" sub="Baseline → exit · 7 domains · 0–5 scale">
+      <SectionCard title="Capability change" sub="Baseline → exit · 7 domains · 0–5 scale">
         <div className="space-y-3.5">
           {DOMAINS.map(d => (
             <div key={d.label} className="grid grid-cols-[190px_1fr_140px] gap-4 items-center max-md:grid-cols-[130px_1fr_100px]">
