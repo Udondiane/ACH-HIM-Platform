@@ -12,6 +12,8 @@ import { WordCloud } from '@/components/charts/word-cloud';
 import { ProjectExportButton } from '@/components/projects/project-export-button';
 import { EnrolBeneficiariesButton } from '@/components/projects/enrol-beneficiaries-button';
 import { CompleteProjectButton } from '@/components/projects/complete-project-button';
+import { OutcomesTracker } from '@/components/projects/outcomes-tracker';
+import { outcomesForActivities } from '@/lib/activities/definitions';
 import { FUNDING_MODEL_LABELS, type FundingModel } from '@/lib/projects/schema';
 import { COHORT_STATUS_LABELS } from '@/lib/cohorts/schema';
 
@@ -65,7 +67,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
   }
   const p = project as any;
 
-  const [capabilities, assessments, cohorts, responses, factorsAll, factorDomainsAll, availableCandidates] = await Promise.all([
+  const [capabilities, assessments, cohorts, responses, factorsAll, factorDomainsAll, availableCandidates, projectActivitiesRes, beneficiaryOutcomesRes] = await Promise.all([
     supabase.from('project_capabilities').select('domain, role, selected_factors').eq('project_id', params.id),
     supabase.from('assessments')
       .select('id, timepoint, assessed_on, status, candidate_id, candidates(candidate_ref, given_name)')
@@ -84,7 +86,26 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
     supabase.from('factors').select('id, name, conversion_factor_type, measurement_question, behavioural_prompt'),
     supabase.from('factor_domains').select('factor_id, domain_id'),
     supabase.from('candidates').select('id, candidate_ref, given_name, family_name').in('status', ['applicant', 'in_programme']).order('candidate_ref').limit(300),
+    supabase.from('project_activities').select('activity').eq('project_id', params.id),
+    supabase.from('beneficiary_outcomes').select('candidate_id, outcome_key, outcome_label, notes').eq('project_id', params.id),
   ]);
+
+  // Beneficiaries enrolled on this project (via any of its cohorts).
+  const cohortIdsForBen = (cohorts.data as any[] ?? []).map(c => c.id);
+  const { data: enrolledCands } = cohortIdsForBen.length > 0
+    ? await supabase.from('cohort_candidates').select('candidate_id, candidates(id, candidate_ref, given_name, family_name)').in('cohort_id', cohortIdsForBen)
+    : { data: [] as any[] };
+  const seenBenIds = new Set<string>();
+  const beneficiaries = ((enrolledCands as any[]) ?? [])
+    .map(cc => cc.candidates)
+    .filter((c: any) => {
+      if (!c || seenBenIds.has(c.id)) return false;
+      seenBenIds.add(c.id);
+      return true;
+    });
+  const projectActivityIds = ((projectActivitiesRes.data as { activity: string }[] | null) ?? []).map(r => r.activity);
+  const outcomeCatalog = outcomesForActivities(projectActivityIds);
+  const beneficiaryOutcomes = (beneficiaryOutcomesRes.data as any[]) ?? [];
 
   const caps = (capabilities.data as any[]) ?? [];
   const allFactors = (factorsAll.data as any[]) ?? [];
@@ -250,6 +271,21 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
             <CapabilityPicker projectId={p.id} initial={caps} />
           </div>
         </details>
+      </Card>
+
+      <Card className="mb-4">
+        <CardHeader>
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Outcomes tracker</div>
+          <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Tick outcomes as beneficiaries reach them. Options come from the project&apos;s ticked activities; use &quot;Other&quot; for unexpected outcomes.</div>
+        </CardHeader>
+        <CardContent>
+          <OutcomesTracker
+            projectId={p.id}
+            beneficiaries={beneficiaries as any[]}
+            outcomes={outcomeCatalog}
+            recorded={beneficiaryOutcomes}
+          />
+        </CardContent>
       </Card>
 
       {hasAnyAssessmentData && (

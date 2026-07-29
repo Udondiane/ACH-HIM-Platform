@@ -134,3 +134,36 @@ export const PROGRAMME_ACTIVITY_LABELS: Record<string, string> = Object.fromEntr
 export const TRAINING_ACTIVITY_IDS: Set<string> = new Set(
   PROGRAMME_ACTIVITIES.filter(a => a.isTraining).map(a => a.id),
 );
+
+/**
+ * The outcome label that appears on the beneficiary tick-list when this
+ * activity is delivered as part of a project. What the ACH staff member
+ * would say when confirming the beneficiary reached the intended result.
+ */
+export const ACTIVITY_OUTCOME_LABELS: Record<string, string> = {
+  english_training:            'Passed English course',
+  digital_skills_training:     'Completed Digital skills training',
+  customer_service_training:   'Completed Customer service training',
+  health_safety_training:      'Health & Safety certified',
+  cultural_awareness_training: 'Completed Cultural awareness training',
+  employability_coaching:      'Completed employability coaching',
+  career_goal_setting:         'Career goal agreed',
+  direct_job_placement:        'Job started',
+  in_work_support:             'Retained in work (6 months+)',
+  mentorship_peer_connection:  'Matched with mentor / peer',
+  wraparound_support:          'Wellbeing / pastoral support delivered',
+  housing_support:             'Housing situation improved',
+  legal_advice:                'Rights / legal advice delivered',
+  community_participation:     'Participated in community activity',
+  employer_engagement:         'Employer engagement completed',
+};
+
+/** Build the outcome tick-list for a project from its ticked activities. */
+export function outcomesForActivities(activityIds: string[]): { key: string; label: string }[] {
+  const list = activityIds
+    .map(id => ({ key: id, label: ACTIVITY_OUTCOME_LABELS[id] ?? PROGRAMME_ACTIVITY_LABELS[id] ?? id }))
+    .filter(o => !!o.label);
+  // Always include an 'other' bucket for unexpected outcomes.
+  list.push({ key: 'other', label: 'Other outcome (specify in notes)' });
+  return list;
+}

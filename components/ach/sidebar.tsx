@@ -16,7 +16,7 @@ const NAV = [
   { href: '/dashboard',          label: 'Dashboard',        icon: LayoutDashboard },
   { section: 'Network' },
   { href: '/partners',           label: 'Partners',         icon: Building2 },
-  { href: '/candidates',         label: 'Candidates',       icon: Users },
+  { href: '/candidates',         label: 'Beneficiaries',    icon: Users },
   { href: '/projects',           label: 'Projects',         icon: FolderKanban },
   { section: 'Delivery' },
   { href: '/training',           label: 'Training',         icon: GraduationCap },
