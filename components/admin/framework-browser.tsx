@@ -85,7 +85,7 @@ export function FrameworkBrowser({ factors, domains }: Props) {
                 type="text"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                placeholder="Search factor names, questions, prompts, indicators…"
+                placeholder="Search metric names, questions, prompts, indicators…"
                 className="w-full pl-9 pr-3 py-2 rounded-[10px] border-[0.5px] border-ach-border bg-white text-[13px] text-ach-navy placeholder:text-ach-navy/40 focus:outline-none focus:ring-1 focus:ring-ach-navy/40"
               />
             </div>
@@ -104,7 +104,7 @@ export function FrameworkBrowser({ factors, domains }: Props) {
               { id: 'environmental', label: 'Environmental' },
             ]} />
             <div className="ml-auto text-[11.5px] text-ach-navy/55 tabular-nums">
-              {filtered.length} of {factors.length} factor{factors.length === 1 ? '' : 's'}
+              {filtered.length} of {factors.length} metric{factors.length === 1 ? '' : 's'}
             </div>
           </div>
         </CardContent>
@@ -113,7 +113,7 @@ export function FrameworkBrowser({ factors, domains }: Props) {
       {filtered.length === 0 ? (
         <Card>
           <CardContent className="pt-6 pb-6 text-center">
-            <p className="text-[13px] text-ach-navy/60">No factors match your filter.</p>
+            <p className="text-[13px] text-ach-navy/60">No metrics match your filter.</p>
           </CardContent>
         </Card>
       ) : (
