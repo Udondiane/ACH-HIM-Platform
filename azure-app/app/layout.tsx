@@ -1,15 +1,30 @@
-import './globals.css';
 import type { Metadata } from 'next';
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
+import { localeMeta, type Locale } from '@/lib/i18n/config';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'HIM · Azure',
-  description: 'Holistic Impact Metric platform — Azure-native rebuild for ACH',
+  title: 'ACH HIM Platform',
+  description: 'Holistic Impact Metric — ACH',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const locale = (await getLocale()) as Locale;
+  const messages = await getMessages();
+  const dir = localeMeta[locale]?.dir ?? 'ltr';
+
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang={locale} dir={dir}>
+      <body>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          {children}
+        </NextIntlClientProvider>
+      </body>
     </html>
   );
 }

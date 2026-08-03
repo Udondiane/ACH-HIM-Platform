@@ -1,37 +1,53 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
+import { AUTH_DISABLED } from '@/lib/auth/dev-bypass';
 
-export default function LandingPage() {
+export default async function HomePage() {
+  if (AUTH_DISABLED) redirect('/dashboard');
+
+  // Best-effort role-based redirect for signed-in users.
+  // If Supabase env is missing (e.g. local first-boot) we just render the landing page.
+  try {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL) {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        const role = (data as { role?: string } | null)?.role;
+        if (role === 'ach_staff') redirect('/dashboard');
+        if (role === 'partner')   redirect('/partner-dashboard');
+      }
+    }
+  } catch {
+    // Supabase not configured yet — render public landing.
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-8">
+    <main className="min-h-screen flex items-center justify-center bg-ach-page px-6">
       <div className="max-w-xl">
-        <div className="text-[10.5px] uppercase tracking-[1.8px] text-ach-navy/55 font-mono mb-2">
-          Holistic Impact Metric · Azure-native
-        </div>
-        <h1 className="font-serif text-[38px] tracking-[-0.01em] leading-[1.05] text-ach-navy font-medium mb-4">
-          ACH's impact platform, in the Microsoft environment.
+        <p className="mini-label mb-3">ACH · Holistic Impact Metric</p>
+        <h1
+          className="font-serif italic text-ach-navy mb-5"
+          style={{ fontSize: 44, lineHeight: 1.1, letterSpacing: '-0.5px' }}
+        >
+          Measure what changes for a person, and what their employer made possible.
         </h1>
-        <p className="text-[15px] text-ach-navy/75 leading-relaxed mb-8">
-          Single sign-on with your ACH Microsoft account. No per-user licence fees.
-          All data stays in the ACH Azure tenant.
+        <p className="text-ach-text-muted mb-8" style={{ fontSize: 14, lineHeight: 1.6 }}>
+          The HIM platform is ACH's consolidated system for project-level impact measurement,
+          partner reporting, pricing, and the Candidate Development Fund. Sign in to continue.
         </p>
-        <div className="flex gap-3">
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center px-4 py-2 rounded-[8px] bg-ach-navy text-ach-cream text-[13px] hover:bg-ach-navy/90"
-          >
-            Open dashboard
-          </Link>
-          <Link
-            href="/api/auth/signin"
-            className="inline-flex items-center px-4 py-2 rounded-[8px] border border-ach-border text-ach-navy text-[13px] hover:bg-ach-page"
-          >
-            Sign in with Microsoft
-          </Link>
-        </div>
-        <div className="mt-10 text-[11px] font-mono uppercase tracking-[1.4px] text-ach-navy/45">
-          Runtime · Azure Static Web Apps · PostgreSQL Flexible Server · Blob Storage · Entra ID
-        </div>
+        <Link href="/sign-in" className="btn-primary inline-flex">
+          Sign in
+        </Link>
+        <p className="mt-12 text-ach-text-meta" style={{ fontSize: 11, letterSpacing: 0.3 }}>
+          ACH
+        </p>
       </div>
-    </div>
+    </main>
   );
 }

@@ -1,0 +1,293 @@
+'use client';
+
+import { useState } from 'react';
+import { useFormState, useFormStatus } from 'react-dom';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import {
+  CANDIDATE_STATUSES, CANDIDATE_STATUS_LABELS, LOCALES, LOCALE_NAMES,
+  EXIT_REASONS, EXIT_REASON_LABELS,
+  PROGRESSION_TYPES, PROGRESSION_TYPE_LABELS,
+} from '@/lib/candidates/schema';
+import type { ActionResult } from '@/lib/candidates/actions';
+
+interface Props {
+  action: (prev: ActionResult | null, fd: FormData) => Promise<ActionResult>;
+  initial?: any;
+  cancelHref: string;
+  submitLabel?: string;
+  /** When true, the candidate_ref field is read-only (edit mode). */
+  refLocked?: boolean;
+  /** When set, a hidden enrol_cohort_id field is submitted with the form so
+   *  the create action can auto-enrol the new candidate into that cohort. */
+  enrolCohortId?: string | null;
+}
+
+export function CandidateForm({ action, initial, cancelHref, submitLabel = 'Save candidate', refLocked = false, enrolCohortId }: Props) {
+  const [state, formAction] = useFormState(action, null);
+  const fe = (k: string) => state && !state.ok ? state.fieldErrors?.[k]?.[0] : undefined;
+  const isEdit = !!initial?.candidate_ref;
+  const [status, setStatus] = useState<string>(initial?.status ?? 'applicant');
+  const [progressionType, setProgressionType] = useState<string>(initial?.progression_type ?? '');
+
+  return (
+    <form action={formAction} className="space-y-5 max-w-2xl">
+      {enrolCohortId && <input type="hidden" name="enrol_cohort_id" value={enrolCohortId} />}
+      {!isEdit && (
+        <div className="rounded-[10px] border-[0.5px] border-ach-navy/30 bg-ach-slate-tint/40 p-4">
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/70 mb-1.5">Data collection consent</div>
+          <p className="text-[12.5px] text-ach-navy/85 leading-relaxed mb-2">
+            Before recording any candidate information, the candidate must be shown what data ACH collects and how it is used.
+            ACH records: name, country of origin, arrival year, preferred language, English level, housing status,
+            career goal and development plan, capability assessments at 4 timepoints, training and interview history,
+            and (where consented) audio recordings of assessment conversations. Data is used to deliver support, report
+            cohort outcomes to funders and partners (anonymised unless separate consent is given), and improve the programme.
+            Candidates can withdraw consent or request deletion at any time.
+          </p>
+          <details className="text-[12px] text-ach-navy/70 mb-3">
+            <summary className="cursor-pointer text-ach-navy font-medium">Full data inventory</summary>
+            <ul className="mt-2 ml-5 list-disc space-y-0.5">
+              <li>Identity: given name, family name, candidate reference</li>
+              <li>Demographics: country of origin, arrival year, preferred language, English level</li>
+              <li>Housing: ACH tenancy status (where applicable)</li>
+              <li>Career: career goal summary, development plan, internal notes</li>
+              <li>Assessments: HIM capability scores across 7 domains × 4 timepoints (baseline, 3-month, exit, 12-month)</li>
+              <li>Programme history: cohort enrolment, training sessions, interviews, placements, support contacts</li>
+              <li>Exit information: reason and notes if candidate leaves the programme</li>
+              <li>Audio recordings of assessment conversations (only with separate consent, retained 90 days)</li>
+              <li>Subsequent consent decisions: may be named, may be quoted, may appear in case study</li>
+            </ul>
+          </details>
+          <label className="flex items-start gap-2.5 text-[13px] cursor-pointer">
+            <input
+              type="checkbox"
+              name="data_collection_consent_confirmed"
+              required
+              className="mt-0.5 h-4 w-4 rounded border-ach-border text-ach-navy focus:ring-ach-navy/40"
+            />
+            <span className="text-ach-navy">
+              I confirm the candidate has been shown the data collection notice above (in their preferred language) and has given consent for ACH to record this information.
+            </span>
+          </label>
+        </div>
+      )}
+
+      <div className={isEdit ? 'grid grid-cols-2 gap-4' : ''}>
+        <Field label="Candidate reference" error={fe('candidate_ref')} hint={!isEdit ? 'Leave blank to auto-generate (e.g. C-2026-012)' : undefined}>
+          <Input
+            name="candidate_ref"
+            defaultValue={initial?.candidate_ref}
+            placeholder="Auto"
+            readOnly={refLocked}
+            className={refLocked ? 'bg-ach-page text-ach-navy/60 cursor-not-allowed' : undefined}
+          />
+        </Field>
+        {isEdit ? (
+          <Field label="Status" error={fe('status')} hint="Progressed = moved beyond placement (e.g. promotion, second job, sustained progression).">
+            <Select name="status" value={status} onValueChange={setStatus}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {CANDIDATE_STATUSES.map(s => (
+                  <SelectItem key={s} value={s}>{CANDIDATE_STATUS_LABELS[s]}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+        ) : (
+          <input type="hidden" name="status" value="applicant" />
+        )}
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <Field label="Given name" error={fe('given_name')}>
+          <Input name="given_name" required defaultValue={initial?.given_name} />
+        </Field>
+        <Field label="Family name" error={fe('family_name')}>
+          <Input name="family_name" required defaultValue={initial?.family_name ?? ''} placeholder="Required" />
+        </Field>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        <Field label="Preferred language" error={fe('preferred_locale')}>
+          <Select name="preferred_locale" defaultValue={initial?.preferred_locale ?? 'en'}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {LOCALES.map(l => (
+                <SelectItem key={l} value={l}>{LOCALE_NAMES[l]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field label="Country of origin" error={fe('country_of_origin')}>
+          <Input name="country_of_origin" required defaultValue={initial?.country_of_origin ?? ''} placeholder="Required" />
+        </Field>
+        <Field label="Arrival year" error={fe('arrival_year')}>
+          <Input
+            name="arrival_year"
+            type="number"
+            min={1980}
+            max={2100}
+            required
+            defaultValue={initial?.arrival_year != null ? String(initial.arrival_year) : ''}
+            placeholder="e.g. 2022"
+          />
+        </Field>
+      </div>
+
+      <Field label="English level" error={fe('english_level')}>
+        <Input name="english_level" defaultValue={initial?.english_level ?? ''} placeholder="A1, A2, B1, B2, C1, C2" />
+      </Field>
+
+      <label className="flex items-start gap-2.5 text-[13px] text-ach-navy/80 cursor-pointer">
+        <input
+          type="checkbox"
+          name="is_ach_tenant"
+          defaultChecked={!!initial?.is_ach_tenant}
+          className="mt-0.5 h-4 w-4 rounded border-ach-border text-ach-navy focus:ring-ach-navy/40"
+        />
+        <span>
+          <span className="text-ach-navy font-medium">Currently an ACH tenant</span>
+          <span className="block text-ach-navy/60 mt-0.5">
+            Tick if this candidate also rents accommodation from ACH. Used for housing-linked outcome reporting and integrated support pathways.
+          </span>
+        </span>
+      </label>
+
+      <div className="pt-3 border-t-[0.5px] border-ach-border space-y-4">
+        <Field label="Career goal summary" error={fe('career_goal_summary')}>
+          <Textarea name="career_goal_summary" defaultValue={initial?.career_goal_summary ?? ''} rows={3} />
+        </Field>
+        <Field label="Development plan" error={fe('development_plan')}>
+          <Textarea name="development_plan" defaultValue={initial?.development_plan ?? ''} rows={4} />
+        </Field>
+      </div>
+
+      {isEdit && (
+        <div className="pt-3 border-t-[0.5px] border-ach-border">
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">
+            Exit (if applicable)
+          </div>
+          <p className="text-[12px] text-ach-navy/60 mb-3">
+            When a candidate leaves the programme, capture WHY. The platform reports cohort outcomes both ways — completers basis AND intention-to-treat (dropouts held at baseline) — so leavers stay in the analysis. &quot;Got a job&quot; is a programme WIN, not a loss.
+          </p>
+          <div className="grid grid-cols-2 gap-4 mb-3">
+            <Field label="Exit reason" error={fe('exit_reason')}>
+              <select
+                name="exit_reason"
+                defaultValue={initial?.exit_reason ?? ''}
+                className="w-full rounded-[10px] border-[0.5px] border-ach-border bg-white px-3 py-2 text-[13px] text-ach-navy focus:outline-none focus:ring-1 focus:ring-ach-navy/40"
+              >
+                <option value="">— Not exited —</option>
+                {EXIT_REASONS.map(r => <option key={r} value={r}>{EXIT_REASON_LABELS[r]}</option>)}
+              </select>
+            </Field>
+            <Field label="Exit date" error={fe('exit_date')}>
+              <Input name="exit_date" type="date" defaultValue={initial?.exit_date ?? ''} />
+            </Field>
+          </div>
+          <Field label="Exit notes" error={fe('exit_notes')} hint="Concrete detail for the cohort funnel — name of employer, course title, follow-up plan, etc.">
+            <Textarea name="exit_notes" defaultValue={initial?.exit_notes ?? ''} rows={2} />
+          </Field>
+        </div>
+      )}
+
+      {status === 'progressed' && (
+        <div className="pt-3 border-t-[0.5px] border-ach-border rounded-[10px] bg-ach-slate-tint/40 p-3">
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/70 mb-2">
+            Progression detail
+          </div>
+          <p className="text-[12px] text-ach-navy/65 mb-3">
+            The candidate moved beyond first placement — record how. This is what makes &quot;Progressed&quot; meaningful in outcome reporting.
+          </p>
+          <div className="grid grid-cols-1 gap-3">
+            <Field label="Type of progression" error={fe('progression_type')}>
+              <select
+                name="progression_type"
+                value={progressionType}
+                onChange={e => setProgressionType(e.target.value)}
+                className="w-full rounded-[10px] border-[0.5px] border-ach-border bg-white px-3 py-2 text-[13px] text-ach-navy focus:outline-none focus:ring-1 focus:ring-ach-navy/40"
+              >
+                <option value="">— Select —</option>
+                {PROGRESSION_TYPES.map(p => (
+                  <option key={p} value={p}>{PROGRESSION_TYPE_LABELS[p]}</option>
+                ))}
+              </select>
+            </Field>
+            <Field
+              label={progressionType === 'other' ? 'Describe the progression' : 'Progression notes (optional)'}
+              error={fe('progression_notes')}
+              hint="Job title, employer, salary band change, study programme, business name — whatever makes the progression concrete."
+            >
+              <Textarea
+                name="progression_notes"
+                defaultValue={initial?.progression_notes ?? ''}
+                rows={progressionType === 'other' ? 3 : 2}
+              />
+            </Field>
+          </div>
+        </div>
+      )}
+
+      {isEdit && (
+        <div className="pt-3 border-t-[0.5px] border-ach-border rounded-[10px] bg-ach-rose/5 p-3">
+          <label className="flex items-start gap-2.5 text-[13px] cursor-pointer">
+            <input
+              type="checkbox"
+              name="at_risk"
+              defaultChecked={!!initial?.at_risk}
+              className="mt-0.5 h-4 w-4 rounded border-ach-border text-[#8B3A4F] focus:ring-[#8B3A4F]/40"
+            />
+            <span>
+              <span className="text-ach-navy font-medium">Flag as needing attention</span>
+              <span className="block text-ach-navy/70 mt-0.5 text-[12px]">
+                Surfaces this candidate on the candidates list so caseworkers can pull up the flagged set in one click. Use for any signal worth following up on: missed contact, capability decline, housing instability, mental-health concern, training withdrawal, lost contact.
+              </span>
+            </span>
+          </label>
+          <div className="mt-3">
+            <Field label="At-risk reason" error={fe('at_risk_reason')} hint="Plain English. Shown as tooltip on the candidates list pill.">
+              <Input name="at_risk_reason" defaultValue={initial?.at_risk_reason ?? ''} placeholder="e.g. No contact > 3 weeks; declining 3-month assessment" />
+            </Field>
+          </div>
+        </div>
+      )}
+
+      <Field label="Internal notes" error={fe('notes')}>
+        <Textarea name="notes" defaultValue={initial?.notes ?? ''} rows={3} />
+      </Field>
+
+      {state && !state.ok && state.error && !state.fieldErrors && (
+        <div className="text-[13px] text-[#8B3A4F] bg-ach-rose/10 rounded-[10px] px-3 py-2 border-[0.5px] border-ach-rose/30">
+          {state.error}
+        </div>
+      )}
+
+      <div className="flex items-center gap-2 pt-2">
+        <SubmitBtn>{submitLabel}</SubmitBtn>
+        <Link href={cancelHref}><Button variant="ghost" type="button">Cancel</Button></Link>
+      </div>
+    </form>
+  );
+}
+
+function Field({ label, error, children, hint }: { label: string; error?: string; children: React.ReactNode; hint?: string }) {
+  return (
+    <div className="space-y-1.5">
+      <Label>{label}</Label>
+      {children}
+      {hint && !error && <div className="text-[11px] text-ach-navy/50">{hint}</div>}
+      {error && <div className="text-[12px] text-[#8B3A4F]">{error}</div>}
+    </div>
+  );
+}
+
+function SubmitBtn({ children }: { children: React.ReactNode }) {
+  const { pending } = useFormStatus();
+  return <Button type="submit" disabled={pending}>{pending ? 'Saving…' : children}</Button>;
+}
