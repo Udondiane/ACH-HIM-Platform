@@ -1,0 +1,4 @@
+# The Azure-native replica lives in azure-app/ and has its own build
+# target (Azure Static Web Apps). Vercel only builds the parent app —
+# ignore the Azure branch so the Vercel deploy stays clean.
+azure-app/
