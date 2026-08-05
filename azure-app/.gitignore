@@ -4,3 +4,57 @@ node_modules
 .env.local
 *.tsbuildinfo
 next-env.d.ts
+
+# ── Bootstrap-populated files (from ../ via bootstrap.sh) ────────────
+# Only the ~15 files that override or add to parent behaviour are
+# git-tracked in this folder. Everything else lives once in parent
+# and is rsynced in on demand. Vendor reviewing this folder sees
+# only the Azure-specific surface.
+
+# Root-level files copied from parent
+/middleware.ts
+/tailwind.config.ts
+/vitest.config.ts
+
+# Ignore the populated directory trees...
+/messages/**
+/tests/**
+/public/**
+
+# ...for the source trees, use negation so overrides stay tracked.
+/app/**
+!/app/
+!/app/(ach)/
+!/app/(ach)/partners/
+!/app/(ach)/partners/[id]/
+!/app/(ach)/partners/[id]/page.tsx
+!/app/(auth)/
+!/app/(auth)/sign-in/
+!/app/(auth)/sign-in/page.tsx
+!/app/api/
+!/app/api/auth/
+!/app/api/auth/[...nextauth]/
+!/app/api/auth/[...nextauth]/route.ts
+
+/components/**
+!/components/
+!/components/partners/
+!/components/partners/partner-invitations.tsx
+
+/lib/**
+!/lib/
+!/lib/azure/
+!/lib/azure/**
+!/lib/partner-access/
+!/lib/partner-access/**
+!/lib/partners/
+!/lib/partners/resolve-current.ts
+!/lib/supabase/
+!/lib/supabase/client.ts
+!/lib/supabase/middleware.ts
+!/lib/supabase/server.ts
+
+/supabase/**
+!/supabase/
+!/supabase/migrations/
+!/supabase/migrations/060_partner_b2b_invitations.sql

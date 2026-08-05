@@ -1,8 +1,28 @@
 # HIM · Azure handover pack
 
-This app is a **replica of the parent Supabase/Vercel app** (`../`) built to run in ACH's Microsoft environment. Every page, component, server action, and migration from the parent is copied in verbatim — data access is transparently routed through an Azure adapter so no downstream code needed touching.
+This app is a **replica of the parent Supabase/Vercel app** (`../`) built to run in ACH's Microsoft environment. Every page, component, server action, and migration from the parent runs verbatim — data access is transparently routed through an Azure adapter so no downstream code needed touching.
 
 **Vendor scope: code review + testing only.** Everything below is built. The vendor does not need to author new features; they read the code, provision Azure, run the migrations, and sign off on UAT.
+
+## Repo layout — the overlay pattern
+
+`azure-app/` is intentionally NOT a full copy of the parent. Only the ~15 files that are new or genuinely override parent behaviour are tracked here. The rest lives once in `../` and gets bootstrapped in on demand.
+
+```bash
+cd azure-app
+bash bootstrap.sh    # copies parent files into place (idempotent, no-clobber)
+npm install
+npm run dev          # http://localhost:3100
+```
+
+The `.gitignore` in this folder uses negation patterns so overrides stay tracked while bootstrap-populated files stay clean. This keeps the vendor's review scope honest: **~3,000 lines of Azure-specific code**, not 30,000+ lines of duplicated pages.
+
+The 15 tracked files fall into three groups:
+| Group | Files |
+|---|---|
+| **Azure adapter** | `lib/azure/{pool,query-builder,auth,entra,storage,graph,openai,client}.ts` |
+| **Partner B2B invitations** | `lib/partner-access/*.ts`, `components/partners/partner-invitations.tsx`, `supabase/migrations/060_partner_b2b_invitations.sql` |
+| **Overrides on parent** | `app/(ach)/partners/[id]/page.tsx`, `app/(auth)/sign-in/page.tsx`, `app/api/auth/[...nextauth]/route.ts`, `lib/partners/resolve-current.ts`, `lib/supabase/{client,middleware,server}.ts` |
 
 ## The one-liner architecture
 
