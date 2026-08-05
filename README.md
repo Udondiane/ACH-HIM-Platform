@@ -2,7 +2,7 @@
 
 Production Next.js 14 + TypeScript + Supabase implementation of the HIM (Holistic Impact Metric) platform for Ashley Community & Housing, in partnership with Aston Business School (CREME / Advanced Services Group).
 
-> **Build status:** Session 1 of 8 complete — foundation scaffolding. See `BUILD_LOG.md` for what ships in each subsequent session.
+> **Handover state:** Feature-complete for the KTP end. See `azure-app/AZURE-HANDOVER.md` for the Microsoft-environment replica and vendor sign-off pack.
 
 ---
 
