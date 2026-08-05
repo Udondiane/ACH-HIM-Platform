@@ -1,33 +1,13 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
+import { useSearchParams } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 
 export default function SignInPage() {
-  const [email, setEmail] = useState('');
-  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
-  const [errorMsg, setErrorMsg] = useState<string>('');
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setStatus('sending');
-    setErrorMsg('');
-    try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        },
-      });
-      if (error) throw error;
-      setStatus('sent');
-    } catch (err) {
-      setStatus('error');
-      setErrorMsg(err instanceof Error ? err.message : 'Unknown error');
-    }
-  }
+  const params = useSearchParams();
+  const callbackUrl = params.get('callbackUrl') ?? '/dashboard';
+  const externalIdEnabled = process.env.NEXT_PUBLIC_EXTERNAL_ID_ENABLED === 'true';
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-ach-page px-6">
@@ -40,45 +20,35 @@ export default function SignInPage() {
           Welcome back.
         </h1>
         <p className="text-ach-text-muted mb-6" style={{ fontSize: 13 }}>
-          Enter your email and we'll send you a magic link to sign in.
+          ACH staff and Microsoft-account partners sign in with Microsoft.
+          {externalIdEnabled ? ' Partners without Microsoft can use the email code option below.' : ''}
         </p>
 
-        {status === 'sent' ? (
-          <div className="card-cream">
-            <p className="text-ach-text" style={{ fontSize: 13, lineHeight: 1.6 }}>
-              Check <span style={{ fontVariantNumeric: 'tabular-nums' }}>{email}</span> for a sign-in
-              link. It expires in 1 hour.
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit}>
-            <label className="block mb-4">
-              <span className="mini-label block mb-2">Email</span>
-              <input
-                type="email"
-                required
-                autoFocus
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.org"
-              />
-            </label>
+        <button
+          onClick={() => signIn('microsoft-entra-id', { callbackUrl })}
+          className="btn-primary w-full justify-center flex items-center gap-2"
+        >
+          <MicrosoftLogo />
+          Continue with Microsoft
+        </button>
+
+        {externalIdEnabled && (
+          <>
+            <div className="flex items-center gap-2 my-4 text-[11px] text-ach-text-muted uppercase tracking-widest">
+              <span className="flex-1 h-px bg-ach-navy/10" />
+              or
+              <span className="flex-1 h-px bg-ach-navy/10" />
+            </div>
             <button
-              type="submit"
-              disabled={status === 'sending'}
-              className="btn-primary w-full justify-center"
+              onClick={() => signIn('entra-external-id', { callbackUrl })}
+              className="btn-secondary w-full justify-center"
             >
-              {status === 'sending' ? 'Sending link…' : 'Send sign-in link'}
+              Email me a one-time code
             </button>
-            {errorMsg && (
-              <p
-                className="mt-3 text-ach-rose-deep"
-                style={{ fontSize: 12 }}
-              >
-                {errorMsg}
-              </p>
-            )}
-          </form>
+            <p className="text-[11px] text-ach-text-muted mt-2 text-center">
+              For partners without a work Microsoft account.
+            </p>
+          </>
         )}
 
         <div
@@ -95,5 +65,17 @@ export default function SignInPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+function MicrosoftLogo() {
+  // Inline SVG — no external asset dep.
+  return (
+    <svg width="16" height="16" viewBox="0 0 23 23" aria-hidden="true">
+      <path fill="#f35325" d="M1 1h10v10H1z" />
+      <path fill="#81bc06" d="M12 1h10v10H12z" />
+      <path fill="#05a6f0" d="M1 12h10v10H1z" />
+      <path fill="#ffba08" d="M12 12h10v10H12z" />
+    </svg>
   );
 }

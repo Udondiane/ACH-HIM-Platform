@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { PARTNER_TYPE_LABELS, PARTNER_STATUS_LABELS } from '@/lib/partners/schema';
 import { PartnerAccessTokens } from '@/components/partners/partner-access-tokens';
+import { PartnerInvitations } from '@/components/partners/partner-invitations';
 import { headers } from 'next/headers';
 
 export default async function PartnerDetailPage({ params }: { params: { id: string } }) {
@@ -35,6 +36,14 @@ export default async function PartnerDetailPage({ params }: { params: { id: stri
     .eq('partner_id', params.id)
     .order('created_at', { ascending: false });
   const tokens = (tokensRes as any[]) ?? [];
+
+  const { data: invitationsRes } = await supabase
+    .from('partner_invitations')
+    .select('id, invited_email, invited_display_name, role, provider, status, invited_at, redeemed_at, redeem_url, last_error')
+    .eq('partner_id', params.id)
+    .order('invited_at', { ascending: false });
+  const invitations = (invitationsRes as any[]) ?? [];
+  const externalIdEnabled = Boolean(process.env.AUTH_MICROSOFT_EXTERNAL_ID_ISSUER);
 
   const h = headers();
   const host = h.get('x-forwarded-host') ?? h.get('host') ?? 'localhost:3000';
@@ -185,9 +194,26 @@ export default async function PartnerDetailPage({ params }: { params: { id: stri
 
       <Card className="mb-4">
         <CardHeader>
-          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Partner access tokens</div>
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Partner sign-in (Entra)</div>
           <div className="text-[11.5px] text-ach-navy/55 mt-0.5">
-            Time-boxed URLs a partner contact can use to fill in their timepoint reports without a login.
+            Invite partner staff to sign in with their own work Microsoft account (B2B) or an email one-time code (External ID).
+            Each person has their own audit trail; revoking one leaver doesn&rsquo;t break access for the rest of the team.
+          </div>
+        </CardHeader>
+        <CardContent>
+          <PartnerInvitations
+            partnerId={p.id}
+            initial={invitations}
+            externalIdEnabled={externalIdEnabled}
+          />
+        </CardContent>
+      </Card>
+
+      <Card className="mb-4">
+        <CardHeader>
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Shareable snapshot links (legacy)</div>
+          <div className="text-[11.5px] text-ach-navy/55 mt-0.5">
+            Time-boxed URLs for one-off snapshot shares (email a report to a CSR head). Not for ongoing access &mdash; use invitations above for that.
           </div>
         </CardHeader>
         <CardContent>

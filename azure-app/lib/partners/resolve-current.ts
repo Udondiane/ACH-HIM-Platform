@@ -37,15 +37,30 @@ export async function resolveCurrentPartner(
   if (!AUTH_DISABLED) {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
+      // 1. Preferred (Entra path): partner_users maps Entra oid → partner.
+      //    Populated on first sign-in from a redeemed invitation.
+      const { data: partnerUserRow } = await supabase
+        .from('partner_users')
+        .select('partner_id, role, disabled_at')
+        .eq('entra_oid', user.id)
+        .maybeSingle();
+      const pu = partnerUserRow as { partner_id?: string; role?: string; disabled_at?: string | null } | null;
+      const partnerFromEntra = pu && !pu.disabled_at ? pu.partner_id ?? null : null;
+
+      // 2. Legacy fallback: user_roles table (kept working for staff
+      //    accounts + any users still on the pre-Entra model).
       const { data: roleRow } = await supabase
         .from('user_roles').select('partner_id, role').eq('user_id', user.id).maybeSingle();
       const row = roleRow as { partner_id?: string; role?: string } | null;
+
+      const isStaff = row?.role === 'ach_staff';
+
       // ACH staff can impersonate; partners cannot.
-      if (row?.role === 'ach_staff' && (asParam || cookieAs)) {
+      if (isStaff && (asParam || cookieAs)) {
         partnerId = asParam ?? cookieAs;
         impersonating = true;
       } else {
-        partnerId = row?.partner_id ?? null;
+        partnerId = partnerFromEntra ?? row?.partner_id ?? null;
       }
     }
   } else {
