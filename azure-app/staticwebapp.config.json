@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/staticwebapp.config.json",
+  "platform": { "apiRuntime": "node:20" },
+  "routes": [
+    { "route": "/api/auth/*", "allowedRoles": ["anonymous"] }
+  ],
+  "responseOverrides": {
+    "401": { "redirect": "/api/auth/signin", "statusCode": 302 }
+  },
+  "networking": {
+    "allowedIpRanges": ["AzureCloud"]
+  },
+  "globalHeaders": {
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+    "X-Frame-Options": "SAMEORIGIN",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "strict-origin-when-cross-origin"
+  }
+}
