@@ -2,7 +2,7 @@
 
 Production Next.js 14 + TypeScript + Supabase implementation of the HIM (Holistic Impact Metric) platform for Ashley Community & Housing, in partnership with Aston Business School (CREME / Advanced Services Group).
 
-> **Handover state:** Feature-complete for the KTP end. See `azure-app/AZURE-HANDOVER.md` for the Microsoft-environment replica and vendor sign-off pack.
+> **Handover state:** Feature-complete for the KTP end. Start with **[`HANDOVER.md`](./HANDOVER.md)** — the executive pack covering scope, migration plan, vendor + ICT responsibilities, operating model, and sign-off criteria. Technical Azure detail lives in `azure-app/AZURE-HANDOVER.md`.
 
 ---
 
