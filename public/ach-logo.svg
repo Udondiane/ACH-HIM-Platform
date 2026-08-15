@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 80" role="img" aria-label="ACH">
+  <!-- Placeholder — replace public/ach-logo.svg (or ach-logo.png) with the real ACH brand file.
+       The mark below is a stylised stand-in of ACH's coloured-figure ring; the "ACH" wordmark
+       matches the navy in the app's palette (#1E2A54). -->
+  <g transform="translate(8,8)">
+    <!-- Coloured-figure ring (5 dots representing the ACH people mark) -->
+    <circle cx="32" cy="10"  r="7"  fill="#E67E4D"/>  <!-- orange -->
+    <circle cx="52" cy="24"  r="7"  fill="#8AB947"/>  <!-- green -->
+    <circle cx="46" cy="48"  r="7"  fill="#E4B34A"/>  <!-- yellow -->
+    <circle cx="18" cy="48"  r="7"  fill="#7BA9D8"/>  <!-- blue -->
+    <circle cx="12" cy="24"  r="7"  fill="#4C5FAB"/>  <!-- purple -->
+    <circle cx="32" cy="30"  r="6"  fill="#FFFFFF"/>  <!-- centre gap -->
+    <circle cx="32" cy="30"  r="4"  fill="#1E2A54"/>  <!-- centre navy dot -->
+  </g>
+  <!-- ACH wordmark -->
+  <text x="88" y="53"
+        font-family="Cambria, Georgia, 'Times New Roman', serif"
+        font-size="42" font-weight="700" fill="#1E2A54"
+        letter-spacing="-1">ACH</text>
+</svg>

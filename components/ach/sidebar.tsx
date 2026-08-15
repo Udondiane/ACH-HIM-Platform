@@ -72,10 +72,18 @@ export function AchSidebar() {
       aria-label="Primary navigation"
     >
       <div className={cn('border-b-[0.5px] border-ach-border', collapsed ? 'px-3 py-5' : 'px-5 py-6')}>
-        <Link href="/dashboard" className={cn('flex', collapsed ? 'items-center justify-center' : 'flex-col')}>
-          <span className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">ACH</span>
+        <Link href="/dashboard" className={cn('flex', collapsed ? 'items-center justify-center' : 'items-center gap-3')}>
+          {/* Logo — swap public/ach-logo.svg for the official ACH brand file when available */}
+          <img
+            src="/ach-logo.svg"
+            alt="ACH"
+            className={cn('shrink-0', collapsed ? 'h-8 w-8' : 'h-9 w-auto')}
+          />
           {!collapsed && (
-            <span className="text-[15px] font-medium text-ach-navy mt-0.5">HIM Platform</span>
+            <div className="flex flex-col leading-tight">
+              <span className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">HIM Platform</span>
+              <span className="text-[13px] text-ach-navy/70">Impact measurement</span>
+            </div>
           )}
         </Link>
       </div>

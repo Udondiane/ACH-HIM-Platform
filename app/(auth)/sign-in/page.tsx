@@ -32,6 +32,7 @@ export default function SignInPage() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-ach-page px-6">
       <div className="card w-full max-w-md">
+        <img src="/ach-logo.svg" alt="ACH" className="h-12 w-auto mb-6" />
         <p className="mini-label mb-3">Sign in</p>
         <h1
           className="font-serif italic text-ach-navy mb-2"
