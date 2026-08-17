@@ -13,15 +13,24 @@ export default async function MyClassesPage() {
   const today = new Date().toISOString().slice(0, 10);
   const in7Days = new Date(Date.now() + 7 * 86400_000).toISOString().slice(0, 10);
 
-  // TODO: once SSO is live, filter to sessions where tutor_id = current user.
-  // For now, show all upcoming sessions grouped by day.
-  const { data: sessRes } = await supabase
+  // Scope to the tutor's own sessions when a real user session is present.
+  // Under AUTH_DISABLED (pilot demo mode) there is no distinct user; the
+  // page falls back to showing all sessions with the informational note at
+  // the bottom of the render.
+  const { data: { user } } = await supabase.auth.getUser();
+  const tutorScope = user?.id ?? null;
+
+  let query = supabase
     .from('training_sessions')
-    .select('id, session_number, session_title, scheduled_date, scheduled_start, scheduled_end, room, tutor_name, status, training_programmes(id, name)')
+    .select('id, session_number, session_title, scheduled_date, scheduled_start, scheduled_end, room, tutor_name, tutor_id, status, training_programmes(id, name)')
     .gte('scheduled_date', today)
     .lte('scheduled_date', in7Days)
     .order('scheduled_date')
     .order('scheduled_start');
+  if (tutorScope) {
+    query = query.eq('tutor_id', tutorScope);
+  }
+  const { data: sessRes } = await query;
 
   const sessions = (sessRes as any[]) ?? [];
 
@@ -127,9 +136,11 @@ export default async function MyClassesPage() {
         </div>
       )}
 
-      <div className="mt-4 text-[11px] text-ach-navy/50 italic">
-        Once ACH SSO is live, this view will filter to your own assigned sessions only.
-      </div>
+      {!tutorScope && (
+        <div className="mt-4 text-[11px] text-ach-navy/50 italic">
+          Pilot demo mode: showing all sessions. Once Entra sign-in is live, this view will filter to your own assigned sessions only.
+        </div>
+      )}
     </div>
   );
 }
