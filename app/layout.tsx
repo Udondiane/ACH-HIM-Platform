@@ -7,13 +7,6 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'ACH HIM Platform',
   description: 'Holistic Impact Metric — ACH',
-  icons: {
-    icon: [
-      { url: '/ach-logo.svg', type: 'image/svg+xml' },
-    ],
-    shortcut: '/ach-logo.svg',
-    apple: '/ach-logo.svg',
-  },
 };
 
 export default async function RootLayout({
