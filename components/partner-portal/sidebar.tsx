@@ -56,20 +56,12 @@ export function PartnerSidebar({ partner }: { partner: Partner | null }) {
       aria-label="Partner navigation"
     >
       <div className={cn('border-b-[0.5px] border-ach-border', collapsed ? 'px-3 py-5' : 'px-5 py-6')}>
-        <Link href={`/partner-dashboard${qs}`} className={cn('flex', collapsed ? 'items-center justify-center' : 'items-center gap-3')}>
-          {/* Logo — swap public/ach-logo.svg for the official ACH brand file when available */}
-          <img
-            src="/ach-logo.svg"
-            alt="ACH"
-            className={cn('shrink-0', collapsed ? 'h-8 w-8' : 'h-9 w-auto')}
-          />
+        <Link href={`/partner-dashboard${qs}`} className={cn('flex', collapsed ? 'items-center justify-center' : 'flex-col')}>
+          <span className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">{collapsed ? 'PP' : 'Partner portal'}</span>
           {!collapsed && (
-            <div className="flex flex-col leading-tight min-w-0">
-              <span className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Partner portal</span>
-              <span className="text-[13px] font-medium text-ach-navy truncate">
-                {partner?.name ?? 'Partner'}
-              </span>
-            </div>
+            <span className="text-[15px] font-medium text-ach-navy mt-0.5 truncate">
+              {partner?.name ?? 'Partner'}
+            </span>
           )}
         </Link>
       </div>
