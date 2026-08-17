@@ -1,0 +1,281 @@
+digraph HIM_schema {
+  graph [rankdir=LR, splines=ortho, nodesep=0.30, ranksep=0.60, fontname="Helvetica"];
+  node [shape=box, style="filled,rounded", fontname="Helvetica", fontsize=11, margin="0.12,0.06"];
+  edge [color="#555555", arrowhead=vee, arrowsize=0.7];
+
+  subgraph cluster_0 {
+    label = "People & Programme";
+    fontsize = 13;
+    fontname = "Helvetica-Bold";
+    style = filled;
+    fillcolor = "#f9f9f9";
+    color = "#bbbbbb";
+    "candidates" [fillcolor="#D9E7C7"];
+    "cohorts" [fillcolor="#D9E7C7"];
+    "cohort_candidates" [fillcolor="#D9E7C7"];
+    "projects" [fillcolor="#D9E7C7"];
+    "project_activities" [fillcolor="#D9E7C7"];
+    "project_capabilities" [fillcolor="#D9E7C7"];
+    "project_data_providers" [fillcolor="#D9E7C7"];
+    "project_training_programmes" [fillcolor="#D9E7C7"];
+    "candidate_consent" [fillcolor="#D9E7C7"];
+    "candidate_support" [fillcolor="#D9E7C7"];
+  }
+
+  subgraph cluster_1 {
+    label = "Assessment engine";
+    fontsize = 13;
+    fontname = "Helvetica-Bold";
+    style = filled;
+    fillcolor = "#f9f9f9";
+    color = "#bbbbbb";
+    "assessments" [fillcolor="#C7E1E7"];
+    "assessment_responses" [fillcolor="#C7E1E7"];
+    "assessment_factor_responses" [fillcolor="#C7E1E7"];
+    "assessment_attachments" [fillcolor="#C7E1E7"];
+    "activity_factors" [fillcolor="#C7E1E7"];
+    "factor_domains" [fillcolor="#C7E1E7"];
+    "follow_up_dispatches" [fillcolor="#C7E1E7"];
+  }
+
+  subgraph cluster_2 {
+    label = "HIM framework";
+    fontsize = 13;
+    fontname = "Helvetica-Bold";
+    style = filled;
+    fillcolor = "#f9f9f9";
+    color = "#bbbbbb";
+    "domains" [fillcolor="#E7C7DE"];
+    "factors" [fillcolor="#E7C7DE"];
+    "indicators" [fillcolor="#E7C7DE"];
+    "equivalence_applications" [fillcolor="#E7C7DE"];
+    "equivalence_values" [fillcolor="#E7C7DE"];
+  }
+
+  subgraph cluster_3 {
+    label = "Partners & placements";
+    fontsize = 13;
+    fontname = "Helvetica-Bold";
+    style = filled;
+    fillcolor = "#f9f9f9";
+    color = "#bbbbbb";
+    "partners" [fillcolor="#F5DBDF"];
+    "partner_contacts" [fillcolor="#F5DBDF"];
+    "partner_access_tokens" [fillcolor="#F5DBDF"];
+    "partner_shortlist" [fillcolor="#F5DBDF"];
+    "partner_question_sets" [fillcolor="#F5DBDF"];
+    "partner_question_items" [fillcolor="#F5DBDF"];
+    "partner_tier_status" [fillcolor="#F5DBDF"];
+    "partner_tier_history" [fillcolor="#F5DBDF"];
+    "partner_growth_observations" [fillcolor="#F5DBDF"];
+    "cohort_partners" [fillcolor="#F5DBDF"];
+  }
+
+  subgraph cluster_4 {
+    label = "Employment";
+    fontsize = 13;
+    fontname = "Helvetica-Bold";
+    style = filled;
+    fillcolor = "#f9f9f9";
+    color = "#bbbbbb";
+    "placements" [fillcolor="#F4E4C4"];
+    "placement_offers" [fillcolor="#F4E4C4"];
+    "placement_milestones" [fillcolor="#F4E4C4"];
+    "placement_retention_checks" [fillcolor="#F4E4C4"];
+    "milestone_reviews" [fillcolor="#F4E4C4"];
+    "beneficiary_outcomes" [fillcolor="#F4E4C4"];
+  }
+
+  subgraph cluster_5 {
+    label = "Training";
+    fontsize = 13;
+    fontname = "Helvetica-Bold";
+    style = filled;
+    fillcolor = "#f9f9f9";
+    color = "#bbbbbb";
+    "training_catalogue" [fillcolor="#D6DCF0"];
+    "training_programmes" [fillcolor="#D6DCF0"];
+    "training_enrolments" [fillcolor="#D6DCF0"];
+    "training_sessions" [fillcolor="#D6DCF0"];
+    "training_session_notes" [fillcolor="#D6DCF0"];
+    "training_attendance" [fillcolor="#D6DCF0"];
+    "training_certificates" [fillcolor="#D6DCF0"];
+    "training_learning_outcomes" [fillcolor="#D6DCF0"];
+    "training_learning_outcome_map" [fillcolor="#D6DCF0"];
+    "training_requests" [fillcolor="#D6DCF0"];
+  }
+
+  subgraph cluster_6 {
+    label = "Reporting";
+    fontsize = 13;
+    fontname = "Helvetica-Bold";
+    style = filled;
+    fillcolor = "#f9f9f9";
+    color = "#bbbbbb";
+    "evidence_packs" [fillcolor="#E9E9E9"];
+    "evidence_pack_sections" [fillcolor="#E9E9E9"];
+    "cohort_reports" [fillcolor="#E9E9E9"];
+    "cohort_narrative_synthesis" [fillcolor="#E9E9E9"];
+    "cohort_toms_claims" [fillcolor="#E9E9E9"];
+    "engagement_reports" [fillcolor="#E9E9E9"];
+    "career_progression_reports" [fillcolor="#E9E9E9"];
+    "featured_quotes" [fillcolor="#E9E9E9"];
+    "candidate_interviews" [fillcolor="#E9E9E9"];
+  }
+
+  subgraph cluster_7 {
+    label = "Pricing";
+    fontsize = 13;
+    fontname = "Helvetica-Bold";
+    style = filled;
+    fillcolor = "#f9f9f9";
+    color = "#bbbbbb";
+    "pricing_parameters" [fillcolor="#FCE5B3"];
+    "pricing_quotes" [fillcolor="#FCE5B3"];
+    "pricing_quote_lines" [fillcolor="#FCE5B3"];
+    "dev_fund_credits" [fillcolor="#FCE5B3"];
+    "development_fund_balances" [fillcolor="#FCE5B3"];
+    "sroi_proxies" [fillcolor="#FCE5B3"];
+  }
+
+  subgraph cluster_8 {
+    label = "Bidding";
+    fontsize = 13;
+    fontname = "Helvetica-Bold";
+    style = filled;
+    fillcolor = "#f9f9f9";
+    color = "#bbbbbb";
+    "bids" [fillcolor="#F0D6C7"];
+    "bid_financial_frameworks" [fillcolor="#F0D6C7"];
+    "bid_framework_domain_proxies" [fillcolor="#F0D6C7"];
+  }
+
+  subgraph cluster_9 {
+    label = "AI + Governance";
+    fontsize = 13;
+    fontname = "Helvetica-Bold";
+    style = filled;
+    fillcolor = "#f9f9f9";
+    color = "#bbbbbb";
+    "ai_draft_cache" [fillcolor="#D4D4D4"];
+    "ai_draft_calls" [fillcolor="#D4D4D4"];
+    "ai_score_suggestions" [fillcolor="#D4D4D4"];
+    "audit_entries" [fillcolor="#D4D4D4"];
+    "candidate_training" [fillcolor="#D4D4D4"];
+    "delphi_experts" [fillcolor="#D4D4D4"];
+    "delphi_panels" [fillcolor="#D4D4D4"];
+    "delphi_rounds" [fillcolor="#D4D4D4"];
+    "delphi_responses" [fillcolor="#D4D4D4"];
+    "inclusion_assessments" [fillcolor="#D4D4D4"];
+    "inclusion_dimensions" [fillcolor="#D4D4D4"];
+    "translation_snapshots" [fillcolor="#D4D4D4"];
+    "toms_codes" [fillcolor="#D4D4D4"];
+    "toms_crosswalk" [fillcolor="#D4D4D4"];
+  }
+
+  subgraph cluster_other {
+    label = "Other";
+    "translations" [fillcolor="#eeeeee"];
+    "user_roles" [fillcolor="#eeeeee"];
+  }
+  "partner_contacts" -> "partners";
+  "candidate_consent" -> "candidates";
+  "cohort_partners" -> "cohorts";
+  "cohort_partners" -> "partners";
+  "cohort_candidates" -> "cohorts";
+  "cohort_candidates" -> "candidates";
+  "cohort_candidates" -> "partners";
+  "projects" -> "cohorts";
+  "project_capabilities" -> "projects";
+  "factor_domains" -> "factors";
+  "factor_domains" -> "domains";
+  "indicators" -> "factors";
+  "assessments" -> "candidates";
+  "assessments" -> "projects";
+  "assessments" -> "cohorts";
+  "assessment_responses" -> "assessments";
+  "assessment_responses" -> "indicators";
+  "placements" -> "candidates";
+  "placements" -> "partners";
+  "placements" -> "cohorts";
+  "placement_milestones" -> "placements";
+  "milestone_reviews" -> "placement_milestones";
+  "development_fund_balances" -> "candidates";
+  "dev_fund_credits" -> "candidates";
+  "dev_fund_credits" -> "placement_milestones";
+  "dev_fund_credits" -> "partners";
+  "training_requests" -> "candidates";
+  "training_requests" -> "training_catalogue";
+  "training_enrolments" -> "training_requests";
+  "training_enrolments" -> "candidates";
+  "training_enrolments" -> "training_catalogue";
+  "pricing_quotes" -> "partners";
+  "pricing_quotes" -> "cohorts";
+  "pricing_quote_lines" -> "pricing_quotes";
+  "audit_entries" -> "partners";
+  "partner_tier_status" -> "partners";
+  "partner_tier_history" -> "partners";
+  "inclusion_assessments" -> "partners";
+  "delphi_experts" -> "delphi_panels";
+  "delphi_rounds" -> "delphi_panels";
+  "delphi_responses" -> "delphi_rounds";
+  "delphi_responses" -> "delphi_experts";
+  "equivalence_applications" -> "equivalence_values";
+  "evidence_pack_sections" -> "evidence_packs";
+  "career_progression_reports" -> "partners";
+  "engagement_reports" -> "placements";
+  "engagement_reports" -> "partners";
+  "toms_crosswalk" -> "toms_codes";
+  "cohort_toms_claims" -> "cohorts";
+  "cohort_toms_claims" -> "toms_codes";
+  "assessment_attachments" -> "assessments";
+  "candidate_interviews" -> "candidates";
+  "candidate_interviews" -> "cohorts";
+  "candidate_interviews" -> "partners";
+  "candidate_training" -> "candidates";
+  "candidate_training" -> "cohorts";
+  "candidate_support" -> "candidates";
+  "cohort_narrative_synthesis" -> "cohorts";
+  "assessment_factor_responses" -> "assessments";
+  "assessment_factor_responses" -> "factors";
+  "assessment_factor_responses" -> "assessment_attachments";
+  "activity_factors" -> "factors";
+  "project_activities" -> "projects";
+  "ai_score_suggestions" -> "assessments";
+  "ai_score_suggestions" -> "factors";
+  "partner_shortlist" -> "partners";
+  "partner_shortlist" -> "candidates";
+  "partner_growth_observations" -> "placements";
+  "placement_offers" -> "placements";
+  "placement_retention_checks" -> "placements";
+  "partner_access_tokens" -> "partners";
+  "partner_access_tokens" -> "projects";
+  "training_sessions" -> "training_programmes";
+  "training_sessions" -> "cohorts";
+  "training_enrolments" -> "training_programmes";
+  "training_enrolments" -> "cohorts";
+  "training_attendance" -> "training_sessions";
+  "training_attendance" -> "candidates";
+  "training_session_notes" -> "training_sessions";
+  "training_session_notes" -> "candidates";
+  "training_certificates" -> "candidates";
+  "training_certificates" -> "training_programmes";
+  "training_certificates" -> "training_enrolments";
+  "training_learning_outcomes" -> "training_programmes";
+  "training_learning_outcome_map" -> "training_learning_outcomes";
+  "training_learning_outcome_map" -> "factors";
+  "featured_quotes" -> "candidates";
+  "featured_quotes" -> "cohorts";
+  "cohort_reports" -> "cohorts";
+  "follow_up_dispatches" -> "candidates";
+  "follow_up_dispatches" -> "cohorts";
+  "follow_up_dispatches" -> "placements";
+  "follow_up_dispatches" -> "assessments";
+  "partner_question_items" -> "partner_question_sets";
+  "project_training_programmes" -> "projects";
+  "project_training_programmes" -> "training_programmes";
+  "bid_framework_domain_proxies" -> "bid_financial_frameworks";
+  "project_data_providers" -> "projects";
+  "beneficiary_outcomes" -> "projects";
+  "beneficiary_outcomes" -> "candidates";
+}
