@@ -158,14 +158,27 @@ Re-invite them by email. The system will find the existing account and re-attach
 
 ### How sign-in works for invited users
 
-*(Applies once the password + MFA rollout completes.)*
+1. First-time invitee receives an email with a link. Clicking it signs them in briefly and routes them to `/set-password`.
+2. They set a password (minimum 12 characters, must include an upper-case letter, a lower-case letter, and a number).
+3. They are then routed to `/mfa-enrol` — a QR code screen where they scan with an authenticator app (Microsoft Authenticator, Google Authenticator, 1Password) and verify with a 6-digit code. This is skippable but strongly recommended.
+4. From that point on, every sign-in is email + password + (if MFA enrolled) 6-digit code.
+5. If they forget their password, they use the "Forgot password?" link on the sign-in page — self-serve, no ICT intervention needed.
+6. If they lose their MFA device, an ICT administrator resets MFA from `/admin/users` (Reset MFA button on their row) and the user re-enrols a new device on next sign-in.
 
-1. First-time invitee receives an email with a link to "set your password"
-2. They set a password (minimum 12 characters, mix of types)
-3. Optional but strongly recommended: they set up MFA using an authenticator app
-4. They sign in with email + password + 6-digit MFA code from that point on
-5. If they forget their password, they use the "Forgot password?" link on the sign-in page — self-serve, no ICT intervention needed
-6. If they lose their MFA device, an ICT administrator can reset it from `/admin/users`
+### Supabase dashboard settings ICT should confirm
+
+The application code assumes the Supabase project is configured with these settings. Check them on the Supabase dashboard → **Authentication → Settings**:
+
+| Setting | Required value |
+|---|---|
+| Enable email provider | On |
+| Enable password sign-in | On |
+| Minimum password length | 12 |
+| Password complexity requirements | Lower + upper + digit |
+| Enable multi-factor authentication (TOTP) | On |
+| Site URL | The production HIM URL |
+| Redirect URLs (allowed) | The production URL plus `/*` |
+| Session lifetime | 14 days (recommended for Article 9 data) |
 
 ---
 

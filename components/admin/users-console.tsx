@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { UserPlus, Trash2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { UserPlus, Trash2, AlertCircle, CheckCircle2, KeyRound, ShieldOff } from 'lucide-react';
 import {
   inviteUserAction,
   updateTeamRoleAction,
   deactivateUserAction,
+  sendPasswordResetAction,
+  resetMfaAction,
   type ActionResult,
 } from '@/lib/admin/users-actions';
 import {
@@ -189,9 +191,13 @@ function UserRow({ user, isSelf }: { user: UserRow; isSelf: boolean }) {
         </td>
         <td className="px-5 py-3.5 text-right">
           {isSelf ? (
-            <span className="text-[11.5px] text-ach-navy/40">—</span>
+            <span className="text-[11.5px] text-ach-navy/40">Own account</span>
           ) : (
-            <DeactivateButton userId={user.user_id} email={user.email ?? user.user_id} setResult={setRowResult} />
+            <div className="flex items-center gap-3 justify-end">
+              <ResetPasswordButton email={user.email} setResult={setRowResult} />
+              <ResetMfaButton userId={user.user_id} email={user.email ?? user.user_id} setResult={setRowResult} />
+              <DeactivateButton userId={user.user_id} email={user.email ?? user.user_id} setResult={setRowResult} />
+            </div>
           )}
         </td>
       </tr>
@@ -203,6 +209,81 @@ function UserRow({ user, isSelf }: { user: UserRow; isSelf: boolean }) {
         </tr>
       )}
     </>
+  );
+}
+
+function ResetPasswordButton({
+  email, setResult,
+}: {
+  email: string | null;
+  setResult: (r: ActionResult) => void;
+}) {
+  const [pending, startTransition] = useTransition();
+
+  function handleClick() {
+    if (!email) {
+      setResult({ ok: false, error: 'No email on record for this user.' });
+      return;
+    }
+    const ok = window.confirm(
+      `Send a password reset email to ${email}? The user will receive a link to set a new password.`,
+    );
+    if (!ok) return;
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set('email', email);
+      const r = await sendPasswordResetAction(null, fd);
+      setResult(r);
+    });
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={pending || !email}
+      className="text-[12px] text-ach-navy/70 hover:text-ach-navy disabled:opacity-50"
+      title="Send password reset email"
+    >
+      <KeyRound className="inline h-3.5 w-3.5 mr-1" />
+      {pending ? 'Sending…' : 'Reset password'}
+    </button>
+  );
+}
+
+function ResetMfaButton({
+  userId, email, setResult,
+}: {
+  userId: string;
+  email: string;
+  setResult: (r: ActionResult) => void;
+}) {
+  const [pending, startTransition] = useTransition();
+
+  function handleClick() {
+    const ok = window.confirm(
+      `Reset multi-factor authentication for ${email}? All existing authenticator factors will be removed and the user will be prompted to enrol a new one on next sign-in.`,
+    );
+    if (!ok) return;
+    startTransition(async () => {
+      const fd = new FormData();
+      fd.set('user_id', userId);
+      const r = await resetMfaAction(null, fd);
+      setResult(r);
+    });
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={pending}
+      className="text-[12px] text-ach-navy/70 hover:text-ach-navy disabled:opacity-50"
+      title="Reset MFA (lost authenticator device)"
+    >
+      <ShieldOff className="inline h-3.5 w-3.5 mr-1" />
+      {pending ? 'Resetting…' : 'Reset MFA'}
+    </button>
   );
 }
 
@@ -234,6 +315,7 @@ function DeactivateButton({
       onClick={handleClick}
       disabled={pending}
       className="text-[12px] text-[#8B3A4F] hover:text-[#5B2334] disabled:opacity-50"
+      title="Remove access permanently"
     >
       <Trash2 className="inline h-3.5 w-3.5 mr-1" />
       {pending ? 'Deactivating…' : 'Deactivate'}
