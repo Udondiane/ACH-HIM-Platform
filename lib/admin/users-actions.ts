@@ -54,10 +54,14 @@ export async function inviteUserAction(
 
   const supabase = createServiceClient();
 
-  // 1. Send the invite. If the user already exists in auth.users this
+  // 1. Send the invite. The user_metadata flag `needs_password_setup`
+  //    routes the invitee to /set-password on first sign-in via
+  //    /auth/callback. If the user already exists in auth.users this
   //    returns an error; we handle that path below.
   const { data: inviteData, error: inviteError } =
-    await supabase.auth.admin.inviteUserByEmail(email);
+    await supabase.auth.admin.inviteUserByEmail(email, {
+      data: { needs_password_setup: true },
+    });
 
   let userId: string | null = inviteData?.user?.id ?? null;
 
@@ -174,4 +178,75 @@ export async function deactivateUserAction(
 
   revalidatePath('/admin/users');
   return { ok: true, message: 'User deactivated.' };
+}
+
+/**
+ * Send a password-reset email to the user.
+ * They receive a one-time link that lets them set a new password.
+ */
+export async function sendPasswordResetAction(
+  _prev: ActionResult | null,
+  fd: FormData,
+): Promise<ActionResult> {
+  try {
+    await assertIctAdmin();
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'Not authorised.' };
+  }
+
+  const email = String(fd.get('email') ?? '').trim();
+  if (!email) return { ok: false, error: 'Missing email address.' };
+
+  const supabase = createServiceClient();
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+              ?? process.env.NEXT_PUBLIC_VERCEL_URL
+              ?? 'http://localhost:3000';
+  const redirectTo = siteUrl.startsWith('http')
+    ? `${siteUrl}/auth/callback?flow=reset`
+    : `https://${siteUrl}/auth/callback?flow=reset`;
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+  if (error) return { ok: false, error: error.message };
+
+  return { ok: true, message: `Password reset email sent to ${email}.` };
+}
+
+/**
+ * Remove all MFA factors for a user. Used when someone has lost
+ * their authenticator device. On next sign-in the user goes through
+ * MFA enrolment again.
+ */
+export async function resetMfaAction(
+  _prev: ActionResult | null,
+  fd: FormData,
+): Promise<ActionResult> {
+  try {
+    await assertIctAdmin();
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'Not authorised.' };
+  }
+
+  const userId = String(fd.get('user_id') ?? '');
+  if (!userId) return { ok: false, error: 'Missing user id.' };
+
+  const supabase = createServiceClient();
+
+  const { data: factorsData, error: listError } =
+    await supabase.auth.admin.mfa.listFactors({ userId });
+  if (listError) return { ok: false, error: listError.message };
+
+  const factors = factorsData?.factors ?? [];
+  if (factors.length === 0) {
+    return { ok: true, message: 'This user has no MFA factors to reset.' };
+  }
+
+  for (const f of factors) {
+    const { error: delError } =
+      await supabase.auth.admin.mfa.deleteFactor({ userId, id: f.id });
+    if (delError) {
+      return { ok: false, error: `Could not remove factor ${f.id}: ${delError.message}` };
+    }
+  }
+
+  return { ok: true, message: 'MFA reset. The user will be prompted to enrol again on next sign-in.' };
 }
