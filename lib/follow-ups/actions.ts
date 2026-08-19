@@ -93,9 +93,13 @@ export async function recordFollowUpResponseAction(input: {
       .eq('id', assessmentId);
   }
 
-  // 2. Write candidate voice against a placeholder indicator on this assessment.
-  //    Uses a special reserved indicator id: 'followup_narrative'. If it doesn't
-  //    exist as a formal indicator, the free-text still lives on the row.
+  // 2. Try to write the candidate voice against a placeholder indicator on
+  //    this assessment so that any featured quote can point back to a formal
+  //    assessment_responses row. Uses the reserved indicator id
+  //    'followup_narrative'; if that indicator is not seeded, the insert
+  //    fails the FK check — non-fatal, because the same response_text is
+  //    persisted on the dispatch below (see step 4). We warn so operators
+  //    know the link is not being made and can seed the indicator if wanted.
   const { data: responseRow, error: rErr } = await supabase
     .from('assessment_responses')
     .insert({
@@ -107,7 +111,9 @@ export async function recordFollowUpResponseAction(input: {
     } as never)
     .select('id')
     .maybeSingle();
-  // Non-fatal — if indicator FK doesn't exist we still capture on the dispatch itself
+  if (rErr) {
+    console.warn('[follow-ups] assessment_responses insert skipped (non-fatal):', rErr.message);
+  }
   const responseId: string | null = (responseRow as any)?.id ?? null;
 
   // 3. Classify for concerning content

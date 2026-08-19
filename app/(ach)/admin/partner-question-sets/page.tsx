@@ -57,7 +57,7 @@ export default async function PartnerQuestionSetsPage() {
       {sets.length === 0 ? (
         <Card>
           <CardContent className="pt-6 text-[13px] text-ach-navy/70">
-            No question sets defined yet. Run migration 058 to seed the workforce partner question set.
+            No question sets defined yet. Ask your ICT contact to load the workforce partner question set to enable tokenised partner reports.
           </CardContent>
         </Card>
       ) : (

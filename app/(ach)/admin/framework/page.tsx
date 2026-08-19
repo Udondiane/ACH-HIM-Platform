@@ -71,7 +71,7 @@ export default async function FrameworkLibraryPage() {
           <EmptyState
             icon={<Search className="h-10 w-10" />}
             title="Framework not installed"
-            description="Run migration 029_him_reference_taxonomy.sql to install the HIM reference framework."
+            description="The HIM measurement framework has not been loaded on this environment. Ask your ICT contact to complete platform setup."
           />
         </Card>
       ) : (

@@ -84,9 +84,10 @@ export default async function AssessmentRunnerPage({
   const consentToRecord = !!(audioConsentRes.data as { may_ai_analyse_transcript?: boolean } | null)?.may_ai_analyse_transcript;
   const p = project.data as any;
   const a = assessment.data as any;
-  // Demo mode: project-level lock and assessment 'reviewed' lock are both
-  // disabled so every textarea stays editable during the training session.
-  const isLocked = false;
+  // Locked when either the project is closed for edits (Eval Surface pattern,
+  // migration 022) or the assessment has been signed off ('reviewed' status,
+  // migration 007). Both stop further edits to preserve the audit trail.
+  const isLocked = Boolean(p?.is_locked) || a?.status === 'reviewed';
 
   const caps = ((capabilities.data as any[]) ?? []) as { domain: DomainId; role: 'core'|'optional'; selected_factors: string[] | null }[];
   // selected_factors: empty/null = use ALL factors in that domain (default);

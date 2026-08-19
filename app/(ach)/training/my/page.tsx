@@ -138,7 +138,7 @@ export default async function MyClassesPage() {
 
       {!tutorScope && (
         <div className="mt-4 text-[11px] text-ach-navy/50 italic">
-          Pilot demo mode: showing all sessions. Once Entra sign-in is live, this view will filter to your own assigned sessions only.
+          Showing every session. Sign in with a tutor account to see only sessions assigned to you.
         </div>
       )}
     </div>
