@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/supabase/auth';
+import { assertCan, canRunAssessments } from '@/lib/auth/capabilities';
 import { createFeaturedQuoteAction } from '@/lib/featured-quotes/actions';
 
 type ActionResult = { ok: true } | { ok: false; error: string };
@@ -45,6 +47,8 @@ export async function recordFollowUpResponseAction(input: {
   quote_context?: string | null;
   notes?: string | null;
 }): Promise<ActionResult> {
+  const sessionUser = await requireUser(['ach_staff']);
+  assertCan(canRunAssessments, sessionUser);
   if (!input.response_text?.trim()) {
     return { ok: false, error: 'Response text is required.' };
   }
@@ -198,6 +202,8 @@ export async function recordFollowUpResponseAction(input: {
  * dashboard for staff intervention.
  */
 export async function markDispatchAttemptedAction(id: string, note?: string): Promise<ActionResult> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canRunAssessments, user);
   const supabase = createClient();
   const { data: current } = await supabase
     .from('follow_up_dispatches')
@@ -224,6 +230,8 @@ export async function markDispatchAttemptedAction(id: string, note?: string): Pr
 }
 
 export async function closeDispatchAction(id: string): Promise<ActionResult> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canRunAssessments, user);
   const supabase = createClient();
   const { error } = await supabase
     .from('follow_up_dispatches')

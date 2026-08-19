@@ -2,12 +2,14 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/supabase/auth';
 
 export async function updateTranslationAction(
   id: string,
   content: string,
   reviewed: boolean,
 ) {
+  await requireUser(['ach_staff']);
   const supabase = createClient();
   await supabase
     .from('translations')
@@ -21,6 +23,7 @@ export async function updateTranslationAction(
 }
 
 export async function toggleReviewedAction(id: string, reviewed: boolean) {
+  await requireUser(['ach_staff']);
   const supabase = createClient();
   await supabase
     .from('translations')

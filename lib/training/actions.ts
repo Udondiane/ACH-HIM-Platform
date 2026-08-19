@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import { requireUser } from '@/lib/supabase/auth';
+import { assertCan, canManageTraining } from '@/lib/auth/capabilities';
 import {
   trainingSchema,
   programmeSchema,
@@ -42,6 +44,8 @@ function normalisePayload(input: ReturnType<typeof trainingSchema.parse>) {
 }
 
 export async function createTrainingAction(_prev: TrainingResult | null, fd: FormData): Promise<TrainingResult> {
+  const _guard_user = await requireUser(['ach_staff']);
+  assertCan(canManageTraining, _guard_user);
   const parsed = trainingSchema.safeParse(fdToPlain(fd));
   if (!parsed.success) return { ok: false, error: parsed.error.errors.map(e => e.message).join('; ') };
   const supabase = createClient();
@@ -59,6 +63,8 @@ export async function createTrainingAction(_prev: TrainingResult | null, fd: For
 }
 
 export async function updateTrainingAction(id: string, _prev: TrainingResult | null, fd: FormData): Promise<TrainingResult> {
+  const _guard_user = await requireUser(['ach_staff']);
+  assertCan(canManageTraining, _guard_user);
   const parsed = trainingSchema.safeParse(fdToPlain(fd));
   if (!parsed.success) return { ok: false, error: parsed.error.errors.map(e => e.message).join('; ') };
   const supabase = createClient();
@@ -73,6 +79,8 @@ export async function updateTrainingAction(id: string, _prev: TrainingResult | n
 }
 
 export async function deleteTrainingAction(id: string, candidateId: string) {
+  const _guard_user = await requireUser(['ach_staff']);
+  assertCan(canManageTraining, _guard_user);
   const supabase = createClient();
   await supabase.from('candidate_training').delete().eq('id', id);
   revalidatePath(`/candidates/${candidateId}`);
@@ -96,6 +104,8 @@ export async function bulkLogTrainingSessionAction(input: {
   skillsLearnt: string | null;
   completionStatus: 'not_started' | 'in_progress' | 'completed';
 }): Promise<{ ok: true; count: number } | { ok: false; error: string }> {
+  const _guard_user = await requireUser(['ach_staff']);
+  assertCan(canManageTraining, _guard_user);
   if (!input.candidateIds.length) return { ok: false, error: 'No attendees selected.' };
   if (!input.trainingName.trim()) return { ok: false, error: 'Training name is required.' };
   if (!input.sessionDate) return { ok: false, error: 'Session date is required.' };
@@ -145,6 +155,8 @@ function fdToObj(fd: FormData): Record<string, unknown> {
 // ── Programmes ──────────────────────────────────────────────────
 
 export async function createProgrammeAction(_prev: Result | null, fd: FormData): Promise<Result> {
+  const _guard_user = await requireUser(['ach_staff']);
+  assertCan(canManageTraining, _guard_user);
   const parsed = programmeSchema.safeParse(fdToObj(fd));
   if (!parsed.success) return { ok: false, error: 'Please fix the highlighted fields.', fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
   const supabase = createClient();
@@ -175,6 +187,8 @@ export async function createProgrammeAction(_prev: Result | null, fd: FormData):
  * archive (status='archived') instead.
  */
 export async function deleteProgrammeAction(id: string): Promise<Result> {
+  const _guard_user = await requireUser(['ach_staff']);
+  assertCan(canManageTraining, _guard_user);
   const supabase = createClient();
   const { error } = await supabase.from('training_programmes').delete().eq('id', id);
   if (error) return { ok: false, error: error.message };
@@ -183,6 +197,8 @@ export async function deleteProgrammeAction(id: string): Promise<Result> {
 }
 
 export async function updateProgrammeAction(id: string, _prev: Result | null, fd: FormData): Promise<Result> {
+  const _guard_user = await requireUser(['ach_staff']);
+  assertCan(canManageTraining, _guard_user);
   const parsed = programmeSchema.safeParse(fdToObj(fd));
   if (!parsed.success) return { ok: false, error: 'Please fix the highlighted fields.', fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
   const supabase = createClient();
@@ -207,6 +223,8 @@ export async function updateProgrammeAction(id: string, _prev: Result | null, fd
 // ── Sessions ────────────────────────────────────────────────────
 
 export async function createSessionAction(_prev: Result | null, fd: FormData): Promise<Result> {
+  const _guard_user = await requireUser(['ach_staff']);
+  assertCan(canManageTraining, _guard_user);
   const parsed = sessionSchema.safeParse(fdToObj(fd));
   if (!parsed.success) return { ok: false, error: 'Please fix the highlighted fields.', fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
   const supabase = createClient();
@@ -235,6 +253,8 @@ export async function createSessionAction(_prev: Result | null, fd: FormData): P
 }
 
 export async function updateSessionAction(id: string, _prev: Result | null, fd: FormData): Promise<Result> {
+  const _guard_user = await requireUser(['ach_staff']);
+  assertCan(canManageTraining, _guard_user);
   const parsed = sessionSchema.safeParse(fdToObj(fd));
   if (!parsed.success) return { ok: false, error: 'Please fix the highlighted fields.', fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
   const supabase = createClient();
@@ -268,6 +288,8 @@ export async function enrolCandidatesAction(input: {
   cohortId?: string | null;
   status?: 'enrolled' | 'waiting_list';
 }): Promise<{ ok: true; count: number } | { ok: false; error: string }> {
+  const _guard_user = await requireUser(['ach_staff']);
+  assertCan(canManageTraining, _guard_user);
   if (!input.candidateIds.length) return { ok: false, error: 'No learners selected.' };
   const supabase = createClient();
   const { data: user } = await supabase.auth.getUser();
@@ -290,6 +312,8 @@ export async function updateEnrolmentStatusAction(input: {
   status: 'enrolled' | 'completed' | 'withdrawn' | 'waiting_list' | 'deferred';
   withdrawalReason?: string | null;
 }): Promise<Result> {
+  const _guard_user = await requireUser(['ach_staff']);
+  assertCan(canManageTraining, _guard_user);
   const supabase = createClient();
   const payload: Record<string, unknown> = {
     status: input.status,
@@ -312,6 +336,8 @@ export async function markAttendanceAction(input: {
   sessionId: string;
   marks: AttendanceMark[];
 }): Promise<{ ok: true; count: number } | { ok: false; error: string }> {
+  const _guard_user = await requireUser(['ach_staff']);
+  assertCan(canManageTraining, _guard_user);
   if (!input.marks.length) return { ok: false, error: 'No attendance marks supplied.' };
   const supabase = createClient();
   const { data: user } = await supabase.auth.getUser();
@@ -333,6 +359,8 @@ export async function markAttendanceAction(input: {
 }
 
 export async function markSessionDeliveredAction(sessionId: string): Promise<Result> {
+  const _guard_user = await requireUser(['ach_staff']);
+  assertCan(canManageTraining, _guard_user);
   const supabase = createClient();
   const { error } = await supabase
     .from('training_sessions')
@@ -352,6 +380,8 @@ export async function addSessionNoteAction(input: {
   noteKind: 'observation' | 'concern' | 'achievement' | 'follow_up';
   noteText: string;
 }): Promise<Result> {
+  const _guard_user = await requireUser(['ach_staff']);
+  assertCan(canManageTraining, _guard_user);
   if (!input.noteText.trim()) return { ok: false, error: 'Note text is required.' };
   const supabase = createClient();
   const { data: user } = await supabase.auth.getUser();
@@ -375,6 +405,8 @@ export async function issueCertificateAction(input: {
   enrolmentId?: string | null;
   attendancePct?: number | null;
 }): Promise<Result> {
+  const _guard_user = await requireUser(['ach_staff']);
+  assertCan(canManageTraining, _guard_user);
   const supabase = createClient();
   const { data: user } = await supabase.auth.getUser();
   const cert_no = `CERT-${new Date().getFullYear()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
@@ -404,6 +436,8 @@ export async function bulkIssueCertificatesAction(input: {
   programmeId: string;
   enrolments: { enrolmentId: string; candidateId: string; attendancePct: number | null }[];
 }): Promise<{ ok: true; count: number } | { ok: false; error: string }> {
+  const _guard_user = await requireUser(['ach_staff']);
+  assertCan(canManageTraining, _guard_user);
   if (!input.enrolments.length) return { ok: false, error: 'No learners eligible.' };
   const supabase = createClient();
   const { data: user } = await supabase.auth.getUser();
@@ -431,6 +465,8 @@ export async function bulkIssueCertificatesAction(input: {
 // ── Learning outcomes ──────────────────────────────────────────
 
 export async function addLearningOutcomeAction(_prev: Result | null, fd: FormData): Promise<Result> {
+  const _guard_user = await requireUser(['ach_staff']);
+  assertCan(canManageTraining, _guard_user);
   const parsed = learningOutcomeSchema.safeParse(fdToObj(fd));
   if (!parsed.success) return { ok: false, error: 'Please fix the highlighted fields.', fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
   const supabase = createClient();
@@ -452,6 +488,8 @@ export async function mapOutcomeToFactorAction(input: {
   factorId: string;
   evidenceWeight?: number;
 }): Promise<Result> {
+  const _guard_user = await requireUser(['ach_staff']);
+  assertCan(canManageTraining, _guard_user);
   const supabase = createClient();
   const { error } = await supabase.from('training_learning_outcome_map').upsert({
     learning_outcome_id: input.learningOutcomeId,
@@ -468,6 +506,8 @@ export async function unmapOutcomeFromFactorAction(input: {
   factorId: string;
   programmeId: string;
 }): Promise<Result> {
+  const _guard_user = await requireUser(['ach_staff']);
+  assertCan(canManageTraining, _guard_user);
   const supabase = createClient();
   const { error } = await supabase
     .from('training_learning_outcome_map')

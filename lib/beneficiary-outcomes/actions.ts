@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/supabase/auth';
+import { assertCan, canWriteBeneficiaries } from '@/lib/auth/capabilities';
 
 /** Tick or untick an outcome for a beneficiary on a project. */
 export async function setBeneficiaryOutcomeAction(
@@ -12,6 +14,8 @@ export async function setBeneficiaryOutcomeAction(
   ticked: boolean,
   notes?: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  const sessionUser = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, sessionUser);
   const supabase = createClient();
   const { data: user } = await supabase.auth.getUser();
 

@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/supabase/auth';
+import { assertCan, canManagePartners } from '@/lib/auth/capabilities';
 
 /**
  * Shortlist a candidate for a specific workforce partner. This is the
@@ -16,6 +18,8 @@ export async function shortlistForPartnerAction(input: {
   candidateId: string;
   notes?: string | null;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
+  const sessionUser = await requireUser(['ach_staff']);
+  assertCan(canManagePartners, sessionUser);
   const supabase = createClient();
   const { data: user } = await supabase.auth.getUser();
 
@@ -47,6 +51,8 @@ export async function withdrawFromShortlistAction(input: {
   partnerId: string;
   candidateId: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canManagePartners, user);
   const supabase = createClient();
   const { error } = await supabase
     .from('partner_shortlist')

@@ -3,15 +3,10 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/supabase/auth';
+import { assertCan, canManageBids } from '@/lib/auth/capabilities';
 
 export type ActionResult = { ok: true; id?: string } | { ok: false; error: string };
-
-function toStringArray(v: FormDataEntryValue | null): string[] {
-  if (!v) return [];
-  const s = String(v).trim();
-  if (!s) return [];
-  return s.split(',').map(x => x.trim()).filter(Boolean);
-}
 
 function collectMulti(fd: FormData, name: string): string[] {
   const vals = fd.getAll(name).map(v => String(v).trim()).filter(Boolean);
@@ -19,6 +14,9 @@ function collectMulti(fd: FormData, name: string): string[] {
 }
 
 export async function createBidAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const sessionUser = await requireUser(['ach_staff']);
+  assertCan(canManageBids, sessionUser);
+
   const supabase = createClient();
   const { data: user } = await supabase.auth.getUser();
 
@@ -55,6 +53,9 @@ export async function createBidAction(_prev: ActionResult | null, fd: FormData):
 }
 
 export async function updateBidAction(id: string, _prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canManageBids, user);
+
   const supabase = createClient();
   const name = String(fd.get('name') ?? '').trim();
   if (!name) return { ok: false, error: 'Name is required.' };

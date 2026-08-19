@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/supabase/auth';
+import { assertCan, canWriteBeneficiaries } from '@/lib/auth/capabilities';
 import { cohortSchema } from './schema';
 
 export type ActionResult =
@@ -59,6 +61,8 @@ async function uniqueCohortRef(
 }
 
 export async function createCohortAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, user);
   const parsed = cohortSchema.safeParse(fdToPlain(fd));
   if (!parsed.success) {
     return { ok: false, error: 'Please fix the highlighted fields.', fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
@@ -141,6 +145,8 @@ export async function updateCohortAction(
   _prev: ActionResult | null,
   fd: FormData,
 ): Promise<ActionResult> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, user);
   const parsed = cohortSchema.safeParse(fdToPlain(fd));
   if (!parsed.success) {
     return { ok: false, error: 'Please fix the highlighted fields.', fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
@@ -157,6 +163,8 @@ export async function updateCohortAction(
 }
 
 export async function cancelCohortAction(id: string) {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, user);
   const supabase = createClient();
   await supabase.from('cohorts').update({ status: 'cancelled' } as never).eq('id', id);
   revalidatePath('/cohorts');
@@ -171,6 +179,8 @@ export async function linkPartnerToCohortAction(
   engagement_fee: number,
   is_lead_partner: boolean,
 ) {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, user);
   const supabase = createClient();
   await supabase.from('cohort_partners').upsert({
     cohort_id: cohortId, partner_id: partnerId, sponsorship_count, engagement_fee, is_lead_partner,
@@ -179,6 +189,8 @@ export async function linkPartnerToCohortAction(
 }
 
 export async function unlinkPartnerFromCohortAction(cohortPartnerId: string, cohortId: string) {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, user);
   const supabase = createClient();
   await supabase.from('cohort_partners').delete().eq('id', cohortPartnerId);
   revalidatePath(`/cohorts/${cohortId}`);
@@ -190,6 +202,8 @@ export async function linkCandidateToCohortAction(
   sponsoringPartnerId?: string | null,
   _interventionStartDate?: string | null,
 ) {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, user);
   // intervention_start_date column is part of migration 034; omitted from
   // the insert until that migration is applied.
   const supabase = createClient();
@@ -205,6 +219,8 @@ export async function setCandidateInterventionStartAction(
   cohortId: string,
   startDate: string | null,
 ) {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, user);
   const supabase = createClient();
   const { error } = await supabase
     .from('cohort_candidates')
@@ -216,6 +232,8 @@ export async function setCandidateInterventionStartAction(
 }
 
 export async function unlinkCandidateFromCohortAction(rowId: string, cohortId: string) {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, user);
   const supabase = createClient();
   await supabase.from('cohort_candidates').delete().eq('id', rowId);
   revalidatePath(`/cohorts/${cohortId}`);

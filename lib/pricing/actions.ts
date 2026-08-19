@@ -3,8 +3,12 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/supabase/auth';
+import { assertCan, canWritePricing } from '@/lib/auth/capabilities';
 import { quoteSchema } from './schema';
 import { calculateQuote, type PricingParameters } from './calculator';
+
+const VALID_QUOTE_STATUSES = ['draft', 'sent', 'accepted', 'declined', 'expired'] as const;
 
 export type ActionResult =
   | { ok: true; id?: string }
@@ -62,6 +66,8 @@ export async function createQuoteAction(
   _prev: ActionResult | null,
   fd: FormData,
 ): Promise<ActionResult> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canWritePricing, user);
   const parsed = quoteSchema.safeParse(fdToPlain(fd));
   if (!parsed.success) {
     return {
@@ -129,6 +135,13 @@ export async function createQuoteAction(
 }
 
 export async function setQuoteStatusAction(id: string, status: string) {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canWritePricing, user);
+  // Enum-validate the incoming status so an arbitrary string cannot be
+  // written into the enum column.
+  if (!(VALID_QUOTE_STATUSES as readonly string[]).includes(status)) {
+    throw new Error(`Invalid quote status: ${status}`);
+  }
   const supabase = createClient();
   const patch: Record<string, unknown> = { status };
   if (status === 'sent') patch.sent_at = new Date().toISOString();
