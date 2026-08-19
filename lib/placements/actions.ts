@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/supabase/auth';
+import { assertCan, canWriteBeneficiaries } from '@/lib/auth/capabilities';
 import { placementSchema, type SalaryBand } from './schema';
 
 export type ActionResult =
@@ -36,6 +38,8 @@ export async function createPlacementAction(
   _prev: ActionResult | null,
   fd: FormData,
 ): Promise<ActionResult> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, user);
   const parsed = placementSchema.safeParse(fdToPlain(fd));
   if (!parsed.success) {
     return {

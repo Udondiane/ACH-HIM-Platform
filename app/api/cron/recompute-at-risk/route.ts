@@ -11,12 +11,19 @@ export const runtime = 'nodejs';
    for manual calls pass the header explicitly. */
 
 export async function GET(req: NextRequest) {
+  // Fail closed: without a configured secret we refuse the request.
+  // Previously this checked `if (expected)` — a missing env var meant
+  // the block was skipped entirely and anyone could mutate at-risk flags.
   const expected = process.env.CRON_SECRET;
-  if (expected) {
-    const got = req.headers.get('authorization') ?? req.headers.get('x-cron-secret');
-    if (got !== `Bearer ${expected}` && got !== expected) {
-      return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
-    }
+  if (!expected) {
+    return NextResponse.json(
+      { ok: false, error: 'CRON_SECRET not configured on this deployment' },
+      { status: 503 },
+    );
+  }
+  const got = req.headers.get('authorization') ?? req.headers.get('x-cron-secret');
+  if (got !== `Bearer ${expected}` && got !== expected) {
+    return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
   }
 
   const supabase = createClient();

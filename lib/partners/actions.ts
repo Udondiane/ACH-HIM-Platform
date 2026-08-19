@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/supabase/auth';
+import { assertCan, canManagePartners } from '@/lib/auth/capabilities';
 import { partnerSchema } from './schema';
 
 function fdToPlain(fd: FormData): Record<string, unknown> {
@@ -26,6 +28,8 @@ export type ActionResult =
   | { ok: false; error: string; fieldErrors?: Record<string, string[]> };
 
 export async function createPartnerAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canManagePartners, user);
   const parsed = partnerSchema.safeParse(fdToPlain(fd));
   if (!parsed.success) {
     return {
@@ -62,6 +66,8 @@ export async function updatePartnerAction(
   _prev: ActionResult | null,
   fd: FormData,
 ): Promise<ActionResult> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canManagePartners, user);
   const parsed = partnerSchema.safeParse(fdToPlain(fd));
   if (!parsed.success) {
     return {
@@ -92,6 +98,8 @@ export async function updatePartnerAction(
 }
 
 export async function deletePartnerAction(id: string) {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canManagePartners, user);
   const supabase = createClient();
   // Soft-delete by setting status to 'closed' — partners with placements
   // cannot be hard-deleted due to FK on placements (on delete restrict).

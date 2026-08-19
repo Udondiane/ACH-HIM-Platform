@@ -2,6 +2,27 @@ import type { AchTeamRole } from '@/lib/supabase/types';
 import type { SessionUser } from '@/lib/supabase/auth';
 
 /**
+ * Assert a capability check inside a server action and throw if it fails.
+ * Preferred pattern for server-side enforcement — the thrown error is
+ * caught by the framework and surfaced to the client as an action failure.
+ *
+ * Usage:
+ *   const user = await requireUser(['ach_staff']);
+ *   assertCan(canWriteBeneficiaries, user);
+ *   // ... proceed with the mutation
+ *
+ * For read-only actions that need role scoping, use the boolean helpers
+ * directly rather than this assertion form.
+ */
+export function assertCan(
+  check: (u: SessionUser) => boolean,
+  user: SessionUser,
+  message = 'Not authorised for this action.',
+): void {
+  if (!check(user)) throw new Error(message);
+}
+
+/**
  * Human-readable labels for the eight ACH team roles.
  * Used in the admin UI, the sidebar, and any "signed in as" surface.
  */

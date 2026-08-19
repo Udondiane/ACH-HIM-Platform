@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/supabase/auth';
+import { assertCan, canWriteBeneficiaries } from '@/lib/auth/capabilities';
 import { candidateSchema } from './schema';
 
 export type ActionResult =
@@ -28,6 +30,8 @@ export async function bulkImportCandidatesAction(input: {
   | { ok: true; created: number; skipped_duplicates: number; failed: Array<{ row: number; error: string }> }
   | { ok: false; error: string }
 > {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, user);
   const supabase = createClient();
   let created = 0;
   let skipped = 0;
@@ -155,6 +159,8 @@ async function nextCandidateRef(supabase: ReturnType<typeof createClient>): Prom
 }
 
 export async function createCandidateAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, user);
   const parsed = candidateSchema.safeParse(fdToPlain(fd));
   if (!parsed.success) {
     return { ok: false, error: 'Please fix the highlighted fields.', fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
@@ -197,6 +203,8 @@ export async function updateCandidateAction(
   _prev: ActionResult | null,
   fd: FormData,
 ): Promise<ActionResult> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, user);
   const parsed = candidateSchema.safeParse(fdToPlain(fd));
   if (!parsed.success) {
     return { ok: false, error: 'Please fix the highlighted fields.', fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
@@ -240,6 +248,8 @@ export async function withdrawCandidateAction(
   id: string,
   opts?: { exitReason?: string | null; exitNotes?: string | null; exitDate?: string | null },
 ) {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, user);
   const supabase = createClient();
   await supabase.from('candidates').update({
     status: 'withdrawn',
@@ -256,6 +266,8 @@ export async function withdrawCandidateAction(
 // most recent publication flags so the timestamp of a toggle doesn't
 // silently reset previously-recorded consent to false.
 export async function setAudioConsentAction(candidateId: string, consent: boolean) {
+  const sessionUser = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, sessionUser);
   const supabase = createClient();
   const { data: user } = await supabase.auth.getUser();
 
@@ -295,6 +307,8 @@ export async function recordConsentAction(
   },
   notes?: string,
 ) {
+  const sessionUser = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, sessionUser);
   const supabase = createClient();
   const { data: user } = await supabase.auth.getUser();
   await supabase.from('candidate_consent').insert({

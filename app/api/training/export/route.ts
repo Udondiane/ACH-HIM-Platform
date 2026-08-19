@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/supabase/auth';
+import { canManageTraining } from '@/lib/auth/capabilities';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,8 +10,17 @@ export const dynamic = 'force-dynamic';
  * attendance %, status, and certificate status.  Format is the
  * lowest-common-denominator CSV — reformat downstream for specific
  * funder templates (Views XML, ESF returns, etc.) as needed.
+ *
+ * Contains personally identifying beneficiary data (name, ref).
+ * Gated to ACH staff with the training-management capability;
+ * partners and candidates never see this output.
  */
 export async function GET() {
+  const user = await requireUser(['ach_staff']);
+  if (!canManageTraining(user)) {
+    return new NextResponse('Not authorised', { status: 403 });
+  }
+
   const supabase = createClient();
 
   const [{ data: enrolments }, { data: programmes }, { data: attendance }, { data: certs }] = await Promise.all([
