@@ -1,12 +1,13 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import type { UserRole } from '@/lib/supabase/types';
+import type { UserRole, AchTeamRole } from '@/lib/supabase/types';
 import { AUTH_DISABLED, DEV_BYPASS_USER } from '@/lib/auth/dev-bypass';
 
 export type SessionUser = {
   id: string;
   email: string | null;
   role: UserRole;
+  teamRole: AchTeamRole | null;
   partnerId: string | null;
   candidateId: string | null;
 };
@@ -14,8 +15,8 @@ export type SessionUser = {
 /**
  * Resolves the current user + their role row.
  * Redirects to /sign-in if unauthenticated.
- * If `allowedRoles` is provided and the user's role is not in it, redirects
- * to that role's home.
+ * If `allowedRoles` is provided and the user's role is not in it,
+ * redirects to that role's home page.
  */
 export async function requireUser(allowedRoles?: UserRole[]): Promise<SessionUser> {
   // Build-time bypass: return synthetic ACH-staff user without touching Supabase.
@@ -27,12 +28,13 @@ export async function requireUser(allowedRoles?: UserRole[]): Promise<SessionUse
 
   const { data: roleData } = await supabase
     .from('user_roles')
-    .select('role, partner_id, candidate_id')
+    .select('role, team_role, partner_id, candidate_id')
     .eq('user_id', user.id)
     .maybeSingle();
 
   const roleRow = roleData as {
     role: UserRole;
+    team_role: AchTeamRole | null;
     partner_id: string | null;
     candidate_id: string | null;
   } | null;
@@ -46,6 +48,7 @@ export async function requireUser(allowedRoles?: UserRole[]): Promise<SessionUse
     id: user.id,
     email: user.email ?? null,
     role: roleRow.role,
+    teamRole: roleRow.team_role,
     partnerId: roleRow.partner_id,
     candidateId: roleRow.candidate_id,
   };

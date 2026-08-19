@@ -1,4 +1,4 @@
-import type { UserRole } from '@/lib/supabase/types';
+import type { UserRole, AchTeamRole } from '@/lib/supabase/types';
 
 /**
  * Build-time auth bypass. OFF by default — real Supabase / Entra
@@ -12,10 +12,18 @@ import type { UserRole } from '@/lib/supabase/types';
  */
 export const AUTH_DISABLED = process.env.NEXT_PUBLIC_AUTH_DISABLED === 'true';
 
+/**
+ * Synthetic user returned when AUTH_DISABLED is true.
+ *
+ * `teamRole` is intentionally null → the capability helpers treat
+ * that as full-access ach_staff, so pilot demos and training-session
+ * walkthroughs can see every surface without needing real user rows.
+ */
 export const DEV_BYPASS_USER = {
   id: '00000000-0000-0000-0000-000000000001',
   email: 'dev@ach.local',
   role: 'ach_staff' as UserRole,
+  teamRole: null as AchTeamRole | null,
   partnerId: null as string | null,
   candidateId: null as string | null,
 };
