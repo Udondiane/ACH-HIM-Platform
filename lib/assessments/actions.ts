@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/supabase/auth';
+import { assertCan, canRunAssessments } from '@/lib/auth/capabilities';
 import { baselineWindowState } from './intervention';
 
 type Timepoint = 'baseline' | 'mid_3mo' | 'exit_6mo' | 'followup_12mo';
@@ -16,6 +18,8 @@ export async function startAssessmentAction(
   candidateId: string,
   timepoint: Timepoint,
 ): Promise<StartResult> {
+  const sessionUser = await requireUser(['ach_staff']);
+  assertCan(canRunAssessments, sessionUser);
   const supabase = createClient();
   const { data: user } = await supabase.auth.getUser();
 
@@ -130,6 +134,8 @@ export async function startAssessmentForCandidateAction(
   candidateId: string,
   timepoint: Timepoint,
 ): Promise<StartResult> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canRunAssessments, user);
   const supabase = createClient();
   // Find the candidate's project via cohort_candidates → cohorts.project_id
   const { data: cc } = await supabase
@@ -152,6 +158,8 @@ export async function saveAssessmentResponseAction(
   observableChanges: string | null = null,
   practices: string | null = null,
 ) {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canRunAssessments, user);
   const supabase = createClient();
   await supabase
     .from('assessment_responses')
@@ -183,6 +191,8 @@ export async function adjustScoreAfterAiReviewAction(input: {
     | 'ai_missed_language_nuance' | 'assessor_error_corrected' | 'other';
   reasonText: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canRunAssessments, user);
   if (!input.reasonText || input.reasonText.trim().length < 3) {
     return { ok: false, error: 'A reason for the adjustment is required.' };
   }
@@ -214,6 +224,8 @@ export async function saveFactorResponseAction(
   spokenLanguage: string | null = null,
   audioAttachmentId: string | null = null,
 ) {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canRunAssessments, user);
   const supabase = createClient();
   const { error } = await supabase
     .from('assessment_factor_responses')
@@ -230,6 +242,8 @@ export async function saveFactorResponseAction(
 }
 
 export async function completeAssessmentAction(assessmentId: string, projectId: string) {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canRunAssessments, user);
   const supabase = createClient();
   await supabase.from('assessments').update({ status: 'completed' } as never).eq('id', assessmentId);
   /* Project lock on first-assessment-completed disabled for the training
@@ -242,6 +256,8 @@ export async function applyAiSuggestionsAction(
   assessmentId: string,
   suggestions: { indicatorId: string; numericValue: number | null; observableChanges: string; practices: string }[],
 ) {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canRunAssessments, user);
   const supabase = createClient();
   for (const s of suggestions) {
     await supabase.from('assessment_responses').upsert({
@@ -255,12 +271,19 @@ export async function applyAiSuggestionsAction(
 }
 
 export async function unlockProjectAction(projectId: string) {
+  // Bypasses the project-level lock — only Programme Lead may.
+  const user = await requireUser(['ach_staff']);
+  if (user.teamRole !== null && user.teamRole !== 'programme_lead') {
+    throw new Error('Only a Programme Lead may unlock a project.');
+  }
   const supabase = createClient();
   await supabase.from('projects').update({ is_locked: false } as never).eq('id', projectId);
   revalidatePath(`/projects/${projectId}`);
 }
 
 export async function exportProjectJsonAction(projectId: string): Promise<{ ok: true; data: any } | { ok: false; error: string }> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canRunAssessments, user);
   const supabase = createClient();
   const [proj, caps, assessments, cohorts] = await Promise.all([
     supabase.from('projects').select('*').eq('id', projectId).maybeSingle(),

@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/supabase/auth';
+import { assertCan, canRunAssessments } from '@/lib/auth/capabilities';
 
 const BUCKET = 'assessment-evidence';
 const MAX_SIZE = 25 * 1024 * 1024; // 25MB per file
@@ -14,6 +16,9 @@ export async function uploadAssessmentAttachmentAction(
   assessmentId: string,
   formData: FormData,
 ): Promise<UploadResult> {
+  const sessionUser = await requireUser(['ach_staff']);
+  assertCan(canRunAssessments, sessionUser);
+
   const file = formData.get('file') as File | null;
   if (!file || typeof file === 'string') return { ok: false, error: 'No file provided' };
   if (file.size === 0) return { ok: false, error: 'Empty file' };
@@ -58,6 +63,11 @@ export async function uploadAssessmentAttachmentAction(
 }
 
 export async function deleteAssessmentAttachmentAction(attachmentId: string) {
+  // Destructive: removes both the DB row and the underlying storage object.
+  // Restricted to staff with assessment capability so evidence cannot be
+  // silently deleted by a lesser role.
+  const user = await requireUser(['ach_staff']);
+  assertCan(canRunAssessments, user);
   const supabase = createClient();
   const { data: row } = await supabase
     .from('assessment_attachments').select('storage_path, assessment_id').eq('id', attachmentId).maybeSingle();
@@ -68,6 +78,8 @@ export async function deleteAssessmentAttachmentAction(attachmentId: string) {
 }
 
 export async function getAttachmentDownloadUrlAction(attachmentId: string): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canRunAssessments, user);
   const supabase = createClient();
   const { data: row } = await supabase
     .from('assessment_attachments').select('storage_path, file_name').eq('id', attachmentId).maybeSingle();

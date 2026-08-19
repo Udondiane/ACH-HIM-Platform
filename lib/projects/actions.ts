@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/supabase/auth';
+import { assertCan, canWriteBeneficiaries } from '@/lib/auth/capabilities';
 import { projectSchema, deriveCapabilitiesFromAnswers, CAP_DOMAINS, type CapAnswer, type CapDomain } from './schema';
 import { classify, type ClassificationResponses } from '@/lib/scoring/classification';
 import type { DomainId } from '@/lib/scoring/types';
@@ -340,6 +342,8 @@ async function syncPartnersFromFunderName(
 }
 
 export async function createProjectAction(_prev: ActionResult | null, fd: FormData): Promise<ActionResult> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, user);
   const parsed = projectSchema.safeParse(fdToPlain(fd));
   if (!parsed.success) {
     return { ok: false, error: 'Please fix the highlighted fields.', fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
@@ -379,6 +383,8 @@ export async function createProjectAction(_prev: ActionResult | null, fd: FormDa
 export async function updateProjectAction(
   id: string, _prev: ActionResult | null, fd: FormData,
 ): Promise<ActionResult> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, user);
   const parsed = projectSchema.safeParse(fdToPlain(fd));
   if (!parsed.success) {
     return { ok: false, error: 'Please fix the highlighted fields.', fieldErrors: parsed.error.flatten().fieldErrors as Record<string, string[]> };
@@ -411,6 +417,12 @@ export async function updateProjectAction(
 }
 
 export async function deleteProjectAction(id: string) {
+  // Destructive — restricted to Programme Lead (or legacy full-access
+  // staff whose team_role has not yet been set).
+  const user = await requireUser(['ach_staff']);
+  if (user.teamRole !== null && user.teamRole !== 'programme_lead') {
+    throw new Error('Only a Programme Lead may delete a project.');
+  }
   const supabase = createClient();
   await supabase.from('projects').delete().eq('id', id);
   revalidatePath('/projects');
@@ -422,6 +434,8 @@ export async function setProjectCapabilitiesAction(
   projectId: string,
   capabilities: { domain: DomainId; role: 'core' | 'optional' }[],
 ) {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, user);
   const supabase = createClient();
   // Preserve existing factor selections when re-saving capability roles —
   // dropping the row would silently reset custom factor picks.
@@ -453,6 +467,8 @@ export async function setProjectFactorsAction(
   domain: DomainId,
   factorIds: string[],
 ) {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, user);
   const supabase = createClient();
   const { error } = await supabase
     .from('project_capabilities')
@@ -559,6 +575,8 @@ export async function markProjectCompletedAction(
   projectId: string,
   narrative: { what_worked: string; challenges: string; unexpected: string },
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, user);
   const supabase = createClient();
   const { error } = await supabase
     .from('projects')
@@ -580,6 +598,8 @@ export async function enrolBeneficiariesToProjectAction(
   projectId: string,
   candidateIds: string[],
 ): Promise<{ ok: true; count: number; cohortId: string } | { ok: false; error: string }> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, user);
   if (candidateIds.length === 0) return { ok: false, error: 'Pick at least one candidate.' };
   const supabase = createClient();
   const cohortId = await ensureDefaultCohortForProject(supabase, projectId);

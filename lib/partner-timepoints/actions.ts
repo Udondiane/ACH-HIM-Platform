@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/supabase/auth';
+import { assertCan, canManagePartners } from '@/lib/auth/capabilities';
 import { randomUUID } from 'crypto';
 
 export type Result = { ok: true } | { ok: false; error: string };
@@ -23,8 +25,9 @@ export async function savePartnerGrowthObservationAction(input: {
   deiTargetNote?: string | null;
   recordedByPartnerRole?: string | null;
 }): Promise<Result> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canManagePartners, user);
   const supabase = createClient();
-  const { data: user } = await supabase.auth.getUser();
 
   const payload = {
     placement_id: input.placementId,
@@ -37,7 +40,7 @@ export async function savePartnerGrowthObservationAction(input: {
     what_stood_out: input.whatStoodOut ?? null,
     dei_target_contribution: input.deiTargetContribution ?? null,
     dei_target_note: input.deiTargetNote ?? null,
-    recorded_by: user.user?.id ?? null,
+    recorded_by: user.id,
     recorded_by_partner_role: input.recordedByPartnerRole ?? null,
   };
 
@@ -64,8 +67,9 @@ export async function savePlacementOfferAction(input: {
   candidateResponseReasonText?: string | null;
   candidateResponseDate?: string | null;
 }): Promise<Result> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canManagePartners, user);
   const supabase = createClient();
-  const { data: user } = await supabase.auth.getUser();
 
   const payload = {
     placement_id: input.placementId,
@@ -76,7 +80,7 @@ export async function savePlacementOfferAction(input: {
     candidate_response_reason_category: input.candidateResponseReasonCategory ?? null,
     candidate_response_reason_text: input.candidateResponseReasonText ?? null,
     candidate_response_date: input.candidateResponseDate ?? null,
-    recorded_by: user.user?.id ?? null,
+    recorded_by: user.id,
   };
 
   const { error } = await supabase
@@ -101,8 +105,9 @@ export async function savePlacementRetentionCheckAction(input: {
   leavingReason?: string | null;
   progressionNote?: string | null;
 }): Promise<Result> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canManagePartners, user);
   const supabase = createClient();
-  const { data: user } = await supabase.auth.getUser();
 
   const payload = {
     placement_id: input.placementId,
@@ -112,7 +117,7 @@ export async function savePlacementRetentionCheckAction(input: {
     leaving_date: input.leavingDate ?? null,
     leaving_reason: input.leavingReason ?? null,
     progression_note: input.progressionNote ?? null,
-    checked_by: user.user?.id ?? null,
+    checked_by: user.id,
   };
 
   const { error } = await supabase
@@ -127,6 +132,9 @@ export async function savePlacementRetentionCheckAction(input: {
 // ============================================================
 // PARTNER ACCESS TOKEN GENERATION
 // ============================================================
+// Sensitive: minting a token gives external parties access to the
+// tokenised /report/[token] surface for a specific partner. Only
+// staff with partner-management authority may issue them.
 
 export async function generatePartnerAccessTokenAction(input: {
   partnerId: string;
@@ -134,8 +142,9 @@ export async function generatePartnerAccessTokenAction(input: {
   label?: string | null;
   expiresAt?: string | null;
 }): Promise<{ ok: true; token: string } | { ok: false; error: string }> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canManagePartners, user);
   const supabase = createClient();
-  const { data: user } = await supabase.auth.getUser();
 
   const token = randomUUID().replace(/-/g, '') + randomUUID().replace(/-/g, '').slice(0, 16);
 
@@ -147,7 +156,7 @@ export async function generatePartnerAccessTokenAction(input: {
       token,
       label: input.label ?? null,
       expires_at: input.expiresAt ?? null,
-      created_by: user.user?.id ?? null,
+      created_by: user.id,
     } as never);
 
   if (error) return { ok: false, error: error.message };
@@ -156,6 +165,8 @@ export async function generatePartnerAccessTokenAction(input: {
 }
 
 export async function revokePartnerAccessTokenAction(tokenId: string, partnerId: string): Promise<Result> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canManagePartners, user);
   const supabase = createClient();
   const { error } = await supabase
     .from('partner_access_tokens')
