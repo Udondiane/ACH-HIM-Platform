@@ -34,16 +34,27 @@ export async function updateSession(request: NextRequest) {
   const url = request.nextUrl.clone();
   const path = url.pathname;
 
-  // Public routes
+  // Public routes. Kept explicit rather than sniffing for a dot in the
+  // path — the old `path.includes('.')` check let `/candidates/foo.bar`
+  // skip the gate. Static asset paths are excluded via the matcher below.
   const isPublic =
     path === '/' ||
     path.startsWith('/sign-in') ||
+    path.startsWith('/auth/callback') ||   // Supabase OTP code exchange
+    path.startsWith('/report/') ||         // tokenised partner report surface
     path.startsWith('/api/public') ||
-    path.startsWith('/_next') ||
-    path.includes('.');
+    path.startsWith('/api/cron') ||        // guarded by CRON_SECRET inside
+    path.startsWith('/api/health') ||      // health endpoint for uptime checks
+    path.startsWith('/_next');
 
   if (!user && !isPublic) {
     url.pathname = '/sign-in';
+    // Preserve the destination so sign-in can bounce back to it.
+    if (path.startsWith('/') && !path.startsWith('//')) {
+      url.searchParams.set('next', path);
+    } else {
+      url.search = '';
+    }
     return NextResponse.redirect(url);
   }
 

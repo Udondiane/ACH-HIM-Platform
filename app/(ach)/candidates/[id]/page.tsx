@@ -23,8 +23,8 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
     supabase.from('candidate_consent').select('*').eq('candidate_id', params.id).order('given_at', { ascending: false }).limit(5),
     supabase.from('development_fund_balances').select('*').eq('candidate_id', params.id).maybeSingle(),
     supabase.from('placements').select('id, role_title, salary_band, start_date, status, partners(name)').eq('candidate_id', params.id).order('start_date', { ascending: false }).limit(5),
-    supabase.from('cohort_candidates').select('id, enrolled_at, cohorts(id, name, cohort_ref, status, cohort_partners(partner_id, partners(id, name, partner_types)))').eq('candidate_id', params.id),
-    supabase.from('partners').select('id, name, partner_types'),
+    supabase.from('cohort_candidates').select('id, enrolled_at, cohorts(id, name, cohort_ref, status, cohort_partners(partner_id, partners(id, name, types)))').eq('candidate_id', params.id),
+    supabase.from('partners').select('id, name, types'),
     supabase.from('partner_shortlist').select('partner_id, withdrawn_at, notes').eq('candidate_id', params.id),
     supabase.from('training_enrolments').select('id, status, enrolled_date, completed_date, training_programmes(id, name, code, category)').eq('candidate_id', params.id).order('enrolled_date', { ascending: false }),
     supabase.from('training_certificates').select('id, certificate_number, issued_date, attendance_pct, training_programmes(name)').eq('candidate_id', params.id).order('issued_date', { ascending: false }),
@@ -35,7 +35,7 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
 
   // Only workforce partners are eligible for shortlisting.
   const availableWorkforcePartners = ((workforcePartners.data as any[]) ?? [])
-    .filter(p => Array.isArray(p.partner_types) && p.partner_types.includes('workforce_partner'))
+    .filter(p => Array.isArray(p.types) && p.types.includes('workforce_partner'))
     .map(p => ({ id: p.id, name: p.name }));
   const shortlistRows = (shortlists.data as any[]) ?? [];
 

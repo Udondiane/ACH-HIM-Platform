@@ -136,7 +136,7 @@ export function AchSidebar() {
 
       {!collapsed && (
         <div className="px-5 py-3 border-t-[0.5px] border-ach-border text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/40">
-          v0.1 · Internal preview
+          HIM Platform
         </div>
       )}
     </aside>
