@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/supabase/auth';
+import { assertCan, canManageImpactLibrary } from '@/lib/auth/capabilities';
 
 export type QuoteSource = 'assessment' | 'partner_exit' | 'partner_retention' | 'interview' | 'other';
 export type QuoteSpeaker = 'candidate' | 'assessor' | 'partner' | 'other';
@@ -21,6 +23,9 @@ export async function createFeaturedQuoteAction(input: {
   context?: string | null;
   display_name?: string | null;
 }): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  const sessionUser = await requireUser(['ach_staff']);
+  assertCan(canManageImpactLibrary, sessionUser);
+
   const text = input.quote_text?.trim();
   if (!text) return { ok: false, error: 'Quote text is required.' };
 
@@ -74,6 +79,8 @@ export async function archiveFeaturedQuoteAction(
   id: string,
   reason?: string | null,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canManageImpactLibrary, user);
   const supabase = createClient();
   const { error } = await supabase
     .from('featured_quotes')
@@ -92,6 +99,8 @@ export async function markResponseFeatureWorthyAction(input: {
   candidate_id: string;
   feature_worthy: boolean;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canManageImpactLibrary, user);
   const supabase = createClient();
   const { error } = await supabase
     .from('assessment_responses')
@@ -107,6 +116,8 @@ export async function setCandidateVoiceAction(input: {
   candidate_id: string;
   candidate_voice: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canManageImpactLibrary, user);
   const supabase = createClient();
   const { error } = await supabase
     .from('assessment_responses')

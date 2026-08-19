@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/supabase/auth';
+import { assertCan, canWriteBeneficiaries } from '@/lib/auth/capabilities';
 import { interviewSchema } from './schema';
 
 export type InterviewResult =
@@ -43,6 +45,8 @@ async function maybeAdvanceJourney(_supabase: ReturnType<typeof createClient>, _
 }
 
 export async function createInterviewAction(_prev: InterviewResult | null, fd: FormData): Promise<InterviewResult> {
+  const sessionUser = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, sessionUser);
   const parsed = interviewSchema.safeParse(fdToPlain(fd));
   if (!parsed.success) {
     return { ok: false, error: 'Please check the form fields: ' + parsed.error.errors.map(e => e.message).join('; ') };
@@ -96,6 +100,8 @@ export async function createInterviewAction(_prev: InterviewResult | null, fd: F
 }
 
 export async function updateInterviewAction(id: string, _prev: InterviewResult | null, fd: FormData): Promise<InterviewResult> {
+  const sessionUser = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, sessionUser);
   const parsed = interviewSchema.safeParse(fdToPlain(fd));
   if (!parsed.success) {
     return { ok: false, error: 'Please check the form fields: ' + parsed.error.errors.map(e => e.message).join('; ') };
@@ -113,6 +119,8 @@ export async function updateInterviewAction(id: string, _prev: InterviewResult |
 }
 
 export async function deleteInterviewAction(id: string, candidateId: string) {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, user);
   const supabase = createClient();
   await supabase.from('candidate_interviews').delete().eq('id', id);
   revalidatePath(`/candidates/${candidateId}`);

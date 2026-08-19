@@ -2,6 +2,8 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/supabase/auth';
+import { assertCan, canManageBids } from '@/lib/auth/capabilities';
 
 export async function saveCohortTomsClaimAction(
   cohortId: string,
@@ -9,6 +11,8 @@ export async function saveCohortTomsClaimAction(
   quantity: number,
   notes: string | null,
 ) {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canManageBids, user);
   const supabase = createClient();
   if (quantity <= 0) {
     await supabase.from('cohort_toms_claims').delete().eq('cohort_id', cohortId).eq('toms_code', tomsCode);
