@@ -37,24 +37,18 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
             <div className="flex items-start gap-2.5">
               <AlertCircle className="h-5 w-5 text-[#8B3A4F] shrink-0 mt-0.5" />
               <div className="space-y-2 text-[13px] text-ach-navy/80">
-                <p className="font-medium text-ach-navy">Likely causes:</p>
-                <ol className="list-decimal pl-5 space-y-1.5">
-                  <li>
-                    <span className="font-medium">Supabase service role key is missing</span> — when
-                    {' '}<code className="text-[12px] bg-ach-page px-1 rounded">AUTH_DISABLED=true</code> and
-                    {' '}<code className="text-[12px] bg-ach-page px-1 rounded">SUPABASE_SERVICE_ROLE_KEY</code> is not set
-                    in the Vercel project env vars, every read silently returns null because RLS blocks the anon key. Set the
-                    service role key under Vercel → Settings → Environment Variables and redeploy.
-                  </li>
-                  <li>
-                    The project with this ID has been deleted from the database.
-                  </li>
-                  {projectError && (
-                    <li>
-                      Supabase returned an error: <code className="text-[11.5px] bg-ach-page px-1 rounded">{projectError.message}</code>
-                    </li>
-                  )}
-                </ol>
+                <p className="font-medium text-ach-navy">This project isn't available.</p>
+                <p>
+                  It may have been deleted, or the platform can't reach it right now. Try
+                  going back to the project list and reopening it. If it keeps happening,
+                  contact your ICT team.
+                </p>
+                {process.env.NODE_ENV !== 'production' && projectError && (
+                  <p className="text-[11.5px] text-ach-navy/60">
+                    <span className="font-medium">Dev detail:</span>{' '}
+                    <code className="bg-ach-page px-1 rounded">{projectError.message}</code>
+                  </p>
+                )}
                 <p className="pt-2">
                   <Link href="/projects" className="text-ach-navy underline">← Back to project list</Link>
                 </p>

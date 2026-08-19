@@ -50,13 +50,15 @@ export default async function ProjectsListPage() {
             <div className="space-y-2 text-[13px] text-ach-navy/80">
               <p className="font-medium text-ach-navy">Could not load projects.</p>
               <p>
-                Supabase returned: <code className="text-[11.5px] bg-ach-page px-1 rounded">{error.message}</code>
+                Something went wrong loading this page. Try refreshing; if it keeps happening,
+                contact your ICT team so they can check the platform is configured correctly.
               </p>
-              <p>
-                If <code className="text-[12px] bg-ach-page px-1 rounded">AUTH_DISABLED=true</code> on Vercel,
-                also set <code className="text-[12px] bg-ach-page px-1 rounded">SUPABASE_SERVICE_ROLE_KEY</code>{' '}
-                in Vercel → Settings → Environment Variables, then redeploy.
-              </p>
+              {process.env.NODE_ENV !== 'production' && (
+                <p className="text-[11.5px] text-ach-navy/60">
+                  <span className="font-medium">Dev detail:</span>{' '}
+                  <code className="bg-ach-page px-1 rounded">{error.message}</code>
+                </p>
+              )}
             </div>
           </div>
         </Card>

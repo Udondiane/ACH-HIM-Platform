@@ -27,16 +27,22 @@ export default function AchErrorBoundary({
         <div className="flex items-start gap-2.5">
           <AlertCircle className="h-5 w-5 text-[#8B3A4F] shrink-0 mt-0.5" />
           <div className="space-y-2 text-[13px] text-ach-navy/80">
-            <p className="font-medium text-ach-navy">The page crashed during render.</p>
+            <p className="font-medium text-ach-navy">Something went wrong on this page.</p>
             <p>
-              <span className="font-medium">Error message:</span>{' '}
-              <code className="text-[11.5px] bg-ach-page px-1.5 py-0.5 rounded">
-                {error.message || '(no message provided)'}
-              </code>
+              Try refreshing. If it keeps happening, contact your ICT team and quote the
+              reference below.
             </p>
             {error.digest && (
               <p className="text-[12px] text-ach-navy/60">
-                Digest: <code className="text-[11.5px]">{error.digest}</code>
+                Reference: <code className="text-[11.5px] bg-ach-page px-1 rounded">{error.digest}</code>
+              </p>
+            )}
+            {process.env.NODE_ENV !== 'production' && (
+              <p className="text-[11.5px] text-ach-navy/60">
+                <span className="font-medium">Dev detail:</span>{' '}
+                <code className="bg-ach-page px-1.5 py-0.5 rounded">
+                  {error.message || '(no message provided)'}
+                </code>
               </p>
             )}
             <div className="flex items-center gap-3 pt-2">
