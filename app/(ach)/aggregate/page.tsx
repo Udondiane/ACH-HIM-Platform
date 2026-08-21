@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { CapabilityRadar } from '@/components/charts/capability-radar';
+import { PrintButton } from '@/components/ui/print-button';
 import { computeUplift } from '@/lib/scoring/uplift';
 
 const DOMAIN_LABELS: Record<string, string> = {
@@ -114,15 +115,18 @@ export default async function AggregateDashboardPage() {
     <div className="max-w-6xl mx-auto">
       <PageHeader
         miniLabel="Reports"
-        title="Aggregate dashboard"
-        description="A network-wide roll-up of what every project's outcomes report shows. Click any project below to open its full outcomes report."
+        title="Aggregate impact report"
+        description="A network-wide roll-up of what every project's outcomes report shows. Print or save as PDF for a funder or board pack. Click any project below to open its full outcomes report."
         actions={
-          <Link href="/featured-quotes">
-            <span className="inline-flex items-center gap-1.5 text-[12px] text-ach-navy hover:text-ach-navy/70 underline underline-offset-2">
-              <Quote className="h-3.5 w-3.5" />
-              Featured quotes library
-            </span>
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link href="/featured-quotes">
+              <span className="inline-flex items-center gap-1.5 text-[12px] text-ach-navy hover:text-ach-navy/70 underline underline-offset-2">
+                <Quote className="h-3.5 w-3.5" />
+                Featured quotes library
+              </span>
+            </Link>
+            <PrintButton />
+          </div>
         }
       />
 
@@ -159,35 +163,46 @@ export default async function AggregateDashboardPage() {
         />
       </div>
 
+      {/* Radar renders only when there's data — a radar with no points
+          reads as broken rather than empty. Fine because the domain
+          bar-chart card below always renders and communicates the same
+          shape without needing every domain populated. */}
       {hasAnyAssessmentData && (
-        <>
-          <Card className="mb-5">
-            <CardHeader>
-              <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Network capability radar</div>
-              <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Baseline vs exit across all beneficiaries — visual view.</div>
-            </CardHeader>
-            <CardContent>
-              <CapabilityRadar data={radarData} mode="comparison" />
-            </CardContent>
-          </Card>
+        <Card className="mb-5">
+          <CardHeader>
+            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Network capability radar</div>
+            <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Baseline vs exit across all beneficiaries — visual view.</div>
+          </CardHeader>
+          <CardContent>
+            <CapabilityRadar data={radarData} mode="comparison" />
+          </CardContent>
+        </Card>
+      )}
 
-          <Card className="mb-5">
-            <CardHeader>
-              <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Change by capability domain</div>
-              <div className="text-[11.5px] text-ach-navy/55 mt-0.5">
-                Mean HIM score per domain — baseline to exit — averaged across every assessment on the platform. Bars are on the 0–5 scale.
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {networkUplift.map(u => {
-                const b = u.baselineAvg ?? 0;
-                const e = u.exitAvgCompleters ?? b;
-                const delta = (u.baselineAvg !== null && u.exitAvgCompleters !== null)
-                  ? u.exitAvgCompleters - u.baselineAvg : null;
-                const label = DOMAIN_LABELS[u.domain] ?? u.domain;
-                return (
-                  <div key={u.domain} className="grid grid-cols-[160px_1fr_160px] gap-4 items-center max-md:grid-cols-[120px_1fr_120px]">
-                    <div className="text-[13px] text-ach-navy">{label}</div>
+      {/* Change by capability domain — always renders. Domains with no
+          data show a dashed "Awaiting assessment data" row rather than
+          disappearing, so the seven-domain frame is always visible and
+          readers understand the shape of what will fill in over time. */}
+      <Card className="mb-5">
+        <CardHeader>
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Change by capability domain</div>
+          <div className="text-[11.5px] text-ach-navy/55 mt-0.5">
+            Mean HIM score per domain — baseline to exit — averaged across every assessment on the platform. Bars are on the 0–5 scale.
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {networkUplift.map(u => {
+            const b = u.baselineAvg ?? 0;
+            const e = u.exitAvgCompleters ?? b;
+            const delta = (u.baselineAvg !== null && u.exitAvgCompleters !== null)
+              ? u.exitAvgCompleters - u.baselineAvg : null;
+            const label = DOMAIN_LABELS[u.domain] ?? u.domain;
+            const hasAny = u.baselineAvg !== null || u.exitAvgCompleters !== null;
+            return (
+              <div key={u.domain} className="grid grid-cols-[160px_1fr_160px] gap-4 items-center max-md:grid-cols-[120px_1fr_120px]">
+                <div className="text-[13px] text-ach-navy">{label}</div>
+                {hasAny ? (
+                  <>
                     <div className="relative h-5 bg-ach-page rounded-[3px] overflow-hidden border-[0.5px] border-ach-border/70">
                       {u.baselineAvg !== null && (
                         <div className="absolute inset-y-0 left-0 bg-ach-navy/25" style={{ width: `${(b / 5) * 100}%` }} />
@@ -206,16 +221,23 @@ export default async function AggregateDashboardPage() {
                         </strong>
                       )}
                     </div>
-                  </div>
-                );
-              })}
-              <div className="pt-2 text-[11px] text-ach-navy/50 border-t-[0.5px] border-ach-border mt-3">
-                Navy bar = baseline mean · Gold bar = exit mean · Green delta = capability rose · Rose delta = capability fell.
+                  </>
+                ) : (
+                  <>
+                    <div className="h-5 rounded-[3px] border-[0.5px] border-dashed border-ach-border bg-ach-page/40 flex items-center px-2.5">
+                      <span className="text-[11px] italic text-ach-navy/50">Awaiting assessment data across the network.</span>
+                    </div>
+                    <div className="text-[11px] font-mono tabular-nums text-right text-ach-navy/40">—</div>
+                  </>
+                )}
               </div>
-            </CardContent>
-          </Card>
-        </>
-      )}
+            );
+          })}
+          <div className="pt-2 text-[11px] text-ach-navy/50 border-t-[0.5px] border-ach-border mt-3">
+            Navy bar = baseline mean · Gold bar = exit mean · Green delta = capability rose · Rose delta = capability fell.
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Per-project breakdown — only the numbers every funder wants at
           a glance, plus a link into the full outcomes report for depth. */}
