@@ -327,7 +327,7 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
       <div className="pt-5 border-t-[0.5px] border-ach-border">
         <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">Programme activities</div>
         <p className="text-[12px] text-ach-navy/60 mb-3">
-          Tick the activities this programme delivers. The assessment set is derived from this — you don&apos;t pick individual factors.
+          Tick the activities this programme delivers. The holistic impact assessment questions set is derived from this.
         </p>
         {relevantActivities.length === 0 ? (
           <div className="rounded-[10px] border border-dashed border-ach-border bg-ach-page/40 px-4 py-6 text-center">
