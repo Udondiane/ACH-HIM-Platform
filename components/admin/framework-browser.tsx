@@ -169,9 +169,6 @@ function FactorCard({ factor }: { factor: Factor }) {
       <CardHeader>
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="min-w-0">
-            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/55 mb-1">
-              <code className="font-mono">{factor.id}</code>
-            </div>
             <div className="text-[16px] font-medium text-ach-navy">{displayName(factor.name)}</div>
           </div>
           <div className="flex items-center gap-1.5 flex-wrap shrink-0">
