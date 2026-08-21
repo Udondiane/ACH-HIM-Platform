@@ -11,6 +11,8 @@ import { ConsentForm } from '@/components/candidates/consent-form';
 import { CandidateIdentity } from '@/components/ui/candidate-identity';
 import { ShortlistForPartner } from '@/components/candidates/shortlist-for-partner';
 import { AudioConsentToggle } from '@/components/candidates/audio-consent-toggle';
+import { ChangeHistoryPanel } from '@/components/candidates/change-history-panel';
+import { logCandidateAccess } from '@/lib/audit/access-log';
 
 export default async function CandidateDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -19,7 +21,7 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
   if (!candidate) notFound();
   const c = candidate as any;
 
-  const [consents, balance, placements, cohortCandidates, workforcePartners, shortlists, trainingEnrols, trainingCerts] = await Promise.all([
+  const [consents, balance, placements, cohortCandidates, workforcePartners, shortlists, trainingEnrols, trainingCerts, changeLog, statusTransitions, accessLog] = await Promise.all([
     supabase.from('candidate_consent').select('*').eq('candidate_id', params.id).order('given_at', { ascending: false }).limit(5),
     supabase.from('development_fund_balances').select('*').eq('candidate_id', params.id).maybeSingle(),
     supabase.from('placements').select('id, role_title, salary_band, start_date, status, partners(name)').eq('candidate_id', params.id).order('start_date', { ascending: false }).limit(5),
@@ -28,7 +30,13 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
     supabase.from('partner_shortlist').select('partner_id, withdrawn_at, notes').eq('candidate_id', params.id),
     supabase.from('training_enrolments').select('id, status, enrolled_date, completed_date, training_programmes(id, name, code, category)').eq('candidate_id', params.id).order('enrolled_date', { ascending: false }),
     supabase.from('training_certificates').select('id, certificate_number, issued_date, attendance_pct, training_programmes(name)').eq('candidate_id', params.id).order('issued_date', { ascending: false }),
+    supabase.from('candidate_change_log').select('id, changed_at, changed_by, field_name, old_value, new_value').eq('candidate_id', params.id).order('changed_at', { ascending: false }).limit(200),
+    supabase.from('candidate_status_transitions').select('id, from_status, to_status, changed_at, changed_by').eq('candidate_id', params.id).order('changed_at', { ascending: false }).limit(50),
+    supabase.from('candidate_access_log').select('id, accessed_at, accessed_by, access_type, route').eq('candidate_id', params.id).order('accessed_at', { ascending: false }).limit(50),
   ]);
+
+  // Log THIS view — fire-and-forget, never blocks the render.
+  void logCandidateAccess(params.id, { accessType: 'view', route: '/candidates/[id]' });
 
   const latestConsent = (consents.data as any[])?.[0];
   const bal = balance.data as any;
@@ -303,6 +311,18 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
           <ConsentForm candidateId={c.id} />
         </CardContent>
       </Card>
+
+      {/* Change history — automatic audit trail from migration 065.
+          Every field edit, status transition, and record view logged
+          to the corresponding audit table. Newest first, capped at 100
+          rendered rows. */}
+      <div className="mt-4">
+        <ChangeHistoryPanel
+          changes={(changeLog.data as any[]) ?? []}
+          transitions={(statusTransitions.data as any[]) ?? []}
+          accesses={(accessLog.data as any[]) ?? []}
+        />
+      </div>
     </div>
   );
 }
