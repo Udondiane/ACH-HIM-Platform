@@ -19,6 +19,12 @@ const DOMAIN_LABELS: Record<string, string> = {
 
 const ALL_DOMAINS = ['employment','housing','education','health','belonging','social','rights'];
 
+// Fully dynamic — every hit re-queries the DB. Combined with the
+// revalidatePath calls in every mutation action across the app this
+// guarantees the aggregate reflects reality at page-load time.
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function AggregateDashboardPage() {
   const supabase = createClient();
   const [

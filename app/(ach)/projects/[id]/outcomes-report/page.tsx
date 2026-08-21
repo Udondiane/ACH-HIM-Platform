@@ -6,6 +6,12 @@ import { PrintButton } from '@/components/ui/print-button';
 import { scoreToLevel } from '@/lib/scoring/interpret';
 
 export const metadata = { title: 'Project outcomes report' };
+// Fully dynamic — every hit re-queries the DB, no Next.js caching.
+// Combined with the revalidatePath calls in the mutation actions
+// (beneficiary_outcomes, assessments, project completion) this
+// guarantees the report reflects reality at page-load time.
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 const DOMAIN_LABELS: Record<string, { label: string; hint: string }> = {
   employment: { label: 'Employment',           hint: 'work, earnings, quality' },
