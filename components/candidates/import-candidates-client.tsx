@@ -51,10 +51,11 @@ export function ImportCandidatesClient({ cohorts, defaultCohortId }: { cohorts: 
 
       const mapped = raw.map(mapRow);
       setRows(mapped);
-      // Auto-tick rows without blocking errors
-      const auto = new Set<number>();
-      mapped.forEach((r, i) => { if (r.errors.length === 0) auto.add(i); });
-      setTicked(auto);
+      // Start with nothing ticked — staff should consciously choose who
+      // gets imported (skim the parsed rows, spot obvious mistakes) rather
+      // than defaulting to "everything valid goes in". "Select all" is
+      // one click away for the common case of importing the whole batch.
+      setTicked(new Set());
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Failed to parse file');
     }
@@ -161,9 +162,9 @@ export function ImportCandidatesClient({ cohorts, defaultCohortId }: { cohorts: 
               <strong>{rows.length}</strong> rows in file · <strong>{ticked.size}</strong> ticked to import · <strong>{rows.filter(r => r.errors.length > 0).length}</strong> with errors
             </div>
             <div className="flex items-center gap-2 text-[11.5px]">
-              <button type="button" onClick={() => tickAll(true)}  className="text-ach-navy underline">Tick all valid</button>
+              <button type="button" onClick={() => tickAll(true)}  className="text-ach-navy underline">Select all valid</button>
               <span className="text-ach-navy/40">·</span>
-              <button type="button" onClick={() => tickAll(false)} className="text-ach-navy underline">None</button>
+              <button type="button" onClick={() => tickAll(false)} className="text-ach-navy underline">Clear selection</button>
             </div>
           </div>
 

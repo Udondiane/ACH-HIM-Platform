@@ -371,6 +371,12 @@ export async function createProjectAction(_prev: ActionResult | null, fd: FormDa
   await autoSpawnTrainingProgrammesFromActivities(supabase, row!.id, ref, parsed.data.activities ?? []);
   await syncPartnersFromFunderName(supabase, parsed.data.funder_name, parsed.data.funding_model);
   await syncDataProviders(supabase, row!.id, parsed.data.partner_provides_standard_data, parsed.data.data_provider_emails);
+  // Auto-create the Main cohort straight away so bulk import, enrolment,
+  // and every other cohort-scoped action has somewhere to land without
+  // staff having to hand-create one. Runs after syncPartnersFromFunderName
+  // so any funders parsed out of the funder_name field are already in
+  // partners and get auto-linked to the new cohort.
+  await ensureDefaultCohortForProject(supabase, row!.id);
   revalidatePath('/projects');
   revalidatePath('/partners');
   revalidatePath('/cohorts/new');
