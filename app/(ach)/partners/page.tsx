@@ -1,9 +1,8 @@
 import Link from 'next/link';
-import { Building2, Plus } from 'lucide-react';
+import { Building2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/ui/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { PARTNER_TYPES, PARTNER_TYPE_LABELS } from '@/lib/partners/schema';
@@ -40,12 +39,7 @@ export default async function PartnersListPage({ searchParams }: { searchParams?
       <PageHeader
         miniLabel="Network"
         title="Partners"
-        description="Capability Investors, Workforce Partners, and Training Partners."
-        actions={
-          <Link href="/partners/new">
-            <Button><Plus className="h-4 w-4" />Add partner</Button>
-          </Link>
-        }
+        description="Capability Investors, Workforce Partners, and Training Partners. Partners are created through project setup — when a Programme Lead adds a project and names the partners involved, HIM auto-creates the partner records here."
       />
 
       <div className="flex items-center gap-2 mb-5 flex-wrap">
@@ -85,11 +79,9 @@ export default async function PartnersListPage({ searchParams }: { searchParams?
           <EmptyState
             icon={<Building2 className="h-10 w-10" />}
             title="No partners yet"
-            description="Add your first partner to begin tracking sponsorships, placements, and milestone payments."
+            description="Partners are created through project setup. Create a project and name the partners involved — HIM will add them here automatically."
             action={
-              <Link href="/partners/new">
-                <Button><Plus className="h-4 w-4" />Add partner</Button>
-              </Link>
+              <Link href="/projects/new" className="btn-primary inline-flex">Create a project</Link>
             }
           />
         </Card>

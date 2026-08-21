@@ -15,9 +15,9 @@ import { PrivacyModeToggle } from '@/components/ui/privacy-mode-toggle';
 const NAV = [
   { href: '/dashboard',          label: 'Dashboard',        icon: LayoutDashboard },
   { section: 'Network' },
+  { href: '/projects',           label: 'Projects',         icon: FolderKanban },
   { href: '/partners',           label: 'Partners',         icon: Building2 },
   { href: '/candidates',         label: 'Beneficiaries',    icon: Users },
-  { href: '/projects',           label: 'Projects',         icon: FolderKanban },
   { section: 'Delivery' },
   { href: '/training',           label: 'Training',         icon: GraduationCap },
   { href: '/training/my',        label: 'My classes',       icon: ScrollText },

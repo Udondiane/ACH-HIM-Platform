@@ -1,7 +1,15 @@
 import { z } from 'zod';
 
 export const PARTNER_TYPES = ['capability_investor', 'workforce_partner', 'training_partner', 'grant_funder'] as const;
-export const PARTNER_STATUSES = ['prospect', 'active', 'paused', 'closed'] as const;
+
+/**
+ * Partner statuses.
+ * 'prospect' removed as a workflow — partners are only created through
+ * project setup now (auto-created from project.funder_name), so every
+ * partner exists because of real work. No more speculative pipeline
+ * records cluttering the list.
+ */
+export const PARTNER_STATUSES = ['active', 'paused', 'closed'] as const;
 
 export const PARTNER_TYPE_LABELS: Record<typeof PARTNER_TYPES[number], string> = {
   capability_investor: 'Capability Investor',
@@ -23,7 +31,6 @@ export const PARTNER_TYPE_HINTS: Record<typeof PARTNER_TYPES[number], string> = 
 export const COMMERCIAL_PARTNER_TYPES = ['capability_investor', 'workforce_partner', 'training_partner'] as const;
 
 export const PARTNER_STATUS_LABELS: Record<typeof PARTNER_STATUSES[number], string> = {
-  prospect: 'Prospect',
   active:   'Active',
   paused:   'Paused',
   closed:   'Closed',
@@ -32,7 +39,7 @@ export const PARTNER_STATUS_LABELS: Record<typeof PARTNER_STATUSES[number], stri
 export const partnerSchema = z.object({
   name: z.string().trim().min(1, 'Name required').max(200),
   types: z.array(z.enum(PARTNER_TYPES)).min(1, 'Pick at least one partner type'),
-  status: z.enum(PARTNER_STATUSES).default('prospect'),
+  status: z.enum(PARTNER_STATUSES).default('active'),
   sector: z.string().trim().max(120).optional().or(z.literal('')),
   region: z.string().trim().max(120).optional().or(z.literal('')),
   website: z.string().trim().max(300).optional().or(z.literal('')),
