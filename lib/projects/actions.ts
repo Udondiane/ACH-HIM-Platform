@@ -547,7 +547,11 @@ export async function ensureDefaultCohortForProject(
     .from('cohorts')
     .insert({
       cohort_ref: cohortRef,
-      name: `Main — ${p.project_ref}`,
+      // Keep the name short and unhyphenated — the cohort_ref badge
+      // already carries the project context (e.g. "PRJ-2026-006-MAIN").
+      // Long hyphen-heavy names ("Main — PRJ-2026-006") were breaking
+      // character-by-character in narrow layouts.
+      name: 'Main cohort',
       project_id: projectId,
       structure: 'multi_partner',
       service_type: 'full_programme',

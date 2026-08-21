@@ -33,21 +33,24 @@ export function PageHeader({
           {backLabel ?? 'Back'}
         </Link>
       )}
-      <div className="flex items-start justify-between gap-4">
-        <div>
+      <div className="flex items-start justify-between gap-4 min-w-0">
+        <div className="min-w-0 flex-1">
           {miniLabel && (
-            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-1.5">
+            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-1.5 break-all">
               {miniLabel}
             </div>
           )}
-          <h1 className="text-[26px] font-medium tracking-[-0.5px] text-ach-navy leading-tight">
+          {/* Responsive header size + overflow-wrap keeps long titles
+              legible in narrow containers (side panels, mobile). Font
+              scales up on wider viewports. */}
+          <h1 className="text-[20px] sm:text-[24px] md:text-[26px] font-medium tracking-[-0.5px] text-ach-navy leading-tight [overflow-wrap:break-word]">
             {title}
           </h1>
           {description && (
             <p className="text-[13px] text-ach-navy/60 mt-1.5 max-w-2xl">{description}</p>
           )}
         </div>
-        {actions && <div className="flex items-center gap-2">{actions}</div>}
+        {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
       </div>
     </div>
   );
