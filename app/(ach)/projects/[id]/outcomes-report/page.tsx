@@ -58,7 +58,12 @@ export default async function ProjectOutcomesReportPage({ params }: { params: { 
       assessments!inner(id, cohort_id, timepoint, project_id)
     `).eq('assessments.project_id', params.id),
     supabase.from('placements').select('candidate_id, partner_id, start_date, salary_pence'),
-    supabase.from('featured_quotes').select('quote_text, context, speaker_type, use_anonymised, display_name, candidates(candidate_ref, given_name, country_of_origin, arrival_year)').is('archived_at', null).limit(20),
+    // Scope quotes to this project — either the quote is tagged with
+    // one of this project's cohorts, or its candidate is enrolled in
+    // one of this project's cohorts. Fetching happens in two steps
+    // below because Supabase's REST filter language can't do an OR
+    // across a join in one query.
+    supabase.from('featured_quotes').select('quote_text, context, speaker_type, use_anonymised, display_name, candidate_id, cohort_id, candidates(candidate_ref, given_name, country_of_origin, arrival_year)').is('archived_at', null).limit(200),
     supabase.from('cohort_partners').select('cohort_id, is_lead_partner, partners(id, name, types)'),
     supabase.from('project_activities').select('activity').eq('project_id', params.id),
     supabase.from('beneficiary_outcomes').select('candidate_id, outcome_key').eq('project_id', params.id),
@@ -131,7 +136,20 @@ export default async function ProjectOutcomesReportPage({ params }: { params: { 
     .map(o => ({ ...o, val: outcomeCounts[o.key] ?? 0 }))
     .filter(o => o.val > 0);
 
-  const featured = quotes.filter((q: any) => q.quote_text).slice(0, 4);
+  // Filter quotes to this project only. A quote counts as belonging
+  // to this project when either its cohort_id is one of the project's
+  // cohorts, or its candidate is enrolled in one of the project's
+  // cohorts. Belt-and-braces: earlier quotes may not have had a
+  // cohort_id set at capture time, so the candidate-enrolment path
+  // catches those retroactively.
+  const projectCandidateIds = new Set(candidates.map((c: any) => c.id));
+  const scopedQuotes = quotes.filter((q: any) => {
+    if (!q.quote_text) return false;
+    if (q.cohort_id && cohortIds.has(q.cohort_id)) return true;
+    if (q.candidate_id && projectCandidateIds.has(q.candidate_id)) return true;
+    return false;
+  });
+  const featured = scopedQuotes.slice(0, 4);
 
   const meanBaseline = domainRows.filter(d => d.baseline !== null).reduce((s, d) => s + (d.baseline ?? 0), 0)
     / Math.max(1, domainRows.filter(d => d.baseline !== null).length);
