@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Building2, Users, FolderKanban,
-  PoundSterling, GraduationCap, CalendarDays,
-  ScrollText, Calculator, Quote, Phone, BookOpen, ArrowLeftRight, Library,
+  GraduationCap,
+  ScrollText, Quote, BookOpen, ArrowLeftRight, Library,
   ChevronsLeft, ChevronsRight, Sparkles, ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -21,11 +21,13 @@ const NAV = [
   { section: 'Delivery' },
   { href: '/training',           label: 'Training',         icon: GraduationCap },
   { href: '/training/my',        label: 'My classes',       icon: ScrollText },
-  { section: 'Operations' },
-  { href: '/follow-ups',         label: 'Follow-ups',       icon: Phone },
-  { href: '/placements/timepoints', label: 'Placement timepoints', icon: CalendarDays },
-  { href: '/pricing',            label: 'Pricing tool',     icon: Calculator },
-  { href: '/development-fund',   label: 'Development fund', icon: PoundSterling },
+  // Operations section removed from the sidebar for the launch build —
+  // Follow-ups, Placement timepoints, Pricing tool and Development fund
+  // aren't part of the ICT training scope. Their pages remain functional
+  // at their existing URLs, so links from elsewhere still work and no
+  // data is lost; they're simply not discoverable via primary navigation
+  // until the workflows are finalised. Add the section back to NAV to
+  // restore access when ready.
   { section: 'Reports' },
   { href: '/aggregate',          label: 'Aggregate',        icon: LayoutDashboard },
   { href: '/impact-library',     label: 'Impact library',   icon: Library },
