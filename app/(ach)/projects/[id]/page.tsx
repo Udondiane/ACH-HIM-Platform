@@ -260,7 +260,10 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
       </div>
 
       <Card className="mb-4">
-        <details>
+        {/* `group` on <details> is what makes group-open:* actually
+            fire on descendants — without it, the affordance below never
+            switched between Expand / Collapse. */}
+        <details className="group">
           <summary className="cursor-pointer list-none px-5 py-3 flex items-center justify-between hover:bg-ach-page/40 transition-colors rounded-t-[12px]">
             <div>
               <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Capability selection</div>
@@ -268,7 +271,10 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
                 {caps.filter((c: any) => c.role === 'core').length} Core · {caps.filter((c: any) => c.role === 'optional').length} Optional · {7 - caps.length} Excluded
               </div>
             </div>
-            <span className="text-[11px] text-ach-navy/50 group-open:hidden">Expand to change</span>
+            <span className="text-[11px] text-ach-navy/50">
+              <span className="group-open:hidden">Expand to change</span>
+              <span className="hidden group-open:inline">Collapse</span>
+            </span>
           </summary>
           <div className="px-5 pb-5 pt-1 border-t-[0.5px] border-ach-border">
             <CapabilityPicker projectId={p.id} initial={caps} />
