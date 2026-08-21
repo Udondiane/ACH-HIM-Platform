@@ -161,16 +161,46 @@ export async function bulkImportCandidatesAction(input: {
       application_source_data: Object.keys(r.application_source_data).length > 0 ? r.application_source_data : null,
     };
 
-    const { data, error: insErr } = await supabase
-      .from('candidates')
-      .insert(insert as never)
-      .select('id')
-      .single();
+    // Defensive insert: if migration 064 hasn't been applied yet, some
+    // of the extended columns won't exist and PostgREST returns
+    // "Could not find the 'gender' column of 'candidates' in the
+    // schema cache". Rather than fail the whole row, strip the missing
+    // column into application_source_data and retry, up to 10 columns.
+    let insertPayload = { ...insert };
+    let insertError: { message: string } | null = null;
+    let insertedRow: { id: string } | null = null;
+    for (let attempt = 0; attempt < 10; attempt++) {
+      const res = await supabase
+        .from('candidates')
+        .insert(insertPayload as never)
+        .select('id')
+        .single();
+      if (!res.error) { insertedRow = res.data as { id: string }; insertError = null; break; }
+      insertError = res.error;
+      const missingColMatch = res.error.message.match(/Could not find the '([^']+)' column/i)
+        ?? res.error.message.match(/column "([^"]+)" of relation "candidates" does not exist/i);
+      if (!missingColMatch) break;
+      const missingCol = missingColMatch[1];
+      // Move the missing column's value into application_source_data
+      // so no data is lost, then retry without that column.
+      const dropped = insertPayload[missingCol as keyof typeof insertPayload];
+      if (dropped !== null && dropped !== undefined) {
+        const existingBlob = (insertPayload.application_source_data ?? {}) as Record<string, unknown>;
+        insertPayload = {
+          ...insertPayload,
+          application_source_data: { ...existingBlob, [`_pending_${missingCol}`]: dropped },
+        };
+      }
+      delete (insertPayload as Record<string, unknown>)[missingCol];
+    }
 
-    if (insErr) { failed.push({ row: i + 1, error: insErr.message }); continue; }
+    if (insertError || !insertedRow) {
+      failed.push({ row: i + 1, error: insertError?.message ?? 'Unknown insert error' });
+      continue;
+    }
     created++;
 
-    const candidateId = (data as { id: string } | null)?.id;
+    const candidateId = insertedRow.id;
     if (input.cohortId && candidateId) {
       await supabase
         .from('cohort_candidates')

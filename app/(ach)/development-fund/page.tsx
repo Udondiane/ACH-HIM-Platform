@@ -1,207 +1,133 @@
-import { PoundSterling, BookOpen } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
+import { PoundSterling, Sparkles, ArrowRight, Info } from 'lucide-react';
 import { PageHeader } from '@/components/ui/page-header';
-import { EmptyState } from '@/components/ui/empty-state';
-import { formatGbp, formatGbpDetailed, formatDate } from '@/lib/utils/format';
-import { TrainingRequestRow } from '@/components/dev-fund/training-request-row';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 
-const STATE_TONES: Record<string, 'default' | 'active' | 'paused' | 'closed' | 'prospect'> = {
-  submitted: 'prospect',
-  in_review: 'paused',
-  approved: 'active',
-  declined: 'closed',
-  appealed: 'paused',
-  enrolled: 'active',
-  completed: 'active',
-  withdrawn: 'closed',
-};
+export const metadata = { title: 'Development fund · Coming soon' };
 
-const CAT_LABELS: Record<string, string> = {
-  accredited_qual_l2_l5: 'Accredited L2–L5',
-  sector_certification: 'Sector cert',
-  language_qualification: 'Language',
-  soft_skills_progression: 'Soft skills',
-  pre_degree_access: 'Pre-degree access',
-  ineligible: 'Ineligible',
-};
-
-export default async function DevelopmentFundPage() {
-  const supabase = createClient();
-  const [balanceRes, requestsRes, catalogueRes] = await Promise.all([
-    supabase
-      .from('development_fund_balances')
-      .select('candidate_id, total_credited, total_spent, total_match_funding, candidates(candidate_ref, given_name, family_name, status)')
-      .order('total_credited', { ascending: false }),
-    supabase
-      .from('training_requests')
-      .select('id, candidate_id, training_id, custom_title, custom_provider, custom_cost, career_rationale, state, review_notes, created_at, candidates(candidate_ref), training_catalogue(title, provider, total_cost)')
-      .order('created_at', { ascending: false })
-      .limit(30),
-    supabase
-      .from('training_catalogue')
-      .select('id, provider, title, category, level, duration_weeks, total_cost, is_active')
-      .eq('is_active', true)
-      .order('provider'),
-  ]);
-
-  const balances = (balanceRes.data as any[]) ?? [];
-  const requests = (requestsRes.data as any[]) ?? [];
-  const catalogue = (catalogueRes.data as any[]) ?? [];
-
-  const totals = balances.reduce(
-    (acc, b) => {
-      acc.credited += Number(b.total_credited ?? 0);
-      acc.spent += Number(b.total_spent ?? 0);
-      acc.match += Number(b.total_match_funding ?? 0);
-      return acc;
-    },
-    { credited: 0, spent: 0, match: 0 },
-  );
-  const available = totals.credited + totals.match - totals.spent;
-
-  const pendingRequests = requests.filter(r => r.state === 'submitted' || r.state === 'in_review' || r.state === 'appealed');
-
+/**
+ * The Development Fund module is deferred to a future release. The
+ * intended model is different from what the earlier prototype captured:
+ * a fund that grows from partner retention fees and re-invests a
+ * defined share back into beneficiary training. Shelved rather than
+ * deleted — the underlying tables (development_fund_balances,
+ * training_requests, training_catalogue) stay in the DB so no data
+ * that already exists is lost, and the full page can be re-enabled
+ * once the funding rules are settled.
+ */
+export default function DevelopmentFundComingSoonPage() {
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-4xl mx-auto">
       <PageHeader
         miniLabel="Operations"
-        title="Candidate Development Fund"
-        description="Spec §14 — retention milestone payments ringfenced for candidate-led development training. Approve, decline, or appeal training requests."
+        title="Development fund"
+        description="Coming in a future release. Design still being finalised with ACH's finance and workforce leads."
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-5">
-        <Stat label="Total credited" value={formatGbp(totals.credited)} subline="from milestones + match" />
-        <Stat label="Total spent" value={formatGbp(totals.spent)} subline={`across ${balances.length} candidates`} />
-        <Stat label="Available fund" value={formatGbp(available)} subline="credited − spent" />
-        <Stat label="Pending requests" value={String(pendingRequests.length)} subline="awaiting decision" />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <Card>
-          <CardHeader>
-            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Training requests</div>
-          </CardHeader>
-          <CardContent className="pt-0">
-            {requests.length === 0 ? (
-              <EmptyState
-                icon={<PoundSterling className="h-8 w-8" />}
-                title="No requests yet"
-                description="Candidate-led training requests will appear here once submitted."
-              />
-            ) : (
-              <div className="space-y-2.5">
-                {requests.map(r => (
-                  <TrainingRequestRow
-                    key={r.id}
-                    request={{
-                      id: r.id,
-                      title: r.training_catalogue?.title ?? r.custom_title ?? 'Custom training',
-                      provider: r.training_catalogue?.provider ?? r.custom_provider ?? '—',
-                      cost: Number(r.training_catalogue?.total_cost ?? r.custom_cost ?? 0),
-                      candidateRef: r.candidates?.candidate_ref ?? '—',
-                      state: r.state,
-                      rationale: r.career_rationale ?? '',
-                      reviewNotes: r.review_notes ?? '',
-                      stateVariant: STATE_TONES[r.state] ?? 'default',
-                    }}
-                  />
-                ))}
+      <Card className="mb-5">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-[#B8843C]" />
+            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">
+              Upcoming feature · Not yet available in this build
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div className="rounded-[10px] border-[0.5px] border-ach-border bg-ach-page/40 p-4">
+            <div className="flex items-start gap-2.5">
+              <Info className="h-4 w-4 mt-0.5 text-ach-navy/60 shrink-0" />
+              <div className="text-[13px] text-ach-navy/80 space-y-2 flex-1">
+                <p>
+                  This surface is <strong>parked</strong> until the funding rules are finalised.
+                  The earlier prototype modelled a one-way discretionary grant pool, but ACH&apos;s
+                  actual model is a <strong>retention-fee funded loop</strong> — the details still
+                  need signing off with finance and the workforce partner team.
+                </p>
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+          </div>
 
-        <div className="space-y-5">
-          <Card>
-            <CardHeader>
-              <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Per-candidate balances</div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              {balances.length === 0 ? (
-                <p className="text-[13px] text-ach-navy/60 py-4">No candidate balances yet.</p>
-              ) : (
-                <table className="w-full text-[13px]">
-                  <thead>
-                    <tr className="border-b-[0.5px] border-ach-border">
-                      <Th>Candidate</Th>
-                      <Th className="text-right">Credited</Th>
-                      <Th className="text-right">Spent</Th>
-                      <Th className="text-right">Available</Th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {balances.map(b => {
-                      const credit = Number(b.total_credited ?? 0);
-                      const match = Number(b.total_match_funding ?? 0);
-                      const spent = Number(b.total_spent ?? 0);
-                      const avail = credit + match - spent;
-                      return (
-                        <tr key={b.candidate_id} className="border-b-[0.5px] border-ach-border last:border-0">
-                          <Td>
-                            <div className="text-ach-navy font-medium">{b.candidates?.candidate_ref ?? '—'}</div>
-                            <div className="text-[11px] text-ach-navy/50">{b.candidates?.status ?? ''}</div>
-                          </Td>
-                          <Td className="text-right tabular-nums text-ach-navy/80">{formatGbpDetailed(credit + match)}</Td>
-                          <Td className="text-right tabular-nums text-ach-navy/80">{formatGbpDetailed(spent)}</Td>
-                          <Td className="text-right tabular-nums font-medium text-ach-navy">{formatGbpDetailed(avail)}</Td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Training catalogue</div>
-                <BookOpen className="h-4 w-4 text-ach-navy/40" />
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              {catalogue.length === 0 ? (
-                <p className="text-[13px] text-ach-navy/60 py-4">Catalogue is empty.</p>
-              ) : (
-                <div className="space-y-2">
-                  {catalogue.slice(0, 10).map(t => (
-                    <div key={t.id} className="flex items-start justify-between gap-3 py-2 border-b-[0.5px] border-ach-border last:border-0">
-                      <div className="min-w-0">
-                        <div className="text-[13px] text-ach-navy font-medium">{t.title}</div>
-                        <div className="text-[11px] text-ach-navy/60">{t.provider} · {t.level ?? '—'} · {t.duration_weeks ?? '—'} wks</div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <div className="text-[13px] text-ach-navy tabular-nums">{formatGbpDetailed(t.total_cost)}</div>
-                        <Badge>{CAT_LABELS[t.category] ?? t.category}</Badge>
-                      </div>
-                    </div>
-                  ))}
+          <div>
+            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">
+              How the fund will work
+            </div>
+            <ol className="space-y-3 text-[13px] text-ach-navy/85">
+              <li className="flex items-start gap-3">
+                <span className="shrink-0 mt-0.5 h-5 w-5 rounded-full bg-ach-navy/10 text-ach-navy text-[11px] font-mono flex items-center justify-center">1</span>
+                <div>
+                  <strong>Retention-linked charge to the employer.</strong> Once a beneficiary is
+                  placed with a partner and retained past an agreed milestone (typically 6 months),
+                  a percentage of their annual salary is invoiced to the employer as a
+                  retention-based success fee.
                 </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="shrink-0 mt-0.5 h-5 w-5 rounded-full bg-ach-navy/10 text-ach-navy text-[11px] font-mono flex items-center justify-center">2</span>
+                <div>
+                  <strong>Split into two pools.</strong> A defined share of every retention-fee
+                  payment flows into the Development Fund; the remainder covers ACH&apos;s delivery
+                  cost recovery.
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="shrink-0 mt-0.5 h-5 w-5 rounded-full bg-ach-navy/10 text-ach-navy text-[11px] font-mono flex items-center justify-center">3</span>
+                <div>
+                  <strong>Re-invested back into beneficiary training.</strong> The fund
+                  underwrites accredited qualifications, sector certifications, language and
+                  digital skills, pre-degree access — anything that raises the earning ceiling
+                  of a placed beneficiary or unlocks progression for someone still enrolled.
+                </div>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="shrink-0 mt-0.5 h-5 w-5 rounded-full bg-ach-navy/10 text-ach-navy text-[11px] font-mono flex items-center justify-center">4</span>
+                <div>
+                  <strong>Transparent per-candidate ledger.</strong> Every beneficiary can see
+                  what their placement retention has credited to the pool and what they&apos;ve
+                  drawn against it — accountability in both directions.
+                </div>
+              </li>
+            </ol>
+          </div>
+
+          <div>
+            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">
+              What we&apos;re waiting on
+            </div>
+            <ul className="text-[13px] text-ach-navy/80 space-y-1.5 list-disc pl-5">
+              <li>ACH finance sign-off on the retention-fee percentage and the split ratio into the fund.</li>
+              <li>Workforce partner team confirmation that new commercial contracts include the retention-fee clause.</li>
+              <li>Governance for approvals — who signs off on individual training grants, and against what criteria.</li>
+              <li>Match-funding rules — whether a partner can top up the fund for their own placements.</li>
+            </ul>
+          </div>
+
+          <div>
+            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-2">
+              What&apos;s already built and paused
+            </div>
+            <ul className="text-[13px] text-ach-navy/80 space-y-1.5 list-disc pl-5">
+              <li><strong>Training catalogue</strong> — accredited courses (L2–L5), sector certifications, language qualifications, soft-skills progressions, pre-degree access, categorised.</li>
+              <li><strong>Training request workflow</strong> — beneficiary submits, ACH reviews, approve/decline, enrol, complete or withdraw.</li>
+              <li><strong>Balance ledger</strong> — per-beneficiary running total of credited / spent / match-funded amounts.</li>
+              <li><strong>Database tables preserved</strong> — <code className="text-[11.5px] bg-ach-page px-1.5 py-0.5 rounded">development_fund_balances</code>, <code className="text-[11.5px] bg-ach-page px-1.5 py-0.5 rounded">training_requests</code>, <code className="text-[11.5px] bg-ach-page px-1.5 py-0.5 rounded">training_catalogue</code>. Nothing already captured has been dropped.</li>
+            </ul>
+          </div>
+
+          <div className="pt-3 border-t-[0.5px] border-ach-border text-[12px] text-ach-navy/60">
+            Until this ships, the same training programmes ACH already delivers (
+            <Link href="/training" className="text-ach-navy underline underline-offset-2">Delivery → Training</Link>
+            ) remain the primary training pathway. Individual training grants outside those
+            programmes should continue to be logged in ACH&apos;s existing finance system.
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="text-center">
+        <Link href="/dashboard" className="inline-flex items-center gap-1 text-[13px] text-ach-navy/70 hover:text-ach-navy underline underline-offset-2">
+          Back to dashboard <ArrowRight className="h-3 w-3" />
+        </Link>
       </div>
     </div>
   );
-}
-
-function Stat({ label, value, subline }: { label: string; value: string; subline?: string }) {
-  return (
-    <Card className="px-5 py-4">
-      <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">{label}</div>
-      <div className="text-[22px] font-medium tracking-[-0.5px] text-ach-navy mt-2 leading-none tabular-nums">{value}</div>
-      {subline && <div className="text-[11px] text-ach-navy/60 mt-2">{subline}</div>}
-    </Card>
-  );
-}
-
-function Th({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <th className={`text-left py-2 text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium ${className}`}>{children}</th>;
-}
-function Td({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <td className={`py-2 ${className}`}>{children}</td>;
 }

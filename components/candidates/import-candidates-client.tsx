@@ -14,7 +14,7 @@ export function ImportCandidatesClient({ cohorts, defaultCohortId }: { cohorts: 
   const [ticked, setTicked] = useState<Set<number>>(new Set());
   const [cohortId, setCohortId] = useState<string>(defaultCohortId ?? '');
   const [pending, startTransition] = useTransition();
-  const [result, setResult] = useState<{ created: number; skipped: number; failed: number } | null>(null);
+  const [result, setResult] = useState<{ created: number; skipped: number; failed: number; failedDetails: Array<{ row: number; error: string }> } | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   const onFile = async (f: File) => {
@@ -91,9 +91,18 @@ export function ImportCandidatesClient({ cohorts, defaultCohortId }: { cohorts: 
         cohortId: cohortId || undefined,
       });
       if (!res.ok) { setErr(res.error); return; }
-      setResult({ created: res.created, skipped: res.skipped_duplicates, failed: res.failed.length });
-      // Clear the imported rows so accidental re-import is harder
-      setRows([]);
+      setResult({
+        created: res.created,
+        skipped: res.skipped_duplicates,
+        failed: res.failed.length,
+        failedDetails: res.failed,
+      });
+      // Keep failed rows visible in the table so the user can see which
+      // ones didn't land. Only clear the ticked set — a re-attempt is a
+      // deliberate act. Also clear if everything succeeded.
+      if (res.failed.length === 0) {
+        setRows([]);
+      }
       setTicked(new Set());
     });
   };
@@ -244,16 +253,65 @@ export function ImportCandidatesClient({ cohorts, defaultCohortId }: { cohorts: 
       )}
 
       {result && (
-        <div className="rounded-[10px] border-[0.5px] border-emerald-200 bg-emerald-50/60 p-3 text-[12.5px] text-emerald-900">
+        <div className={`rounded-[10px] border-[0.5px] p-3 text-[12.5px] ${
+          result.failed > 0 && result.created === 0
+            ? 'border-[#8B3A4F]/30 bg-ach-rose/10 text-[#8B3A4F]'
+            : result.failed > 0
+              ? 'border-[#E8C25E]/40 bg-[#E8C25E]/10 text-ach-navy'
+              : 'border-emerald-200 bg-emerald-50/60 text-emerald-900'
+        }`}>
           <div className="flex items-center gap-2 font-medium">
-            <CheckCircle2 className="h-4 w-4" />
-            Import complete
+            {result.failed > 0 && result.created === 0
+              ? <AlertCircle className="h-4 w-4" />
+              : <CheckCircle2 className="h-4 w-4" />}
+            {result.failed > 0 && result.created === 0
+              ? 'Import failed'
+              : result.failed > 0
+                ? 'Import partially completed'
+                : 'Import complete'}
           </div>
-          <div className="mt-1 text-emerald-800">
+          <div className="mt-1">
             {result.created} candidate{result.created === 1 ? '' : 's'} created
             {result.skipped > 0 && ` · ${result.skipped} skipped (duplicate email or NI number)`}
             {result.failed > 0 && ` · ${result.failed} failed to import`}
           </div>
+          {result.failedDetails.length > 0 && (
+            <details className="mt-3 text-[12px]">
+              <summary className="cursor-pointer font-medium underline underline-offset-2">
+                Why {result.failed === 1 ? 'this row' : 'these rows'} failed
+              </summary>
+              <div className="mt-2 space-y-2">
+                {(() => {
+                  // Group by identical error message so the same root
+                  // cause across many rows shows once, not ten times.
+                  const groups = new Map<string, number[]>();
+                  for (const f of result.failedDetails) {
+                    if (!groups.has(f.error)) groups.set(f.error, []);
+                    groups.get(f.error)!.push(f.row);
+                  }
+                  return Array.from(groups.entries()).map(([msg, rows]) => (
+                    <div key={msg} className="rounded-[8px] bg-white/60 border-[0.5px] border-current/20 px-2.5 py-2">
+                      <div className="font-mono text-[11.5px] break-words">{msg}</div>
+                      <div className="text-[11px] opacity-70 mt-1">
+                        Affects row{rows.length === 1 ? '' : 's'} {rows.slice(0, 20).join(', ')}
+                        {rows.length > 20 && ` +${rows.length - 20} more`}
+                      </div>
+                      {(/column.*does not exist|schema cache|Could not find/i.test(msg)) && (
+                        <div className="text-[11.5px] mt-2 pt-2 border-t border-current/15">
+                          <strong>Likely cause:</strong> a database migration has not been applied.
+                          The bulk import writes columns that migration 064
+                          adds (email, phone, date_of_birth, gender, immigration_status, etc.).
+                          If those columns aren&apos;t on the DB yet, PostgREST refuses the insert.
+                          Ask your ICT team to paste the migration 064 SQL block into the
+                          Supabase SQL Editor, then retry.
+                        </div>
+                      )}
+                    </div>
+                  ));
+                })()}
+              </div>
+            </details>
+          )}
         </div>
       )}
     </div>
