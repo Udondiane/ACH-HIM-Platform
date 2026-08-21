@@ -5,6 +5,42 @@ import { Search } from 'lucide-react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 
+/**
+ * If a factor's stored `name` value looks like a raw key
+ * (all-caps snake_case, or lowercase snake_case that matches the id
+ * shape), prettify it for display: strip the domain-prefix + type
+ * marker (e.g. BELONG_P_ / emp_e_), replace underscores with spaces,
+ * and Title-Case it. Otherwise return the name unchanged.
+ *
+ * Defensive: framework data seeded from earlier taxonomy migrations
+ * had raw keys in the name column; the reseed migration (059) fixed
+ * this, but this formatter guards against display leakage in any
+ * environment where the reseed has not yet been applied.
+ */
+function displayName(name: string): string {
+  if (!name) return '';
+  const looksLikeKey = /^[A-Z0-9_]+$/.test(name) || /^[a-z0-9_]+$/.test(name);
+  if (!looksLikeKey) return name;
+
+  // Strip common domain + type prefixes (e.g. "BELONG_P_", "emp_e_", "rights_s_")
+  const stripped = name.replace(
+    /^(?:BELONG|EMP|EMPLOYMENT|EDU|EDUCATION|HEALTH|HOUSING|SOCIAL|RIGHTS)_[PSCEC]_/i,
+    '',
+  );
+
+  const spaced = stripped.replace(/_/g, ' ').toLowerCase().trim();
+  // Title-case each word, but keep short connectors lowercase
+  const smallWords = new Set(['and', 'or', 'the', 'of', 'in', 'to', 'a', 'for', 'on']);
+  return spaced
+    .split(' ')
+    .map((w, i) =>
+      i === 0 || !smallWords.has(w)
+        ? w.charAt(0).toUpperCase() + w.slice(1)
+        : w,
+    )
+    .join(' ');
+}
+
 interface Factor {
   id: string;
   name: string;
@@ -136,7 +172,7 @@ function FactorCard({ factor }: { factor: Factor }) {
             <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/55 mb-1">
               <code className="font-mono">{factor.id}</code>
             </div>
-            <div className="text-[16px] font-medium text-ach-navy">{factor.name}</div>
+            <div className="text-[16px] font-medium text-ach-navy">{displayName(factor.name)}</div>
           </div>
           <div className="flex items-center gap-1.5 flex-wrap shrink-0">
             {factor.domains.map(d => (
