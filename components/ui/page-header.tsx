@@ -13,6 +13,26 @@ interface PageHeaderProps {
   className?: string;
 }
 
+/**
+ * Page header — used on every top-of-page block in the app.
+ *
+ * Layout is DELIBERATELY always stacked (title row above actions row),
+ * never side-by-side. Previously we tried responsive `md:flex-row` to
+ * put actions to the right of the title on wider viewports. That was
+ * fragile because Tailwind breakpoints watch the VIEWPORT, not the
+ * component's container — so any page that renders the header inside
+ * a narrow column (side panel, dashboard tile, split view) would
+ * squeeze the title into ~120px while Tailwind still thought there
+ * was room for actions alongside. Result: titles wrapping
+ * character-by-character because the browser's only remaining break
+ * point was the letters themselves.
+ *
+ * Vertical stacking removes that whole class of bug in one line. The
+ * title always gets 100% of the container width. Actions sit on the
+ * next row and wrap onto multiple lines if there are many. This is
+ * the "small extra vertical space" cost for "never breaks visually"
+ * — the trade is worth it every time.
+ */
 export function PageHeader({
   miniLabel,
   title,
@@ -23,7 +43,7 @@ export function PageHeader({
   className,
 }: PageHeaderProps) {
   return (
-    <div className={cn('flex flex-col gap-3 mb-8', className)}>
+    <div className={cn('flex flex-col gap-3 mb-8 min-w-0', className)}>
       {backHref && (
         <Link
           href={backHref}
@@ -33,43 +53,24 @@ export function PageHeader({
           {backLabel ?? 'Back'}
         </Link>
       )}
-      {/* Responsive header layout:
-          - Narrow viewports: stack title above actions so the title gets
-            the full page width (no fighting five action buttons for
-            space). Actions wrap onto multiple rows if there are many.
-          - Wide viewports (md+): side-by-side, title left, actions right. */}
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 min-w-0">
-        <div className="min-w-0 flex-1">
-          {miniLabel && (
-            // overflow-wrap:anywhere lets a long ref token fold at any
-            // character IF it truly won't fit, but only as a last resort —
-            // whitespace + hyphens still take priority. break-all was
-            // aggressively splitting every character; this is the humane
-            // version.
-            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-1.5 [overflow-wrap:anywhere]">
-              {miniLabel}
-            </div>
-          )}
-          {/* Header sizing:
-              - Modest base font (18px) that fits comfortably in narrow
-                sidebars before we ever start breaking words.
-              - overflow-wrap:normal + hyphens:manual = only break at
-                natural whitespace, never mid-word. If the title genuinely
-                doesn't fit, it overflows rather than being sliced
-                character-by-character (which is worse). */}
-          <h1 className="text-[18px] sm:text-[22px] md:text-[26px] font-medium tracking-[-0.5px] text-ach-navy leading-tight [overflow-wrap:normal] [hyphens:manual]">
-            {title}
-          </h1>
-          {description && (
-            <p className="text-[13px] text-ach-navy/60 mt-1.5 max-w-2xl">{description}</p>
-          )}
-        </div>
-        {actions && (
-          <div className="flex flex-wrap items-center gap-2 md:shrink-0 md:justify-end">
-            {actions}
+      <div className="min-w-0">
+        {miniLabel && (
+          <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-1.5 [overflow-wrap:anywhere]">
+            {miniLabel}
           </div>
         )}
+        <h1 className="text-[22px] sm:text-[26px] font-medium tracking-[-0.5px] text-ach-navy leading-tight [overflow-wrap:break-word] [hyphens:manual]">
+          {title}
+        </h1>
+        {description && (
+          <p className="text-[13px] text-ach-navy/60 mt-1.5 max-w-2xl">{description}</p>
+        )}
       </div>
+      {actions && (
+        <div className="flex flex-wrap items-center gap-2 min-w-0">
+          {actions}
+        </div>
+      )}
     </div>
   );
 }
