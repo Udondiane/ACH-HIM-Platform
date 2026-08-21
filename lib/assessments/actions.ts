@@ -216,6 +216,33 @@ export async function adjustScoreAfterAiReviewAction(input: {
   return { ok: true };
 }
 
+/**
+ * Persist the closing reflection — the one open-ended question asked
+ * at the end of every assessment. Guarantees at least one quotable
+ * candidate voice line per assessment for outcomes reports. Wording of
+ * the question is generated in the UI from the project's ticked
+ * activities + assessment timepoint, so the prompt is always contextual.
+ */
+export async function saveClosingReflectionAction(
+  assessmentId: string,
+  text: string | null,
+  capturedVia: 'typed' | 'voice' | 'voice_edited' = 'typed',
+  language: string | null = null,
+  audioAttachmentId: string | null = null,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canRunAssessments, user);
+  const supabase = createClient();
+  const { error } = await supabase.from('assessments').update({
+    closing_reflection_text: text?.trim() || null,
+    closing_reflection_captured_via: capturedVia,
+    closing_reflection_language: language,
+    closing_reflection_audio_id: audioAttachmentId,
+  } as never).eq('id', assessmentId);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
 export async function saveFactorResponseAction(
   assessmentId: string,
   factorId: string,

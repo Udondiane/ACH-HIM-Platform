@@ -8,8 +8,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { IndicatorScorer } from '@/components/assessments/indicator-scorer';
 import { FactorResponseField } from '@/components/assessments/factor-response-field';
+import { ClosingReflectionField } from '@/components/assessments/closing-reflection-field';
 import { QuoteMarker } from '@/components/featured-quotes/quote-marker';
 import { HimScoreCard } from '@/components/assessments/him-score-card';
+import { closingReflectionPrompt, type ReflectionTimepoint } from '@/lib/assessments/closing-reflection-prompts';
 import { TranscriptModal } from '@/components/assessments/transcript-modal';
 import { AttachmentUploader } from '@/components/assessments/attachment-uploader';
 import { CandidateIdentity } from '@/components/ui/candidate-identity';
@@ -40,7 +42,7 @@ export default async function AssessmentRunnerPage({
   // Load everything in parallel
   const [project, assessment, capabilities, framework, responses, attachments] = await Promise.all([
     supabase.from('projects').select('*').eq('id', params.id).maybeSingle(),
-    supabase.from('assessments').select('*, candidates(candidate_ref, given_name, preferred_locale)').eq('id', params.assessmentId).maybeSingle(),
+    supabase.from('assessments').select('*, closing_reflection_text, closing_reflection_captured_via, closing_reflection_language, closing_reflection_audio_id, candidates(candidate_ref, given_name, preferred_locale)').eq('id', params.assessmentId).maybeSingle(),
     supabase.from('project_capabilities').select('domain, role, selected_factors').eq('project_id', params.id),
     Promise.all([
       supabase.from('factors').select('id, name, conversion_factor_type, is_universal, measurement_method, measurement_question, behavioural_prompt, score_guides'),
@@ -464,6 +466,44 @@ export default async function AssessmentRunnerPage({
               </Card>
             );
           })}
+
+          {/* Closing reflection — asked on every assessment. Question
+              text is generated from the project's ticked activities +
+              the assessment timepoint, so it stays contextual. This is
+              the guaranteed candidate-voice line every outcomes report
+              gets to draw on. */}
+          {!frameworkError && !frameworkEmpty && caps.length > 0 && (() => {
+            const { prompt, context } = closingReflectionPrompt(
+              a.timepoint as ReflectionTimepoint,
+              projectActivities,
+            );
+            return (
+              <Card>
+                <CardHeader>
+                  <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Closing reflection</div>
+                  <div className="text-[11.5px] text-ach-navy/55 mt-0.5">
+                    One open-ended question at the end of every assessment. Powers the featured-quotes library and the outcomes report narrative.
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <ClosingReflectionField
+                    assessmentId={params.assessmentId}
+                    prompt={prompt}
+                    activityContext={context}
+                    initial={{
+                      closing_reflection_text: a.closing_reflection_text ?? null,
+                      closing_reflection_captured_via: a.closing_reflection_captured_via ?? null,
+                      closing_reflection_language: a.closing_reflection_language ?? null,
+                      closing_reflection_audio_id: a.closing_reflection_audio_id ?? null,
+                    }}
+                    candidateLanguage={a.candidates?.preferred_locale ?? null}
+                    consentToRecord={consentToRecord}
+                    locked={isLocked}
+                  />
+                </CardContent>
+              </Card>
+            );
+          })()}
         </div>
 
         <div className="space-y-4">
