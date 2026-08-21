@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Upload, CheckCircle2, AlertCircle, Info, Download } from 'lucide-react';
+import { Upload, CheckCircle2, AlertCircle, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { parseCsv, mapRow, type ImportRow } from '@/lib/candidates/import';
 import { bulkImportCandidatesAction } from '@/lib/candidates/actions';
@@ -109,26 +109,18 @@ export function ImportCandidatesClient({ cohorts, defaultCohortId }: { cohorts: 
 
   return (
     <div className="space-y-5">
-      <div className="rounded-[10px] border-[0.5px] border-ach-border bg-ach-page/50 p-4">
-        <div className="flex items-start gap-2.5">
-          <Info className="h-4 w-4 mt-0.5 text-ach-navy/60 shrink-0" />
-          <div className="text-[12.5px] text-ach-navy/80 space-y-2 flex-1">
-            <p><strong>Accepts CSV or Excel (.xlsx)</strong> — export from MS Forms, Google Forms, Excel, whatever the application form was.</p>
-            <p><strong>Only two things are required per row:</strong> a name column, and at least one contact (email or phone).</p>
-            <p><strong>Any column that doesn&apos;t match a HIM field</strong> — e.g., IKEA&apos;s &ldquo;Can you commute to BS5?&rdquo; — is preserved on the candidate record as application data. Nothing is lost.</p>
-            <p className="pt-1">
-              <a
-                href="/beneficiary-import-template.csv"
-                download
-                className="inline-flex items-center gap-1.5 text-ach-navy underline hover:text-ach-navy/80"
-              >
-                <Download className="h-3.5 w-3.5" />
-                Download the template CSV
-              </a>
-              <span className="text-ach-navy/50 ml-2">— 3 sample rows showing the expected column headers.</span>
-            </p>
-          </div>
-        </div>
+      {/* Info card removed at ACH request — the file picker below is
+          self-explanatory and the template link now lives inline with
+          the picker. Kept the outer div so surrounding spacing rules
+          still apply consistently. */}
+      <div className="flex items-center gap-2 text-[12px] text-ach-navy/60">
+        <Download className="h-3.5 w-3.5" />
+        <a
+          href="/beneficiary-import-template.csv"
+          download
+          className="text-ach-navy underline underline-offset-2 hover:text-ach-navy/80"
+        >
+          Download the template CSV</a>
       </div>
 
       <div>
