@@ -29,50 +29,47 @@ export function joinActivityLabels(labels: string[]): string {
 }
 
 /**
- * Generate the closing reflection question. Timepoint sets the frame,
- * activity list makes it concrete. Both fall back cleanly if either
- * piece is missing.
+ * Generate the closing reflection question.
+ *
+ * Universal + neutral by design: activity-derived variants read as
+ * scripted and long in practice, and the beneficiary answers the same
+ * whether we mention the programme structure or not. One short human
+ * question per timepoint. Activity list is still surfaced separately
+ * in the UI (as a subdued context anchor for the assessor) so the
+ * project shape isn't lost — it just doesn't clutter the prompt read
+ * aloud to the beneficiary.
  */
 export function closingReflectionPrompt(
   timepoint: ReflectionTimepoint,
   activityIds: string[],
 ): { prompt: string; context: string | null } {
   const labels = activityLabels(activityIds);
-  const activityPhrase = joinActivityLabels(labels);
   const context = labels.length > 0 ? labels.join(' · ') : null;
 
   switch (timepoint) {
     case 'baseline':
       return {
-        prompt: activityPhrase
-          ? `You're about to start ${activityPhrase} with us. In your own words — what matters most to you as you begin? What are you hoping this will change for you?`
-          : `You're about to start this programme with us. In your own words — what matters most to you as you begin? What are you hoping this will change for you?`,
+        prompt: 'What are you hoping joining the ACH programme will change in your life?',
         context,
       };
     case 'mid_3mo':
       return {
-        prompt: activityPhrase
-          ? `You've been part of ${activityPhrase} for a few months now. In your own words — what's changed for you? What's the moment or thing that's mattered most so far?`
-          : `You've been on the programme for a few months now. In your own words — what's changed for you? What's the moment or thing that's mattered most so far?`,
+        prompt: 'How has joining the ACH programme changed things for you so far?',
         context,
       };
     case 'exit_6mo':
       return {
-        prompt: activityPhrase
-          ? `Looking back on your time with ${activityPhrase}, in your own words — what shifted for you? What's the one thing you'd most want us to remember about your experience?`
-          : `Looking back on your time with us, in your own words — what shifted for you? What's the one thing you'd most want us to remember?`,
+        prompt: 'How has joining the ACH programme changed your life?',
         context,
       };
     case 'followup_12mo':
       return {
-        prompt: activityPhrase
-          ? `It's been a year since ${activityPhrase} finished. In your own words — what's stayed with you? What's still true for you today because of it?`
-          : `It's been a year since your programme finished. In your own words — what's stayed with you? What's still true for you today?`,
+        prompt: 'A year on — how has joining the ACH programme changed your life?',
         context,
       };
     default:
       return {
-        prompt: `In your own words — what matters most to you right now, and what's changed for you?`,
+        prompt: 'How has joining the ACH programme changed things for you?',
         context,
       };
   }

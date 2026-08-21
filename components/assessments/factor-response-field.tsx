@@ -55,9 +55,25 @@ export function FactorResponseField({
   };
 
   const onBlur = () => {
+    // Auto-stop any in-progress auto-listen recording when focus leaves
+    // the field — that's the trigger to transcribe and persist.
+    if (recording) {
+      stopRecording();
+      return; // stopRecording() → onRecordingStop() will persist for us
+    }
     const via = capturedVia === 'voice' && text !== (initial?.response_text ?? '') ? 'voice_edited' : capturedVia;
     if (via !== capturedVia) setCapturedVia(via);
     persist(text, via, language, initial?.audio_attachment_id ?? null);
+  };
+
+  const onFocus = () => {
+    // Once the beneficiary has consented to voice capture, the mic
+    // arms automatically when the assessor tabs into the response
+    // field — no per-question Record click required. Explicitly opt
+    // out by clicking the Stop pill mid-recording.
+    if (consentToRecord && !locked && !recording && !transcribing) {
+      void startRecording();
+    }
   };
 
   const startRecording = async () => {
@@ -200,12 +216,12 @@ export function FactorResponseField({
       <textarea
         value={text}
         onChange={e => setText(e.target.value)}
+        onFocus={onFocus}
         onBlur={onBlur}
         rows={3}
-        disabled={recording || transcribing}
         placeholder={
           consentToRecord
-            ? `Press Record while ${factorName.toLowerCase()} is being discussed, or type the candidate's response here.`
+            ? `Voice consent on — tab into this field and speak; recording starts automatically. Or type the candidate's response.`
             : `Type the candidate's response in their own words.`
         }
         className="w-full rounded-[8px] border-[0.5px] border-ach-border bg-white px-3 py-2 text-[12.5px] text-ach-navy placeholder:text-ach-navy/40 focus:outline-none focus:ring-1 focus:ring-ach-navy/40 disabled:bg-ach-page disabled:text-ach-navy/55"

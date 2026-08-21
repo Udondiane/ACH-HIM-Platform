@@ -135,9 +135,16 @@ export function ClosingReflectionField({
   };
 
   const onBlur = () => {
+    if (recording) { stopRecording(); return; }
     const via = capturedVia === 'voice' && text !== (initial?.closing_reflection_text ?? '') ? 'voice_edited' : capturedVia;
     if (via !== capturedVia) setCapturedVia(via);
     persist(text, via, language, initial?.closing_reflection_audio_id ?? null);
+  };
+
+  const onFocus = () => {
+    if (consentToRecord && !locked && !recording && !transcribing) {
+      void startRecording();
+    }
   };
 
   const startRecording = async () => {
@@ -292,10 +299,12 @@ export function ClosingReflectionField({
       <textarea
         value={text}
         onChange={e => setText(e.target.value)}
+        onFocus={onFocus}
         onBlur={onBlur}
         rows={4}
-        disabled={recording || transcribing}
-        placeholder="Capture what the candidate says in their own words — even a single sentence. This becomes the human voice in your outcomes report."
+        placeholder={consentToRecord
+          ? 'Voice consent on — tab in and let the candidate speak; recording starts automatically. Or type.'
+          : 'Capture what the candidate says in their own words — even a single sentence. This becomes the human voice in your outcomes report.'}
         className="w-full rounded-[8px] border-[0.5px] border-ach-border bg-white px-3 py-2 text-[13px] text-ach-navy placeholder:text-ach-navy/40 focus:outline-none focus:ring-1 focus:ring-ach-navy/40 disabled:bg-ach-page disabled:text-ach-navy/55"
       />
 

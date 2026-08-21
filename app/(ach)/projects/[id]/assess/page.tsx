@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { startAssessmentAction } from '@/lib/assessments/actions';
 import { ensureDefaultCohortForProject } from '@/lib/projects/actions';
-import { CandidatePicker } from '@/components/candidates/candidate-picker';
+import { StartAssessmentForm } from '@/components/assessments/start-assessment-form';
 
 const TIMEPOINTS = [
   { id: 'baseline',      label: 'Baseline' },
@@ -73,13 +73,19 @@ export default async function StartAssessmentPage({ params }: { params: { id: st
   // Sort by candidate_ref so the picker order is predictable.
   candidates.sort((a, b) => a.candidate_ref.localeCompare(b.candidate_ref));
 
-  async function action(formData: FormData) {
+  // Server action bound to this projectId. Returns { error } to the
+  // client so the StartAssessmentForm can surface it (baseline window
+  // closed, DB error, etc.) instead of the previous silent failure.
+  async function action(_prev: { error?: string } | null, formData: FormData): Promise<{ error?: string } | null> {
     'use server';
     const candidateId = String(formData.get('candidate_id') ?? '');
     const timepoint = String(formData.get('timepoint') ?? 'baseline') as
       'baseline' | 'mid_3mo' | 'exit_6mo' | 'followup_12mo';
-    if (!candidateId) return;
-    await startAssessmentAction(params.id, candidateId, timepoint);
+    if (!candidateId) return { error: 'Pick a beneficiary before starting.' };
+    const result = await startAssessmentAction(params.id, candidateId, timepoint);
+    // On success, startAssessmentAction redirects — we won't reach here.
+    if (result && !result.ok) return { error: result.error };
+    return null;
   }
 
   return (
@@ -129,48 +135,14 @@ export default async function StartAssessmentPage({ params }: { params: { id: st
                 Enrol more →
               </Link>
             </div>
-            <form action={action} className="space-y-5">
-              <div className="space-y-2">
-                <label className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Beneficiary</label>
-                <CandidatePicker name="candidate_id" required options={candidates as any[]} />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 font-medium">Timepoint</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {TIMEPOINTS.map((t, i) => {
-                    const locked = t.id === 'baseline' && baselineLocked;
-                    return (
-                      <label
-                        key={t.id}
-                        className={`flex items-center gap-2 p-3 rounded-[10px] border-[0.5px] ${
-                          locked
-                            ? 'border-ach-border bg-ach-page/40 cursor-not-allowed opacity-60'
-                            : 'border-ach-border cursor-pointer hover:bg-ach-page'
-                        }`}
-                      >
-                        <input
-                          type="radio" name="timepoint" value={t.id}
-                          defaultChecked={i === 0 && !locked}
-                          disabled={locked}
-                          className="h-4 w-4 border-ach-border text-ach-navy focus:ring-ach-navy/40"
-                        />
-                        <span className={`text-[13px] ${locked ? 'text-ach-navy/50' : 'text-ach-navy'}`}>{t.label}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-                {baselineLocked && (
-                  <div className="text-[11.5px] text-[#8B3A4F] bg-ach-rose/10 rounded-[10px] px-3 py-2 border-[0.5px] border-ach-rose/30 mt-2">
-                    Baseline window closed on {baselineDeadline ? new Date(baselineDeadline).toLocaleDateString('en-GB') : '—'} ({windowDays} days after project start). Baseline can no longer be recorded — later timepoints are still available.
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2 pt-2">
-                <Button type="submit">Start assessment</Button>
-              </div>
-            </form>
+            <StartAssessmentForm
+              candidates={candidates as any[]}
+              timepoints={TIMEPOINTS}
+              baselineLocked={baselineLocked}
+              baselineDeadline={baselineDeadline}
+              windowDays={windowDays}
+              startAction={action}
+            />
           </CardContent>
         </Card>
       )}

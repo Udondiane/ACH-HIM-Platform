@@ -17,15 +17,28 @@ const DOMAIN_LABELS: Record<string, { label: string; hint: string }> = {
   rights:     { label: 'Rights & Citizenship', hint: 'status, rights, voice' },
 };
 
+// Keys MUST match what the OutcomesTracker actually saves — that's
+// TRAINING_OUTCOME_LABELS + FIXED_BENEFICIARY_OUTCOMES in
+// lib/activities/definitions.ts. Any mismatch here would silently
+// hide ticked outcomes from the ladder, which is exactly what
+// happened in the earlier version.
 const OUTCOME_DEFINITIONS: { key: string; label: string; hint: string }[] = [
-  { key: 'english_passed',           label: 'Passed English course',           hint: 'observable proficiency at work' },
-  { key: 'customer_service_passed',  label: 'Passed Customer service course',  hint: 'workplace-facing preparation' },
-  { key: 'health_safety_passed',     label: 'Passed Health & safety course',   hint: 'certified pre-placement' },
-  { key: 'digital_skills_passed',    label: 'Passed Digital skills course',    hint: 'workplace tools + confidence' },
-  { key: 'cultural_awareness_passed',label: 'Passed Cultural awareness',       hint: 'workplace inclusion module' },
-  { key: 'job_offer',                label: 'Got a job offer',                 hint: 'from partner or elsewhere' },
-  { key: 'job_started',              label: 'Started a job',                   hint: 'first day on the floor' },
-  { key: 'in_work_6mo',              label: 'Still in work at 6 months',       hint: 'retention confirmed' },
+  // Training-pass outcomes (surface only if the tick exists)
+  { key: 'english_training',           label: 'Passed English course',           hint: 'observable proficiency at work' },
+  { key: 'digital_skills_training',    label: 'Passed Digital skills course',    hint: 'workplace tools + confidence' },
+  { key: 'customer_service_training',  label: 'Passed Customer service course',  hint: 'workplace-facing preparation' },
+  { key: 'health_safety_training',     label: 'Passed Health & Safety course',   hint: 'certified pre-placement' },
+  { key: 'cultural_awareness_training',label: 'Passed Cultural awareness course',hint: 'workplace inclusion module' },
+  // Employability / progression outcomes
+  { key: 'got_job_offer',              label: 'Got a job offer',                 hint: 'from partner or elsewhere' },
+  { key: 'got_placement',              label: 'Got placement',                   hint: 'confirmed placement agreement' },
+  { key: 'started_job',                label: 'Started a job',                   hint: 'first day on the floor' },
+  { key: 'started_vocational',         label: 'Started vocational training',     hint: 'e.g. sector-specific L2/L3 route' },
+  { key: 'started_further_ed',         label: 'Started further education',       hint: 'college / access course' },
+  { key: 'started_apprenticeship',     label: 'Started apprenticeship',          hint: 'formal apprenticeship route' },
+  { key: 'retained_6mo',               label: 'Retained in job (6+ months)',     hint: 'confirmed at retention check' },
+  { key: 'retained_12mo',              label: 'Retained in job (12+ months)',    hint: 'confirmed at retention check' },
+  { key: 'promoted',                   label: 'Promoted / better role',          hint: 'progression from placement' },
 ];
 
 export default async function ProjectOutcomesReportPage({ params }: { params: { id: string } }) {
