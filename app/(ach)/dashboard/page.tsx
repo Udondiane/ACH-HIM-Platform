@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { FolderKanban, Upload, ClipboardCheck, FileText, Clock, User, ArrowRight } from 'lucide-react';
+import { FolderKanban, Upload, Clock, User } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent } from '@/components/ui/card';
@@ -151,7 +151,6 @@ export default async function AchDashboardPage() {
       <PageHeader
         miniLabel="Holistic Impact Metric"
         title="Impact overview"
-        description="Network-wide view of ACH's impact — the same numbers each project's outcomes report headlines, rolled up."
       />
 
       {isEmptyPlatform ? (
@@ -203,21 +202,6 @@ export default async function AchDashboardPage() {
             />
           </div>
 
-          {/* Quick actions strip — cuts the "where do I click?" friction */}
-          <div className="flex flex-wrap items-center gap-2 mb-5">
-            <Link href="/projects/new" className="inline-flex items-center gap-1.5 rounded-[10px] border-[0.5px] border-ach-border bg-white text-ach-navy px-3 py-1.5 text-[12px] hover:bg-ach-page">
-              <FolderKanban className="h-3.5 w-3.5" /> New project
-            </Link>
-            <Link href="/candidates/import" className="inline-flex items-center gap-1.5 rounded-[10px] border-[0.5px] border-ach-border bg-white text-ach-navy px-3 py-1.5 text-[12px] hover:bg-ach-page">
-              <Upload className="h-3.5 w-3.5" /> Import beneficiaries
-            </Link>
-            <Link href="/projects" className="inline-flex items-center gap-1.5 rounded-[10px] border-[0.5px] border-ach-border bg-white text-ach-navy px-3 py-1.5 text-[12px] hover:bg-ach-page">
-              <ClipboardCheck className="h-3.5 w-3.5" /> Run assessment
-            </Link>
-            <Link href="/aggregate" className="inline-flex items-center gap-1.5 rounded-[10px] border-[0.5px] border-ach-border bg-white text-ach-navy px-3 py-1.5 text-[12px] hover:bg-ach-page ml-auto">
-              <FileText className="h-3.5 w-3.5" /> Aggregate impact report <ArrowRight className="h-3 w-3" />
-            </Link>
-          </div>
         </>
       )}
 
@@ -240,12 +224,13 @@ export default async function AchDashboardPage() {
           <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-1">Outcomes reached</div>
           <div className="text-[11.5px] text-ach-navy/55 mb-4">Count of beneficiaries who have reached each outcome across every ACH project.</div>
           {!anyOutcomeTicked ? (
-            <div className="text-[13px] text-ach-navy/55 italic">
-              Outcomes will appear here as they are ticked on project pages.{' '}
-              <Link href="/projects" className="not-italic text-ach-navy underline underline-offset-2">
-                Open a project
-              </Link>{' '}
-              to start ticking.
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {outcomeRows.map(o => (
+                <div key={o.key} className="flex items-center justify-between rounded-[10px] border-[0.5px] border-ach-border/40 bg-ach-page/40 px-3 py-2">
+                  <div className="text-[12.5px] text-ach-navy/50">{o.label}</div>
+                  <div className="text-[15px] font-medium tabular-nums text-ach-navy/30">0</div>
+                </div>
+              ))}
             </div>
           ) : (
             <>
