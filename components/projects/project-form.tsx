@@ -210,19 +210,10 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
                   </label>
                   {partnerProvidesData && (
                     <div className="mt-3 pl-6">
-                      <Field
-                        label="Data-provider email address(es)"
+                      <DataProviderEmails
+                        initial={initial?.data_provider_emails ?? ''}
                         error={fe('data_provider_emails')}
-                        hint="One email per line. Recorded as the partner-side data contacts for this project. Timepoint feedback links are generated manually from the partner's detail page today; automated dispatch to these addresses is a post-launch enhancement."
-                      >
-                        <textarea
-                          name="data_provider_emails"
-                          defaultValue={initial?.data_provider_emails ?? ''}
-                          rows={2}
-                          placeholder="alex.smith@example.com&#10;jenna.james@example.com"
-                          className="w-full rounded-[10px] border-[0.5px] border-ach-border bg-white px-3 py-2 text-[12.5px] text-ach-navy placeholder:text-ach-navy/40 focus:outline-none focus:ring-1 focus:ring-ach-navy/40 font-mono"
-                        />
-                      </Field>
+                      />
                     </div>
                   )}
                 </div>
@@ -446,4 +437,52 @@ function Field({ label, error, children, hint }: { label: string; error?: string
 function SubmitBtn({ children }: { children: React.ReactNode }) {
   const { pending } = useFormStatus();
   return <Button type="submit" disabled={pending}>{pending ? 'Saving…' : children}</Button>;
+}
+
+/**
+ * Three separate email input slots for the partner-side data contacts on
+ * a project. Backing field name `data_provider_emails` stays a
+ * newline-joined string for schema/backend compatibility — but the UI
+ * exposes each contact as its own input so users can't confuse "one
+ * email per line" with "all in one line".
+ */
+function DataProviderEmails({ initial, error }: { initial: string; error?: string }) {
+  const existing = (initial ?? '').split(/[\n,;]+/).map(e => e.trim()).filter(Boolean);
+  const [e1, setE1] = useState(existing[0] ?? '');
+  const [e2, setE2] = useState(existing[1] ?? '');
+  const [e3, setE3] = useState(existing[2] ?? '');
+  const combined = [e1, e2, e3].map(e => e.trim()).filter(Boolean).join('\n');
+
+  const inputClass = 'w-full rounded-[10px] border-[0.5px] border-ach-border bg-white px-3 py-2 text-[12.5px] text-ach-navy placeholder:text-ach-navy/40 focus:outline-none focus:ring-1 focus:ring-ach-navy/40';
+
+  return (
+    <div className="space-y-1.5">
+      <Label>Data-provider email address(es)</Label>
+      <div className="space-y-2">
+        <input
+          type="email"
+          value={e1}
+          onChange={ev => setE1(ev.target.value)}
+          placeholder="First contact · e.g. alex.smith@partner.com"
+          className={inputClass}
+        />
+        <input
+          type="email"
+          value={e2}
+          onChange={ev => setE2(ev.target.value)}
+          placeholder="Second contact · optional"
+          className={inputClass}
+        />
+        <input
+          type="email"
+          value={e3}
+          onChange={ev => setE3(ev.target.value)}
+          placeholder="Third contact · optional"
+          className={inputClass}
+        />
+      </div>
+      <input type="hidden" name="data_provider_emails" value={combined} />
+      {error && <div className="text-[12px] text-[#8B3A4F]">{error}</div>}
+    </div>
+  );
 }
