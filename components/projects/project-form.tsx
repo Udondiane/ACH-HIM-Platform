@@ -213,7 +213,7 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
                       <Field
                         label="Data-provider email address(es)"
                         error={fe('data_provider_emails')}
-                        hint="One email per line. Each will be sent the standard partner question set when data is due."
+                        hint="One email per line. Recorded as the partner-side data contacts for this project. Timepoint feedback links are generated manually from the partner's detail page today; automated dispatch to these addresses is a post-launch enhancement."
                       >
                         <textarea
                           name="data_provider_emails"
