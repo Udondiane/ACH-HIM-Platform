@@ -38,7 +38,7 @@ export default async function PartnerTokenLandingPage({ params }: { params: { to
       <div className="max-w-3xl mx-auto p-8">
         <div className="mb-6">
           <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">ACH — {partnerName}</div>
-          <h1 className="text-[22px] text-ach-navy mt-1">Timepoint reports</h1>
+          <h1 className="text-[22px] text-ach-navy mt-1">Timepoint feedback</h1>
           <p className="text-[13px] text-ach-navy/70 mt-2">
             Thank you for taking the time to record your observations of each candidate you hosted through ACH's Bridge to Employment programme. Your reports feed directly into the outcome evidence we share with funders and use to improve the programme.
           </p>

@@ -273,7 +273,7 @@ export default async function ImpactReportPage({ params }: { params: { id: strin
       <section className="mt-10 pt-6 border-t border-ach-border text-[11.5px] text-ach-navy/60 leading-relaxed">
         <div className="font-medium text-ach-navy/75 mb-1">Methodology note</div>
         <p>
-          Retention counts are drawn from partner-verified 6-month and 12-month retention checks submitted via the tokenised
+          Retention counts are drawn from partner-verified 6-month and 12-month retention checks submitted via the timepoint feedback
           partner portal. Longitudinal capability change compares mean baseline and 12-month follow-up assessment scores at
           cohort level. Progression narratives are partner-authored at the 12-month check.
         </p>

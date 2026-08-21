@@ -39,7 +39,7 @@ export default async function HomePage() {
         </h1>
         <p className="text-ach-text-muted mb-8" style={{ fontSize: 14, lineHeight: 1.6 }}>
           The HIM platform is ACH's consolidated system for project-level impact measurement,
-          partner reporting, pricing, and the Candidate Development Fund. Sign in to continue.
+          partner timepoint feedback, pricing, and the Candidate Development Fund. Sign in to continue.
         </p>
         <Link href="/sign-in" className="btn-primary inline-flex">
           Sign in

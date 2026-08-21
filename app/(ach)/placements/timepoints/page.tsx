@@ -136,7 +136,7 @@ export default async function PlacementTimepointsPage() {
       <PageHeader
         miniLabel="Placements"
         title="Timepoint schedule"
-        description="All placements with their end-of-placement report, 6-month retention check, and 12-month retention check due dates. Colour-coded by urgency."
+        description="All placements with their end-of-placement feedback, 6-month retention check, and 12-month retention check due dates. Colour-coded by urgency."
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">

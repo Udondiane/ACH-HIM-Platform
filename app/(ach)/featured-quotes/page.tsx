@@ -21,7 +21,7 @@ export default async function FeaturedQuotesPage() {
     <div className="max-w-5xl mx-auto">
       <PageHeader miniLabel="Reports" title="Featured quotes library" />
       <p className="text-[13px] text-ach-navy/70 -mt-2 mb-5">
-        Curated quotes from assessments, partner reports and interviews. Feed into close-out reports, 12-month impact reports and case studies.
+        Curated quotes from assessments, timepoint feedback and interviews. Feed into close-out reports, 12-month impact reports and case studies.
         Consent-gated: quotes only appear when the candidate has granted quoting consent.
       </p>
 

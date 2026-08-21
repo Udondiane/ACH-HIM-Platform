@@ -285,7 +285,7 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
                     <div className="text-[12px] text-ach-navy/60">{p.partners?.name} · {new Date(p.start_date).toLocaleDateString('en-GB')}</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Link href={`/placements/${p.id}/timepoints`} className="text-[11.5px] text-ach-navy/70 underline underline-offset-2 hover:text-ach-navy">Timepoint reports</Link>
+                    <Link href={`/placements/${p.id}/timepoints`} className="text-[11.5px] text-ach-navy/70 underline underline-offset-2 hover:text-ach-navy">Timepoint feedback</Link>
                     <Badge>{p.status}</Badge>
                   </div>
                 </li>

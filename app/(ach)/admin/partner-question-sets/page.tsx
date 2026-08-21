@@ -51,13 +51,13 @@ export default async function PartnerQuestionSetsPage() {
       <PageHeader
         miniLabel="Methodology"
         title="Partner question sets"
-        description="Standardised question templates for the partner-facing tokenised reports. Each project links to one set. Same tokenised UX, tailored questions."
+        description="Question templates for the timepoint feedback that partners submit at each check-in. Partners access through a secure link — no login needed. Each project uses one template, so different partner types can be asked different questions while the submission experience stays consistent."
       />
 
       {sets.length === 0 ? (
         <Card>
           <CardContent className="pt-6 text-[13px] text-ach-navy/70">
-            No question sets defined yet. Ask your ICT contact to load the workforce partner question set to enable tokenised partner reports.
+            No question sets defined yet. Ask your ICT contact to load the workforce partner question set to enable timepoint feedback from partners.
           </CardContent>
         </Card>
       ) : (
@@ -129,7 +129,7 @@ export default async function PartnerQuestionSetsPage() {
         <div className="font-medium text-ach-navy/75 mb-1">How this works</div>
         <p>
           Every project links to one partner question set via <code className="font-mono">projects.partner_question_set_key</code>.
-          When a partner opens their tokenised report, the questions shown are pulled from the set linked to that project's cohort.
+          When a partner opens their timepoint feedback link, the questions shown are pulled from the set linked to that project's cohort.
           Editing a set updates the questions for every project that uses it — methodology change flows through in one place.
         </p>
       </section>
