@@ -21,7 +21,8 @@ export type AchTeamRole =
   | 'bid_business_dev'
   | 'board'
   | 'finance_contracts'
-  | 'ict_admin';
+  | 'ict_admin'
+  | 'superadmin';
 
 export type Database = {
   public: {

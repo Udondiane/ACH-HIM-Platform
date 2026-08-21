@@ -35,6 +35,7 @@ export const TEAM_ROLE_LABELS: Record<AchTeamRole, string> = {
   board: 'Board / senior leadership',
   finance_contracts: 'Finance & contracts',
   ict_admin: 'ICT administrator',
+  superadmin: 'Superadmin (full access)',
 };
 
 export const TEAM_ROLE_DESCRIPTIONS: Record<AchTeamRole, string> = {
@@ -46,6 +47,7 @@ export const TEAM_ROLE_DESCRIPTIONS: Record<AchTeamRole, string> = {
   board: 'Read-only strategic dashboards and cohort reports.',
   finance_contracts: 'Pricing, development fund, TOMs claims, contracts.',
   ict_admin: 'User management, audit log, platform administration.',
+  superadmin: 'Unrestricted access to every surface. Reserve for 1–2 named ACH staff; audit assignments.',
 };
 
 export const ALL_TEAM_ROLES: AchTeamRole[] = [
@@ -57,6 +59,7 @@ export const ALL_TEAM_ROLES: AchTeamRole[] = [
   'board',
   'finance_contracts',
   'ict_admin',
+  'superadmin',
 ];
 
 // ------------------------------------------------------------
@@ -80,9 +83,21 @@ function teamRole(user: SessionUser): AchTeamRole | null {
   return user.teamRole ?? null;
 }
 
-/** Full-access fallback for legacy staff users without a team_role. */
+/**
+ * Full-access staff. Two paths qualify:
+ *   1. NULL team_role — the pilot-legacy state; every existing pilot user
+ *      matches this until an ICT admin explicitly assigns them a role
+ *   2. 'superadmin' team_role — an explicit designation for named staff
+ *      (typically the ICT Manager + one backup) who need unrestricted
+ *      access for platform support and troubleshooting
+ *
+ * Assignment of 'superadmin' is a governance decision that should be
+ * recorded alongside a risk-based justification signed by the DPL.
+ */
 function isUnrestrictedStaff(user: SessionUser): boolean {
-  return isStaff(user) && teamRole(user) === null;
+  if (!isStaff(user)) return false;
+  const t = teamRole(user);
+  return t === null || t === 'superadmin';
 }
 
 /** ACH ICT Administrator surfaces — user management, audit log. */

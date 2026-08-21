@@ -1,0 +1,21 @@
+-- ============================================================
+-- 062 · Add 'superadmin' to ACH team-role enum
+-- ============================================================
+-- Extends the ach_team_role enum (migration 061) with an explicit
+-- superadmin value. Semantics: identical to the pre-team-role legacy
+-- state (unrestricted access to every surface) but distinguished at
+-- the value layer so it can be intentionally assigned and audited.
+--
+-- Rationale: ACH ICT requested a role that can see everything in the
+-- platform — for support/troubleshooting, and for the ownership-transfer
+-- period before individual team roles are finalised. Adding it as an
+-- explicit enum value (rather than the current NULL-team-role fallback)
+-- makes the choice a documented decision rather than an accidental drift.
+--
+-- Governance: intended for 1–2 people at ACH only (typically ICT Manager
+-- and one backup). Assignment should be recorded alongside a written
+-- risk-based decision signed by the DPL, per the pattern documented in
+-- the Credential Inventory §7.
+-- ============================================================
+
+alter type public.ach_team_role add value if not exists 'superadmin';
