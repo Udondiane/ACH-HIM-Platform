@@ -33,24 +33,42 @@ export function PageHeader({
           {backLabel ?? 'Back'}
         </Link>
       )}
-      <div className="flex items-start justify-between gap-4 min-w-0">
+      {/* Responsive header layout:
+          - Narrow viewports: stack title above actions so the title gets
+            the full page width (no fighting five action buttons for
+            space). Actions wrap onto multiple rows if there are many.
+          - Wide viewports (md+): side-by-side, title left, actions right. */}
+      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 min-w-0">
         <div className="min-w-0 flex-1">
           {miniLabel && (
-            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-1.5 break-all">
+            // overflow-wrap:anywhere lets a long ref token fold at any
+            // character IF it truly won't fit, but only as a last resort —
+            // whitespace + hyphens still take priority. break-all was
+            // aggressively splitting every character; this is the humane
+            // version.
+            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60 mb-1.5 [overflow-wrap:anywhere]">
               {miniLabel}
             </div>
           )}
-          {/* Responsive header size + overflow-wrap keeps long titles
-              legible in narrow containers (side panels, mobile). Font
-              scales up on wider viewports. */}
-          <h1 className="text-[20px] sm:text-[24px] md:text-[26px] font-medium tracking-[-0.5px] text-ach-navy leading-tight [overflow-wrap:break-word]">
+          {/* Header sizing:
+              - Modest base font (18px) that fits comfortably in narrow
+                sidebars before we ever start breaking words.
+              - overflow-wrap:normal + hyphens:manual = only break at
+                natural whitespace, never mid-word. If the title genuinely
+                doesn't fit, it overflows rather than being sliced
+                character-by-character (which is worse). */}
+          <h1 className="text-[18px] sm:text-[22px] md:text-[26px] font-medium tracking-[-0.5px] text-ach-navy leading-tight [overflow-wrap:normal] [hyphens:manual]">
             {title}
           </h1>
           {description && (
             <p className="text-[13px] text-ach-navy/60 mt-1.5 max-w-2xl">{description}</p>
           )}
         </div>
-        {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
+        {actions && (
+          <div className="flex flex-wrap items-center gap-2 md:shrink-0 md:justify-end">
+            {actions}
+          </div>
+        )}
       </div>
     </div>
   );
