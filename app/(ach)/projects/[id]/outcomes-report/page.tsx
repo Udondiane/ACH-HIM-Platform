@@ -195,31 +195,24 @@ export default async function ProjectOutcomesReportPage({ params }: { params: { 
         </div>
       </div>
 
-      {/* Hero */}
+      {/* Hero — headline sentence removed per ACH request. The 4 stat
+          cards carry the same information without narrative gloss. */}
       <div className="bg-[#FBF2E0]/40 border border-ach-navy/20 rounded-[6px] p-8 mb-6">
-        <div className="text-[10.5px] uppercase tracking-[1.8px] text-ach-navy/55 font-mono mb-3">
+        <div className="text-[10.5px] uppercase tracking-[1.8px] text-ach-navy/55 font-mono mb-4">
           Headline outcome
         </div>
-        <p className="font-serif text-[22px] leading-[1.4] text-ach-navy font-medium max-w-[52ch] text-balance mb-6">
-          {totalEnrolled > 0 ? (
-            <>
-              {totalEnrolled} beneficiar{totalEnrolled === 1 ? 'y' : 'ies'} enrolled.
-              {completed > 0 && <> {completed} completed.</>}
-              {placedCount > 0 && <> <span className="text-[#B8843C] font-medium">{placedCount} placed in work</span>.</>}
-              {baselineLevel && exitLevel && (
-                <> Mean HIM capability rose from {baselineLevel} to {exitLevel}.</>
-              )}
-            </>
-          ) : (
-            'No beneficiaries enrolled yet. Once assessments begin, this headline will reflect the programme reality.'
-          )}
-        </p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-5 border-t border-dotted border-ach-navy/25">
-          <HeroStat k="Beneficiaries" v={String(totalEnrolled)} s={completed > 0 && totalEnrolled > 0 ? `${completed} completed · ${Math.round((completed/totalEnrolled)*100)}%` : undefined} />
-          <HeroStat k="Placed in work" v={String(placedCount)} s={placedCount > 0 && totalEnrolled > 0 ? `${Math.round((placedCount/totalEnrolled)*100)}% of starters` : undefined} />
-          <HeroStat k="Salary secured" v={totalSalary > 0 ? `£${Math.round(totalSalary / 1000)}k` : '—'} s={totalSalary > 0 && placedCount > 0 ? `£${Math.round(totalSalary / placedCount / 1000)}k avg` : undefined} />
-          <HeroStat k="Progressed" v={String(progressed)} s={progressed > 0 ? 'beyond first placement' : undefined} />
-        </div>
+        {totalEnrolled === 0 ? (
+          <p className="text-[13px] text-ach-navy/60 italic">
+            No beneficiaries enrolled yet. Once assessments begin, this section will reflect the programme reality.
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <HeroStat k="Beneficiaries" v={String(totalEnrolled)} s={completed > 0 && totalEnrolled > 0 ? `${completed} completed · ${Math.round((completed/totalEnrolled)*100)}%` : undefined} />
+            <HeroStat k="Placed in work" v={String(placedCount)} s={placedCount > 0 && totalEnrolled > 0 ? `${Math.round((placedCount/totalEnrolled)*100)}% of starters` : undefined} />
+            <HeroStat k="Salary secured" v={totalSalary > 0 ? `£${Math.round(totalSalary / 1000)}k` : '—'} s={totalSalary > 0 && placedCount > 0 ? `£${Math.round(totalSalary / placedCount / 1000)}k avg` : undefined} />
+            <HeroStat k="Progressed" v={String(progressed)} s={progressed > 0 ? 'beyond first placement' : undefined} />
+          </div>
+        )}
       </div>
 
       {/* HIM signature — always renders all 7 domains, each with a clear

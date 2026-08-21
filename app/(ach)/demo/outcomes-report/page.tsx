@@ -53,16 +53,14 @@ export default function SampleOutcomesReportPage() {
         </div>
       </div>
 
-      {/* Hero */}
+      {/* Hero — headline sentence removed per ACH request. The 4 stat
+          cards carry the same information without the narrative gloss,
+          and match the live outcomes report's hero card 1:1. */}
       <div className="bg-[#FBF2E0]/40 border border-ach-navy/20 rounded-[6px] p-8 mb-6">
-        <div className="text-[10.5px] uppercase tracking-[1.8px] text-ach-navy/55 font-mono mb-3">
+        <div className="text-[10.5px] uppercase tracking-[1.8px] text-ach-navy/55 font-mono mb-4">
           Headline outcome
         </div>
-        <p className="font-serif text-[24px] leading-[1.35] text-ach-navy font-medium max-w-[42ch] text-balance mb-6">
-          Twelve beneficiaries baselined. Ten completed.{' '}
-          <span className="text-[#B8843C] font-medium">Five started at IKEA on permanent contracts</span>, and mean HIM capability rose from Level 2 · Emerging to Level 4 · Confident.
-        </p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-5 border-t border-dotted border-ach-navy/25">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <HeroStat k="Beneficiaries" v="12" s="10 completed · 83%" />
           <HeroStat k="Placed in work" v="5" s="42% of starters" />
           <HeroStat k="Salary secured" v="£112k" s="£22.4k avg · into local economy" />
