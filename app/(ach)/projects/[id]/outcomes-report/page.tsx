@@ -28,12 +28,6 @@ const OUTCOME_DEFINITIONS: { key: string; label: string; hint: string }[] = [
   { key: 'in_work_6mo',              label: 'Still in work at 6 months',       hint: 'retention confirmed' },
 ];
 
-const FUNDING_LABEL: Record<string, string> = {
-  funded: 'Grant funder outcomes report',
-  commercial: 'Corporate partner outcomes report',
-  hybrid: 'Grant funder and corporate partner outcomes report',
-};
-
 export default async function ProjectOutcomesReportPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
 
@@ -42,7 +36,7 @@ export default async function ProjectOutcomesReportPage({ params }: { params: { 
   if (!project) notFound();
   const p = project as any;
 
-  const [cohortsRes, cohortCandsRes, responsesRes, placementsRes, quotesRes, partnersRes, activitiesRes, outcomesRes] = await Promise.all([
+  const [cohortsRes, cohortCandsRes, responsesRes, placementsRes, quotesRes, partnersRes, activitiesRes, outcomesRes, capabilitiesRes] = await Promise.all([
     supabase.from('cohorts').select('id, name, cohort_ref, status, start_date, end_date').eq('project_id', params.id),
     supabase.from('cohort_candidates').select('candidate_id, cohort_id, candidates(id, candidate_ref, given_name, family_name, status, country_of_origin, arrival_year)').limit(1000),
     supabase.from('assessment_responses').select(`
@@ -55,7 +49,9 @@ export default async function ProjectOutcomesReportPage({ params }: { params: { 
     supabase.from('cohort_partners').select('cohort_id, is_lead_partner, partners(id, name, types)'),
     supabase.from('project_activities').select('activity').eq('project_id', params.id),
     supabase.from('beneficiary_outcomes').select('candidate_id, outcome_key').eq('project_id', params.id),
+    supabase.from('project_capabilities').select('domain, role').eq('project_id', params.id),
   ]);
+  const scopedDomains = new Set<string>(((capabilitiesRes.data as { domain: string }[] | null) ?? []).map(c => c.domain));
 
   const cohorts = ((cohortsRes.data as any[]) ?? []);
   const cohortIds = new Set(cohorts.map(c => c.id));
@@ -86,16 +82,24 @@ export default async function ProjectOutcomesReportPage({ params }: { params: { 
       else if (tp === 'exit_6mo' || tp === 'mid_3mo' || tp === 'followup_12mo') { agg[dom].exitSum += v; agg[dom].exitN += 1; }
     }
   }
+  // Show ALL 7 domains, always. Each row carries a status:
+  //   'scored'     — real baseline/exit numbers to display
+  //   'awaiting'   — in scope for this project but no data yet
+  //   'out_of_scope' — not selected as core/optional for this project
+  // Reports read cleaner when every domain is present with a clear
+  // reason for missing data, instead of quietly dropping domains that
+  // weren't scored yet or aren't relevant to this programme.
   const domainRows = Object.entries(DOMAIN_LABELS).map(([key, meta]) => {
     const a = agg[key];
-    return {
-      key,
-      label: meta.label,
-      hint: meta.hint,
-      baseline: a.baselineN > 0 ? a.baselineSum / a.baselineN : null,
-      exit:     a.exitN     > 0 ? a.exitSum     / a.exitN     : null,
-    };
-  }).filter(r => r.baseline !== null || r.exit !== null);
+    const baseline = a.baselineN > 0 ? a.baselineSum / a.baselineN : null;
+    const exit     = a.exitN     > 0 ? a.exitSum     / a.exitN     : null;
+    const inScope = scopedDomains.size === 0 ? true : scopedDomains.has(key);
+    let status: 'scored' | 'awaiting' | 'out_of_scope';
+    if (!inScope) status = 'out_of_scope';
+    else if (baseline === null && exit === null) status = 'awaiting';
+    else status = 'scored';
+    return { key, label: meta.label, hint: meta.hint, baseline, exit, status };
+  });
 
   // Headline
   const totalEnrolled = candidates.length;
@@ -133,9 +137,6 @@ export default async function ProjectOutcomesReportPage({ params }: { params: { 
     return start ? `From ${fmt(start)}` : `Until ${fmt(end!)}`;
   })();
 
-  const audienceLabel =
-    (p.funding_model && FUNDING_LABEL[p.funding_model]) ?? FUNDING_LABEL.funded;
-
   return (
     <div className="max-w-5xl mx-auto pb-16 print:max-w-none">
       <div className="mb-4 print:hidden flex items-center justify-between">
@@ -148,7 +149,7 @@ export default async function ProjectOutcomesReportPage({ params }: { params: { 
       {/* Masthead */}
       <div className="pb-5 border-b border-ach-border mb-8">
         <div className="text-[10.5px] uppercase tracking-[1.8px] text-ach-navy/55 font-mono mb-2">
-          {audienceLabel} · {p.completed_at ? 'Final' : 'Draft'}
+          Project outcomes report · {p.completed_at ? 'Final' : 'Draft'}
         </div>
         <div className="flex items-end justify-between gap-6 flex-wrap">
           <h1 className="font-serif text-[38px] tracking-[-0.01em] leading-[1.05] text-ach-navy font-medium">
@@ -190,41 +191,57 @@ export default async function ProjectOutcomesReportPage({ params }: { params: { 
         </div>
       </div>
 
-      {/* HIM signature */}
-      {domainRows.length > 0 && (
-        <SectionCard title="Capability change" sub="Baseline → exit · 7 domains · 0–5 scale">
-          <div className="space-y-3.5">
-            {domainRows.map(d => {
-              const b = d.baseline ?? 0;
-              const e = d.exit ?? b;
-              return (
-                <div key={d.key} className="grid grid-cols-[190px_1fr_140px] gap-4 items-center max-md:grid-cols-[130px_1fr_100px]">
-                  <div className="text-[13.5px] text-ach-navy">
-                    {d.label}
-                    <span className="block text-[11px] text-ach-navy/55 mt-px">{d.hint}</span>
-                  </div>
-                  <div className="relative h-5 bg-ach-page rounded-[3px] overflow-hidden border-[0.5px] border-ach-border/70">
-                    {d.baseline !== null && (
-                      <div className="absolute inset-y-0 left-0 bg-ach-navy/25" style={{ width: `${(b / 5) * 100}%` }} />
-                    )}
-                    {d.exit !== null && (
-                      <div className="absolute inset-y-0 left-0 bg-[#B8843C]" style={{ width: `${(e / 5) * 100}%` }} />
-                    )}
-                  </div>
-                  <div className="text-[12px] font-mono tabular-nums text-right text-ach-navy/60">
-                    {d.baseline !== null ? d.baseline.toFixed(1) : '—'} → {d.exit !== null ? d.exit.toFixed(1) : '—'}
-                    {d.baseline !== null && d.exit !== null && (
-                      <strong className={`ml-1.5 font-semibold ${d.exit >= d.baseline ? 'text-[#1B6D6A]' : 'text-[#8B3A4F]'}`}>
-                        {d.exit - d.baseline >= 0 ? '+' : ''}{(d.exit - d.baseline).toFixed(1)}
-                      </strong>
-                    )}
-                  </div>
+      {/* HIM signature — always renders all 7 domains, each with a clear
+          status so out-of-scope ones read as intentional rather than zero. */}
+      <SectionCard title="Capability change" sub="Baseline → exit · 7 domains · 0–5 scale">
+        <div className="space-y-3.5">
+          {domainRows.map(d => {
+            const b = d.baseline ?? 0;
+            const e = d.exit ?? b;
+            return (
+              <div key={d.key} className="grid grid-cols-[190px_1fr_140px] gap-4 items-center max-md:grid-cols-[130px_1fr_100px]">
+                <div className={`text-[13.5px] ${d.status === 'out_of_scope' ? 'text-ach-navy/45' : 'text-ach-navy'}`}>
+                  {d.label}
+                  <span className="block text-[11px] text-ach-navy/55 mt-px">{d.hint}</span>
                 </div>
-              );
-            })}
-          </div>
-        </SectionCard>
-      )}
+                {d.status === 'scored' ? (
+                  <>
+                    <div className="relative h-5 bg-ach-page rounded-[3px] overflow-hidden border-[0.5px] border-ach-border/70">
+                      {d.baseline !== null && (
+                        <div className="absolute inset-y-0 left-0 bg-ach-navy/25" style={{ width: `${(b / 5) * 100}%` }} />
+                      )}
+                      {d.exit !== null && (
+                        <div className="absolute inset-y-0 left-0 bg-[#B8843C]" style={{ width: `${(e / 5) * 100}%` }} />
+                      )}
+                    </div>
+                    <div className="text-[12px] font-mono tabular-nums text-right text-ach-navy/60">
+                      {d.baseline !== null ? d.baseline.toFixed(1) : '—'} → {d.exit !== null ? d.exit.toFixed(1) : '—'}
+                      {d.baseline !== null && d.exit !== null && (
+                        <strong className={`ml-1.5 font-semibold ${d.exit >= d.baseline ? 'text-[#1B6D6A]' : 'text-[#8B3A4F]'}`}>
+                          {d.exit - d.baseline >= 0 ? '+' : ''}{(d.exit - d.baseline).toFixed(1)}
+                        </strong>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className={`h-5 rounded-[3px] border-[0.5px] flex items-center px-2.5 ${d.status === 'out_of_scope' ? 'bg-ach-page/40 border-ach-border/40' : 'bg-ach-page/70 border-dashed border-ach-border'}`}>
+                      <span className="text-[11px] italic text-ach-navy/60">
+                        {d.status === 'out_of_scope'
+                          ? 'Not measured on this project — not in the project&apos;s capability scope.'
+                          : 'Awaiting assessment data — in scope, no scored responses yet.'}
+                      </span>
+                    </div>
+                    <div className="text-[11px] font-mono tabular-nums text-right text-ach-navy/40">
+                      {d.status === 'out_of_scope' ? 'n/a' : '—'}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </SectionCard>
 
       {/* Outcomes ladder */}
       {outcomeRows.length > 0 && (

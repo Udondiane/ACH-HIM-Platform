@@ -180,15 +180,61 @@ export default async function AggregateDashboardPage() {
       </div>
 
       {hasAnyAssessmentData && (
-        <Card className="mb-5">
-          <CardHeader>
-            <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Network capability radar</div>
-            <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Baseline vs Exit across all beneficiaries.</div>
-          </CardHeader>
-          <CardContent>
-            <CapabilityRadar data={radarData} mode="comparison" />
-          </CardContent>
-        </Card>
+        <>
+          <Card className="mb-5">
+            <CardHeader>
+              <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Network capability radar</div>
+              <div className="text-[11.5px] text-ach-navy/55 mt-0.5">Baseline vs exit across all beneficiaries — visual view.</div>
+            </CardHeader>
+            <CardContent>
+              <CapabilityRadar data={radarData} mode="comparison" />
+            </CardContent>
+          </Card>
+
+          <Card className="mb-5">
+            <CardHeader>
+              <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Change by capability domain</div>
+              <div className="text-[11.5px] text-ach-navy/55 mt-0.5">
+                Mean HIM score per domain — baseline to exit — averaged across every assessment on the platform. Bars are on the 0–5 scale.
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {networkUplift.map(u => {
+                const b = u.baselineAvg ?? 0;
+                const e = u.exitAvgCompleters ?? b;
+                const delta = (u.baselineAvg !== null && u.exitAvgCompleters !== null)
+                  ? u.exitAvgCompleters - u.baselineAvg : null;
+                const label = DOMAIN_LABELS[u.domain] ?? u.domain;
+                return (
+                  <div key={u.domain} className="grid grid-cols-[160px_1fr_160px] gap-4 items-center max-md:grid-cols-[120px_1fr_120px]">
+                    <div className="text-[13px] text-ach-navy">{label}</div>
+                    <div className="relative h-5 bg-ach-page rounded-[3px] overflow-hidden border-[0.5px] border-ach-border/70">
+                      {u.baselineAvg !== null && (
+                        <div className="absolute inset-y-0 left-0 bg-ach-navy/25" style={{ width: `${(b / 5) * 100}%` }} />
+                      )}
+                      {u.exitAvgCompleters !== null && (
+                        <div className="absolute inset-y-0 left-0 bg-[#B8843C]" style={{ width: `${(e / 5) * 100}%` }} />
+                      )}
+                    </div>
+                    <div className="text-[12px] font-mono tabular-nums text-right text-ach-navy/60">
+                      {u.baselineAvg !== null ? u.baselineAvg.toFixed(1) : '—'}
+                      {' → '}
+                      {u.exitAvgCompleters !== null ? u.exitAvgCompleters.toFixed(1) : '—'}
+                      {delta !== null && (
+                        <strong className={`ml-1.5 font-semibold ${delta >= 0 ? 'text-[#1B6D6A]' : 'text-[#8B3A4F]'}`}>
+                          {delta >= 0 ? '+' : ''}{delta.toFixed(2)}
+                        </strong>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="pt-2 text-[11px] text-ach-navy/50 border-t-[0.5px] border-ach-border mt-3">
+                Navy bar = baseline mean · Gold bar = exit mean · Green delta = capability rose · Rose delta = capability fell.
+              </div>
+            </CardContent>
+          </Card>
+        </>
       )}
 
       <Card className="mb-5">
