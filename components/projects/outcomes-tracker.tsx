@@ -121,7 +121,15 @@ export function OutcomesTracker({ projectId, beneficiaries, outcomes, recorded }
             <tr className="border-b-[0.5px] border-ach-border">
               <th className="text-left py-2 pr-3 font-medium text-[10.5px] uppercase tracking-[1.1px] text-ach-navy/60">Beneficiary</th>
               {nonOther.map(o => (
-                <th key={o.key} className="text-center py-2 px-2 font-medium text-[10.5px] uppercase tracking-[1.1px] text-ach-navy/60 whitespace-nowrap">
+                <th
+                  key={o.key}
+                  // Multi-line, top-aligned, capped at a sensible column
+                  // width so long outcome names ("Started vocational
+                  // training") stack cleanly instead of pushing the row
+                  // off-screen. Bottom-hug tick circles align to the row
+                  // baseline via vertical-align:bottom on this cell.
+                  className="text-center align-bottom py-2 px-1.5 font-medium text-[10.5px] uppercase tracking-[1.1px] text-ach-navy/60 leading-[1.25] max-w-[110px] min-w-[76px] [overflow-wrap:break-word]"
+                >
                   {o.label}
                 </th>
               ))}
