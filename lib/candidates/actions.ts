@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 import { requireUser } from '@/lib/supabase/auth';
 import { assertCan, canWriteBeneficiaries } from '@/lib/auth/capabilities';
 import { candidateSchema } from './schema';
+import { normaliseEmail, normaliseNi, normalisePhone } from './dedup';
 
 export type ActionResult =
   | { ok: true; id?: string }
@@ -58,17 +59,33 @@ export async function bulkImportCandidatesAction(input: {
     const r = input.rows[i];
     const m = r.mapped;
 
-    // Duplicate check on email + ni_number
-    if (m.email || m.ni_number) {
-      const orClauses: string[] = [];
-      if (m.email)     orClauses.push(`email.eq.${m.email}`);
-      if (m.ni_number) orClauses.push(`ni_number.eq.${m.ni_number}`);
-      const { data: dupe } = await supabase
+    // Duplicate check on email + phone + ni_number, all normalised so
+    // casual variations (case, whitespace, dashes) still collide.
+    // Matches the DB unique indexes from migration 066 exactly, so
+    // the app-level skip and the DB-level backstop see the same rows.
+    const emailKey = normaliseEmail(m.email as string | null | undefined);
+    const phoneKey = normalisePhone(m.phone as string | null | undefined);
+    const niKey    = normaliseNi(m.ni_number as string | null | undefined);
+    if (emailKey || phoneKey || niKey) {
+      // Pull candidate identity fields we care about, filtered server-
+      // side to a shortlist. Doing the normalisation compare in JS
+      // avoids fragile string interpolation into Supabase's .or().
+      const orQ = [];
+      if (emailKey) orQ.push(`email.ilike.${emailKey.replace(/[%_]/g, '\\$&')}`);
+      if (niKey)    orQ.push(`ni_number.ilike.${niKey.replace(/[%_]/g, '\\$&')}`);
+      // Phone can't use a simple ilike because the DB might store it
+      // with spacing/dashes; pull broader and compare in JS.
+      const { data: possibleDupes } = await supabase
         .from('candidates')
-        .select('id')
-        .or(orClauses.join(','))
-        .limit(1)
-        .maybeSingle();
+        .select('id, email, phone, ni_number, candidate_ref')
+        .or(orQ.length > 0 ? orQ.join(',') : `phone.not.is.null`)
+        .limit(500);
+      const dupe = (possibleDupes as any[] | null ?? []).find((row: any) => {
+        if (emailKey && normaliseEmail(row.email) === emailKey) return true;
+        if (niKey    && normaliseNi(row.ni_number)   === niKey)    return true;
+        if (phoneKey && normalisePhone(row.phone)    === phoneKey) return true;
+        return false;
+      });
       if (dupe) { skipped++; continue; }
     }
 
@@ -210,6 +227,79 @@ export async function bulkImportCandidatesAction(input: {
 
   revalidatePath('/candidates');
   return { ok: true, created, skipped_duplicates: skipped, failed };
+}
+
+/**
+ * Preview which rows in a proposed import would collide with existing
+ * candidates. Same normalisation as the actual dedup path so the UI
+ * warning matches what the server will do at import time. Returns
+ * one entry per matched row: { row: <original index>, matchRef,
+ * matchName, matchedOn }.
+ */
+export async function previewDuplicatesAction(
+  rows: Array<{ email?: string | null; phone?: string | null; ni_number?: string | null }>,
+): Promise<
+  | { ok: true; matches: Array<{ row: number; matchRef: string; matchName: string; matchedOn: 'email' | 'phone' | 'ni' }> }
+  | { ok: false; error: string }
+> {
+  const user = await requireUser(['ach_staff']);
+  assertCan(canWriteBeneficiaries, user);
+  const supabase = createClient();
+
+  // Collect all identifiers we need to check, normalised.
+  const emailsToCheck = new Set<string>();
+  const phonesToCheck = new Set<string>();
+  const nisToCheck    = new Set<string>();
+  for (const r of rows) {
+    const e = normaliseEmail(r.email);   if (e) emailsToCheck.add(e);
+    const p = normalisePhone(r.phone);   if (p) phonesToCheck.add(p);
+    const n = normaliseNi(r.ni_number); if (n) nisToCheck.add(n);
+  }
+  if (emailsToCheck.size + phonesToCheck.size + nisToCheck.size === 0) {
+    return { ok: true, matches: [] };
+  }
+
+  // Fetch all candidates once. At current scale (< thousands) this is
+  // efficient enough. If the pool grows large, tighten with a proper
+  // server-side OR of ilike patterns.
+  const { data, error } = await supabase
+    .from('candidates')
+    .select('id, email, phone, ni_number, candidate_ref, given_name, family_name');
+  if (error) return { ok: false, error: error.message };
+  const existing = (data as any[]) ?? [];
+
+  // Build lookup indexes on the normalised keys.
+  const byEmail = new Map<string, any>();
+  const byPhone = new Map<string, any>();
+  const byNi    = new Map<string, any>();
+  for (const c of existing) {
+    const e = normaliseEmail(c.email);      if (e) byEmail.set(e, c);
+    const p = normalisePhone(c.phone);      if (p) byPhone.set(p, c);
+    const n = normaliseNi(c.ni_number);     if (n) byNi.set(n, c);
+  }
+
+  const matches: Array<{ row: number; matchRef: string; matchName: string; matchedOn: 'email' | 'phone' | 'ni' }> = [];
+  rows.forEach((r, i) => {
+    const e = normaliseEmail(r.email);
+    const p = normalisePhone(r.phone);
+    const n = normaliseNi(r.ni_number);
+    const hit =
+      (e && byEmail.get(e)) ||
+      (n && byNi.get(n))    ||
+      (p && byPhone.get(p));
+    if (!hit) return;
+    const matchedOn: 'email' | 'phone' | 'ni' =
+      e && byEmail.get(e) ? 'email' :
+      n && byNi.get(n)    ? 'ni'    : 'phone';
+    matches.push({
+      row: i,
+      matchRef: hit.candidate_ref,
+      matchName: [hit.given_name, hit.family_name].filter(Boolean).join(' ').trim() || hit.candidate_ref,
+      matchedOn,
+    });
+  });
+
+  return { ok: true, matches };
 }
 
 function fdToPlain(fd: FormData): Record<string, unknown> {

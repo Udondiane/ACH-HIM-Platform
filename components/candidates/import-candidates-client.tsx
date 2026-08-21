@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import { Upload, CheckCircle2, AlertCircle, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { parseCsv, mapRow, type ImportRow } from '@/lib/candidates/import';
-import { bulkImportCandidatesAction } from '@/lib/candidates/actions';
+import { bulkImportCandidatesAction, previewDuplicatesAction } from '@/lib/candidates/actions';
 import { Button } from '@/components/ui/button';
 
 interface CohortOpt { id: string; label: string; }
@@ -12,6 +12,7 @@ interface CohortOpt { id: string; label: string; }
 export function ImportCandidatesClient({ cohorts, defaultCohortId }: { cohorts: CohortOpt[]; defaultCohortId?: string }) {
   const [rows, setRows] = useState<ImportRow[]>([]);
   const [ticked, setTicked] = useState<Set<number>>(new Set());
+  const [duplicateMatches, setDuplicateMatches] = useState<Map<number, { matchRef: string; matchName: string; matchedOn: 'email' | 'phone' | 'ni' }>>(new Map());
   const [cohortId, setCohortId] = useState<string>(defaultCohortId ?? '');
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<{ created: number; skipped: number; failed: number; failedDetails: Array<{ row: number; error: string }> } | null>(null);
@@ -56,6 +57,27 @@ export function ImportCandidatesClient({ cohorts, defaultCohortId }: { cohorts: 
       // than defaulting to "everything valid goes in". "Select all" is
       // one click away for the common case of importing the whole batch.
       setTicked(new Set());
+      setDuplicateMatches(new Map());
+
+      // Ask the server which parsed rows would collide with existing
+      // candidates. Fire-and-forget: if it fails, we just proceed
+      // without the warning tags (the server-side dedup still runs
+      // at import time).
+      const dupePayload = mapped.map(r => ({
+        email: r.mapped.email ?? null,
+        phone: r.mapped.phone ?? null,
+        ni_number: r.mapped.ni_number ?? null,
+      }));
+      try {
+        const res = await previewDuplicatesAction(dupePayload);
+        if (res.ok) {
+          const m = new Map<number, { matchRef: string; matchName: string; matchedOn: 'email' | 'phone' | 'ni' }>();
+          for (const match of res.matches) {
+            m.set(match.row, { matchRef: match.matchRef, matchName: match.matchName, matchedOn: match.matchedOn });
+          }
+          setDuplicateMatches(m);
+        }
+      } catch { /* silent — server dedup at import time is the backstop */ }
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'Failed to parse file');
     }
@@ -161,6 +183,9 @@ export function ImportCandidatesClient({ cohorts, defaultCohortId }: { cohorts: 
           <div className="flex items-center justify-between">
             <div className="text-[12.5px] text-ach-navy/70">
               <strong>{rows.length}</strong> rows in file · <strong>{ticked.size}</strong> ticked to import · <strong>{rows.filter(r => r.errors.length > 0).length}</strong> with errors
+              {duplicateMatches.size > 0 && (
+                <> · <strong className="text-[#8B6D1F]">{duplicateMatches.size} possible duplicate{duplicateMatches.size === 1 ? '' : 's'}</strong></>
+              )}
             </div>
             <div className="flex items-center gap-2 text-[11.5px]">
               <button type="button" onClick={() => tickAll(true)}  className="text-ach-navy underline">Select all valid</button>
@@ -185,9 +210,13 @@ export function ImportCandidatesClient({ cohorts, defaultCohortId }: { cohorts: 
               <tbody className="divide-y divide-ach-border">
                 {rows.map((r, i) => {
                   const disabled = r.errors.length > 0;
+                  const dupe = duplicateMatches.get(i);
                   const on = ticked.has(i);
+                  const rowBg = disabled
+                    ? 'bg-ach-rose/10'
+                    : dupe ? 'bg-[#E8C25E]/15' : '';
                   return (
-                    <tr key={i} className={disabled ? 'bg-ach-rose/10' : ''}>
+                    <tr key={i} className={rowBg}>
                       <td className="p-2">
                         <input
                           type="checkbox"
@@ -212,6 +241,13 @@ export function ImportCandidatesClient({ cohorts, defaultCohortId }: { cohorts: 
                       <td className="p-2">
                         {r.errors.length > 0 ? (
                           <span className="text-[#8B3A4F]" title={r.errors.join('; ')}>Missing required</span>
+                        ) : dupe ? (
+                          <span
+                            className="text-[#8B6D1F]"
+                            title={`Matches existing candidate by ${dupe.matchedOn} — will be skipped if imported`}
+                          >
+                            Possible dupe · {dupe.matchRef}
+                          </span>
                         ) : (
                           <span className="text-emerald-800">Ready</span>
                         )}
