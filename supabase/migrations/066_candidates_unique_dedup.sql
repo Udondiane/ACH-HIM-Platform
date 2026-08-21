@@ -17,7 +17,17 @@
 -- If this migration fails with "could not create unique index" the
 -- DB already has duplicate rows — run the diagnostic block at the
 -- bottom (commented out) to find them, resolve, then re-run 066.
+--
+-- Belt-and-braces: also ADD the ni_number column itself if it's
+-- missing. The app has always referenced this field but no earlier
+-- migration ever created it on the candidates table, so any DB that
+-- ran migration 064 got an index-on-nothing error and skipped the
+-- index. This migration heals both the missing column AND the
+-- missing index in one pass.
 -- ============================================================
+
+alter table public.candidates
+  add column if not exists ni_number text;
 
 create unique index if not exists uq_candidates_email_lower
   on public.candidates(lower(trim(email)))

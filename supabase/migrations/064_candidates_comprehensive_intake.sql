@@ -37,6 +37,13 @@ alter table public.candidates
   add column if not exists city           text,
   add column if not exists postcode       text;
 
+-- ni_number was referenced by the app but never added by a prior
+-- migration; add it here so anyone applying 064 fresh gets both the
+-- column AND the index in one go. Older DBs that hit this migration
+-- before this patch are healed by migration 066.
+alter table public.candidates
+  add column if not exists ni_number text;
+
 create index if not exists idx_candidates_email    on public.candidates(lower(email))    where email is not null;
 create index if not exists idx_candidates_ni       on public.candidates(ni_number)       where ni_number is not null;
 create index if not exists idx_candidates_postcode on public.candidates(postcode)        where postcode is not null;
