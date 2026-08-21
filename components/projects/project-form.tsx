@@ -17,7 +17,7 @@ import {
   deriveTypeAndWeight,
   type FundingModel, type CapAnswer, type CapDomain,
 } from '@/lib/projects/schema';
-import { PROGRAMME_ACTIVITIES } from '@/lib/activities/definitions';
+import { PROGRAMME_ACTIVITIES, TRAINING_ACTIVITY_IDS } from '@/lib/activities/definitions';
 import type { ActionResult } from '@/lib/projects/actions';
 
 interface Props {
@@ -71,6 +71,30 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
   const relevantActivities = PROGRAMME_ACTIVITIES.filter(a =>
     a.domains.some(d => selectedDomains.has(d as CapDomain)),
   );
+  // Split into a "Training" bucket + everything else. The training
+  // modules are collapsed under a single Training master tile so the
+  // activity picker doesn't drown staff in 15 flat options.
+  const trainingActivities = relevantActivities.filter(a => TRAINING_ACTIVITY_IDS.has(a.id));
+  const nonTrainingActivities = relevantActivities.filter(a => !TRAINING_ACTIVITY_IDS.has(a.id));
+  const anyTrainingSelected = trainingActivities.some(a => activitySet.has(a.id));
+  // Master tile shows expanded when any training is already ticked, or
+  // when the user explicitly opens it. Closing the master clears the
+  // children (see toggleTrainingMaster below) so unticking Training is
+  // an all-or-nothing action, not a silent no-op.
+  const [trainingMasterOpen, setTrainingMasterOpen] = useState<boolean>(anyTrainingSelected);
+  const trainingExpanded = trainingMasterOpen || anyTrainingSelected;
+  function toggleTrainingMaster() {
+    if (trainingExpanded && anyTrainingSelected) {
+      // Currently open and children are selected — collapsing means
+      // deselecting every training child. Explicit and honest.
+      const next = new Set(activitySet);
+      for (const t of trainingActivities) next.delete(t.id);
+      setActivitySet(next);
+      setTrainingMasterOpen(false);
+    } else {
+      setTrainingMasterOpen(!trainingMasterOpen);
+    }
+  }
 
   const derived = deriveTypeAndWeight(coreSet.size, optionalSet.size);
   const [typeValue, setTypeValue] = useState<string>(initial?.type ?? derived.type);
@@ -332,7 +356,7 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {relevantActivities.map(act => {
+              {nonTrainingActivities.map(act => {
                 const selected = activitySet.has(act.id);
                 return (
                   <button
@@ -353,9 +377,81 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
                   </button>
                 );
               })}
+
+              {/* Training master tile — a single grouped affordance that
+                  reveals the individual training modules underneath. Keeps
+                  the top-level picker readable (was 15 flat tiles, now 9
+                  + one Training master). Selected count on the tile shows
+                  how many modules are chosen without opening the sub-panel. */}
+              {trainingActivities.length > 0 && (
+                <button
+                  type="button"
+                  onClick={toggleTrainingMaster}
+                  className={`text-left p-3 rounded-[10px] border-[0.5px] transition-colors sm:col-span-2 ${
+                    trainingExpanded
+                      ? 'border-ach-navy bg-ach-navy text-ach-cream'
+                      : 'border-ach-border bg-white text-ach-navy/80 hover:bg-ach-page'
+                  }`}
+                  aria-pressed={trainingExpanded}
+                  aria-expanded={trainingExpanded}
+                >
+                  <div className="flex items-baseline justify-between gap-2">
+                    <div className="text-[13px] font-medium">Training</div>
+                    <div className={`text-[11px] tabular-nums ${trainingExpanded ? 'text-ach-cream/75' : 'text-ach-navy/55'}`}>
+                      {anyTrainingSelected
+                        ? `${trainingActivities.filter(a => activitySet.has(a.id)).length} of ${trainingActivities.length} module${trainingActivities.length === 1 ? '' : 's'} selected`
+                        : trainingExpanded
+                          ? 'Pick the modules below'
+                          : 'Tap to pick training modules'}
+                    </div>
+                  </div>
+                  <div className={`text-[11px] mt-0.5 ${trainingExpanded ? 'text-ach-cream/75' : 'text-ach-navy/55'}`}>
+                    Formal training the beneficiary attends — auto-spawns a training programme per project.
+                  </div>
+                </button>
+              )}
             </div>
+
+            {/* Nested training modules panel — only rendered when the
+                Training master is expanded. Indented + softer background
+                so the parent/child relationship is visually obvious. */}
+            {trainingExpanded && trainingActivities.length > 0 && (
+              <div className="mt-3 rounded-[10px] border-[0.5px] border-ach-border bg-ach-page/40 p-3">
+                <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/55 mb-2">Training modules</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {trainingActivities.map(act => {
+                    const selected = activitySet.has(act.id);
+                    return (
+                      <button
+                        key={act.id}
+                        type="button"
+                        onClick={() => toggleActivity(act.id)}
+                        className={`text-left p-2.5 rounded-[8px] border-[0.5px] transition-colors ${
+                          selected
+                            ? 'border-ach-navy bg-ach-navy text-ach-cream'
+                            : 'border-ach-border bg-white text-ach-navy/80 hover:bg-white'
+                        }`}
+                        aria-pressed={selected}
+                      >
+                        <div className="text-[12.5px] font-medium">{act.label}</div>
+                        <div className={`text-[11px] mt-0.5 ${selected ? 'text-ach-cream/75' : 'text-ach-navy/55'}`}>
+                          {act.hint}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                {anyTrainingSelected && (
+                  <div className="text-[11px] text-ach-navy/55 mt-2">
+                    A single combined training programme is auto-created per project covering the selected modules.
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="text-[11px] text-ach-navy/55 mt-2">
-              {activitySet.size} activit{activitySet.size === 1 ? 'y' : 'ies'} ticked.
+              {activitySet.size} activit{activitySet.size === 1 ? 'y' : 'ies'} ticked
+              {anyTrainingSelected && ` (including ${trainingActivities.filter(a => activitySet.has(a.id)).length} training module${trainingActivities.filter(a => activitySet.has(a.id)).length === 1 ? '' : 's'})`}.
             </div>
             {[...activitySet].map(id => (
               <input key={id} type="hidden" name="activities" value={id} />
