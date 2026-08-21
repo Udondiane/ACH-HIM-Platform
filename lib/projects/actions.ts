@@ -104,23 +104,65 @@ async function autoSpawnTrainingProgrammesFromActivities(
   const programmeName = `Training programme — ${projectRef}`;
   const description = `Covers: ${moduleLabels.join(', ')}.`;
 
-  // Look up the single combined programme for this project.
-  const { data: existingRows } = await supabase
-    .from('training_programmes')
-    .select('id')
-    .eq('spawned_from_project_id', projectId)
-    .eq('source_activity_id', 'combined');
-  const existingRow = (existingRows as { id: string }[] | null)?.[0];
+  // Look up all candidate rows for this project's combined programme.
+  // Union of two matchers so we catch orphans:
+  //   (a) properly-tagged rows (spawned_from_project_id = this project)
+  //   (b) name-matched rows where spawned_from_project_id was nullified
+  //       by a delete cascade (project deleted+recreated with same ref)
+  const [taggedRes, nameMatchRes] = await Promise.all([
+    supabase.from('training_programmes').select('id, created_at')
+      .eq('spawned_from_project_id', projectId).eq('source_activity_id', 'combined'),
+    supabase.from('training_programmes').select('id, created_at, spawned_from_project_id')
+      .eq('name', programmeName),
+  ]);
+  const tagged = (taggedRes.data as { id: string; created_at: string }[] | null) ?? [];
+  const nameMatched = (nameMatchRes.data as { id: string; created_at: string; spawned_from_project_id: string | null }[] | null) ?? [];
+
+  // Merge, dedup by id, prefer the oldest (keeps the original id stable).
+  const seen = new Set<string>();
+  const candidates: { id: string; created_at: string }[] = [];
+  for (const r of tagged) { if (!seen.has(r.id)) { seen.add(r.id); candidates.push(r); } }
+  for (const r of nameMatched) { if (!seen.has(r.id)) { seen.add(r.id); candidates.push(r); } }
+  candidates.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
   let programmeId: string;
-  if (existingRow) {
-    programmeId = existingRow.id;
-    // Refresh description in case the ticked modules changed.
+  if (candidates.length > 0) {
+    const primary = candidates[0];
+    programmeId = primary.id;
+    // Re-adopt: ensure spawned_from_project_id + source_activity_id are
+    // set on the surviving row so the next save's lookup finds it
+    // properly without going through the name fallback again.
     await supabase.from('training_programmes').update({
       name: programmeName,
       description,
       category: 'Combined training',
+      source_activity_id: 'combined',
+      spawned_from_project_id: projectId,
     } as never).eq('id', programmeId);
+
+    // Collapse any duplicates (extras beyond the primary) — safe only
+    // when they carry zero real activity, to protect any manually-added
+    // enrolments or sessions. Loud in the logs when it happens so we
+    // can trace where the duplicates keep coming from.
+    for (const dupe of candidates.slice(1)) {
+      const [enr, ses, cert] = await Promise.all([
+        supabase.from('training_enrolments').select('id', { count: 'exact', head: true }).eq('programme_id', dupe.id),
+        supabase.from('training_sessions').select('id', { count: 'exact', head: true }).eq('programme_id', dupe.id),
+        supabase.from('training_certificates').select('id', { count: 'exact', head: true }).eq('programme_id', dupe.id),
+      ]);
+      const hasActivity = (enr.count ?? 0) + (ses.count ?? 0) + (cert.count ?? 0) > 0;
+      if (hasActivity) {
+        console.warn('[autoSpawn] duplicate training programme kept because it has real activity', {
+          projectId, programmeId, duplicateId: dupe.id, enrolments: enr.count, sessions: ses.count, certificates: cert.count,
+        });
+        // Leave it. Untag it so future saves don't see it as the primary anymore.
+        await supabase.from('training_programmes').update({
+          spawned_from_project_id: null, source_activity_id: null,
+        } as never).eq('id', dupe.id);
+      } else {
+        await supabase.from('training_programmes').delete().eq('id', dupe.id);
+      }
+    }
   } else {
     const { data: created, error } = await supabase
       .from('training_programmes')
