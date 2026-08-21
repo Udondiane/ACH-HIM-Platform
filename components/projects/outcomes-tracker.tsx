@@ -101,8 +101,11 @@ export function OutcomesTracker({ projectId, beneficiaries, outcomes, recorded }
 
   if (beneficiaries.length === 0) {
     return (
-      <div className="text-[13px] text-ach-navy/55 py-4">
-        Enrol beneficiaries first, then come back here to tick outcomes as they land.
+      <div className="rounded-[10px] border-[0.5px] border-dashed border-ach-border bg-ach-page/40 px-4 py-6 text-center">
+        <div className="text-[13px] text-ach-navy font-medium">No beneficiaries enrolled on this project yet</div>
+        <div className="text-[12px] text-ach-navy/60 mt-1">
+          Once you enrol candidates (use <span className="font-mono text-[11.5px]">Enrol candidates</span> above, or bulk-upload from <span className="font-mono text-[11.5px]">/candidates/import</span>), a row per beneficiary appears here with one tick-column per outcome derived from your project&apos;s activities.
+        </div>
       </div>
     );
   }
