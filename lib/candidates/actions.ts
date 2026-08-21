@@ -37,6 +37,23 @@ export async function bulkImportCandidatesAction(input: {
   let skipped = 0;
   const failed: Array<{ row: number; error: string }> = [];
 
+  // Reserve a run of candidate_refs up-front so imports don't collide with
+  // each other or with concurrent single-candidate creates. Format
+  // 'C-YYYY-NNN' — the year gate matches nextCandidateRef() used by the
+  // manual creation path.
+  const year = new Date().getFullYear();
+  const refPrefix = `C-${year}-`;
+  const { data: existingRefs } = await supabase
+    .from('candidates')
+    .select('candidate_ref')
+    .like('candidate_ref', `${refPrefix}%`);
+  const refPattern = new RegExp(`^C-${year}-(\\d+)$`);
+  let refCounter = 0;
+  for (const row of (existingRefs ?? []) as { candidate_ref: string }[]) {
+    const match = row.candidate_ref.match(refPattern);
+    if (match) refCounter = Math.max(refCounter, parseInt(match[1], 10));
+  }
+
   for (let i = 0; i < input.rows.length; i++) {
     const r = input.rows[i];
     const m = r.mapped;
@@ -55,7 +72,11 @@ export async function bulkImportCandidatesAction(input: {
       if (dupe) { skipped++; continue; }
     }
 
+    refCounter += 1;
+    const candidateRef = `${refPrefix}${String(refCounter).padStart(3, '0')}`;
+
     const insert: Record<string, unknown> = {
+      candidate_ref:    candidateRef,
       given_name:       m.given_name ?? null,
       family_name:      m.family_name ?? null,
       preferred_name:   m.preferred_name ?? null,
