@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { Upload, CheckCircle2, AlertCircle, Info } from 'lucide-react';
+import { Upload, CheckCircle2, AlertCircle, Info, Download } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { parseCsv, mapRow, type ImportRow } from '@/lib/candidates/import';
 import { bulkImportCandidatesAction } from '@/lib/candidates/actions';
@@ -102,10 +102,21 @@ export function ImportCandidatesClient({ cohorts, defaultCohortId }: { cohorts: 
       <div className="rounded-[10px] border-[0.5px] border-ach-border bg-ach-page/50 p-4">
         <div className="flex items-start gap-2.5">
           <Info className="h-4 w-4 mt-0.5 text-ach-navy/60 shrink-0" />
-          <div className="text-[12.5px] text-ach-navy/80 space-y-1">
+          <div className="text-[12.5px] text-ach-navy/80 space-y-2 flex-1">
             <p><strong>Accepts CSV or Excel (.xlsx)</strong> — export from MS Forms, Google Forms, Excel, whatever the application form was.</p>
             <p><strong>Only two things are required per row:</strong> a name column, and at least one contact (email or phone).</p>
             <p><strong>Any column that doesn&apos;t match a HIM field</strong> — e.g., IKEA&apos;s &ldquo;Can you commute to BS5?&rdquo; — is preserved on the candidate record as application data. Nothing is lost.</p>
+            <p className="pt-1">
+              <a
+                href="/beneficiary-import-template.csv"
+                download
+                className="inline-flex items-center gap-1.5 text-ach-navy underline hover:text-ach-navy/80"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Download the template CSV
+              </a>
+              <span className="text-ach-navy/50 ml-2">— 3 sample rows showing the expected column headers.</span>
+            </p>
           </div>
         </div>
       </div>
@@ -128,6 +139,20 @@ export function ImportCandidatesClient({ cohorts, defaultCohortId }: { cohorts: 
           </div>
         )}
       </div>
+
+      {rows.length > 0 && rows.filter(r => r.errors.length === 0).length === 0 && (
+        <div className="rounded-[10px] border-[0.5px] border-[#8B3A4F]/30 bg-ach-rose/10 p-4">
+          <div className="flex items-start gap-2.5">
+            <AlertCircle className="h-4 w-4 mt-0.5 text-[#8B3A4F] shrink-0" />
+            <div className="text-[12.5px] text-ach-navy/80 space-y-2 flex-1">
+              <p className="font-medium text-ach-navy">None of the rows imported cleanly. Most likely cause: the column headers in your file don't match what HIM recognises.</p>
+              <p><strong>Columns found in your file:</strong> <span className="font-mono text-[11.5px] text-ach-navy/70">{Object.keys(rows[0]?.raw ?? {}).join(' · ') || '(no headers detected)'}</span></p>
+              <p><strong>What HIM needs at minimum:</strong> a name column (e.g. "First Name" or "Given Name") and a contact column (e.g. "Email", "Phone", "Mobile").</p>
+              <p>Download the template CSV above, match your file's headers to it, and re-upload.</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {rows.length > 0 && (
         <>
