@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { UserPlus, Upload } from 'lucide-react';
+import { ArrowLeft, Info } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent } from '@/components/ui/card';
@@ -94,26 +94,27 @@ export default async function StartAssessmentPage({ params }: { params: { id: st
 
       {candidates.length === 0 ? (
         <Card>
-          <CardContent className="pt-6 space-y-4">
-            <div>
-              <p className="text-[14px] font-medium text-ach-navy">No beneficiaries enrolled on this project yet</p>
-              <p className="text-[12.5px] text-ach-navy/70 mt-1">
-                Assessments run against enrolled beneficiaries only — so the picker
-                doesn&apos;t offer people from unrelated projects by mistake. Enrol
-                someone first, then come back here.
-              </p>
+          <CardContent className="pt-6">
+            <div className="flex items-start gap-2.5">
+              <Info className="h-4 w-4 mt-0.5 text-ach-navy/60 shrink-0" />
+              <div className="text-[13px] text-ach-navy/80 space-y-2 flex-1">
+                <p className="font-medium text-ach-navy">
+                  No beneficiaries have been added to this project.
+                </p>
+                <p>
+                  Assessments run against enrolled beneficiaries only. Return to
+                  <span className="mx-1 font-mono text-[11.5px] bg-ach-page px-1.5 py-0.5 rounded">
+                    {p.project_ref}
+                  </span>
+                  and add beneficiaries before reattempting the assessment.
+                </p>
+              </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Link href={`/candidates/import?projectId=${params.id}`}>
-                <Button>
-                  <Upload className="h-4 w-4" />
-                  Bulk upload beneficiaries
-                </Button>
-              </Link>
+            <div className="mt-5">
               <Link href={`/projects/${params.id}`}>
                 <Button variant="ghost">
-                  <UserPlus className="h-4 w-4" />
-                  Enrol existing beneficiaries
+                  <ArrowLeft className="h-4 w-4" />
+                  Return to project
                 </Button>
               </Link>
             </div>
