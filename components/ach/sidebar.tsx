@@ -32,9 +32,13 @@ const NAV = [
   { href: '/aggregate',          label: 'Aggregate',        icon: LayoutDashboard },
   { href: '/impact-library',     label: 'Impact library',   icon: Library },
   { href: '/featured-quotes',    label: 'Featured quotes',  icon: Quote },
-  { href: '/demo/outcomes-report', label: 'Sample impact report', icon: Sparkles },
-  { href: '/demo/b2e-programme-report', label: 'B2E · programme summary', icon: Sparkles },
-  { href: '/demo/b2e-financial', label: 'B2E · financial reality', icon: Sparkles },
+  // Demo reports removed from primary nav — they carry seeded data,
+  // not live numbers, and exist as teaching artefacts. All three
+  // pages remain at their existing URLs for anyone deep-linking:
+  //   /demo/outcomes-report        (sample impact report)
+  //   /demo/b2e-programme-report   (Bridge to Employment programme summary)
+  //   /demo/b2e-financial          (Bridge to Employment financial reality)
+  // ICT can link to them from docs/ICT-TRAINING-NOTES.md if needed.
   { section: 'Methodology' },
   { href: '/admin/framework',    label: 'Framework library',icon: BookOpen },
   { href: '/toms-crosswalk',     label: 'TOMs crosswalk',   icon: ArrowLeftRight },
