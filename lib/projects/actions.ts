@@ -496,28 +496,53 @@ export async function setProjectFactorsAction(
  * later add named cohorts (e.g. Q3 intake), the default stays as the
  * first row and we don't create a new one.
  */
-async function ensureDefaultCohortForProject(
+export async function ensureDefaultCohortForProject(
   supabase: ReturnType<typeof createClient>,
   projectId: string,
 ): Promise<string | null> {
-  const { data: existing } = await supabase
+  const { data: existing, error: exErr } = await supabase
     .from('cohorts')
     .select('id')
     .eq('project_id', projectId)
     .order('created_at', { ascending: true })
     .limit(1)
     .maybeSingle();
+  if (exErr) {
+    console.error('[ensureDefaultCohortForProject] existing lookup failed', { projectId, error: exErr.message });
+    return null;
+  }
   if (existing) return (existing as { id: string }).id;
 
-  const { data: project } = await supabase
+  const { data: project, error: pErr } = await supabase
     .from('projects')
     .select('project_ref, name, funder_name, start_date, end_date')
     .eq('id', projectId)
     .single();
-  if (!project) return null;
+  if (pErr || !project) {
+    console.error('[ensureDefaultCohortForProject] project lookup failed', { projectId, error: pErr?.message });
+    return null;
+  }
   const p = project as { project_ref: string; name: string; funder_name: string | null; start_date: string | null; end_date: string | null };
 
-  const cohortRef = `${p.project_ref}-MAIN`;
+  // cohort_ref is UNIQUE across the whole cohorts table. If a project
+  // has already had cohorts created and deleted, the "{ref}-MAIN"
+  // slug may already exist orphaned — probe once and fall back to a
+  // suffixed variant so we never fail on a stale collision.
+  let cohortRef = `${p.project_ref}-MAIN`;
+  const { data: collision } = await supabase
+    .from('cohorts')
+    .select('id')
+    .eq('cohort_ref', cohortRef)
+    .maybeSingle();
+  if (collision) {
+    // Rare but possible: append a numeric suffix until we find a free slot.
+    for (let i = 2; i < 20; i++) {
+      const candidate = `${p.project_ref}-MAIN-${i}`;
+      const { data: c } = await supabase.from('cohorts').select('id').eq('cohort_ref', candidate).maybeSingle();
+      if (!c) { cohortRef = candidate; break; }
+    }
+  }
+
   const { data: created, error: cErr } = await supabase
     .from('cohorts')
     .insert({
@@ -532,7 +557,13 @@ async function ensureDefaultCohortForProject(
     } as never)
     .select('id')
     .single();
-  if (cErr) return null;
+  if (cErr) {
+    // Log the exact reason so we stop guessing why this fails silently.
+    console.error('[ensureDefaultCohortForProject] cohort insert failed', {
+      projectId, cohortRef, error: cErr.message, hint: (cErr as any).hint, details: (cErr as any).details,
+    });
+    return null;
+  }
   const cohortId = (created as { id: string }).id;
 
   // Auto-link every partner named in project.funder_name (they were

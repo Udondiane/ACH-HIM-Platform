@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ensureDefaultCohortForProject } from '@/lib/projects/actions';
 import { CapabilityPicker } from '@/components/projects/capability-picker';
 import { CapabilityRadar } from '@/components/charts/capability-radar';
 import { CapabilityBar } from '@/components/charts/capability-bar';
@@ -21,6 +22,13 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
   const supabase = createClient();
   const { data: project, error: projectError } = await supabase
     .from('projects').select('*').eq('id', params.id).maybeSingle();
+
+  // Self-heal: any project without a default cohort gets one silently on
+  // view. Catches projects created before the auto-create-on-project-create
+  // fix landed. No-op if a cohort already exists.
+  if (project) {
+    await ensureDefaultCohortForProject(supabase, params.id);
+  }
 
   if (projectError || !project) {
     return (
