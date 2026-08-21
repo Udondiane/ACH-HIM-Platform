@@ -488,8 +488,13 @@ export default async function AssessmentRunnerPage({
                 <CardContent>
                   <ClosingReflectionField
                     assessmentId={params.assessmentId}
+                    candidateId={a.candidate_id}
+                    cohortId={a.cohort_id ?? null}
                     prompt={prompt}
                     activityContext={context}
+                    timepoint={a.timepoint}
+                    projectName={p.name}
+                    activities={projectActivities}
                     initial={{
                       closing_reflection_text: a.closing_reflection_text ?? null,
                       closing_reflection_captured_via: a.closing_reflection_captured_via ?? null,

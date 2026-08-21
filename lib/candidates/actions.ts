@@ -75,24 +75,87 @@ export async function bulkImportCandidatesAction(input: {
     refCounter += 1;
     const candidateRef = `${refPrefix}${String(refCounter).padStart(3, '0')}`;
 
+    // languages_spoken arrives from the fuzzy import as a string like
+    // "Somali, Arabic, English" — the DB column is text[], so split on
+    // common separators before insert. Empty entries dropped.
+    const languagesSpokenArr = typeof m.languages_spoken === 'string'
+      ? (m.languages_spoken as string).split(/[,;/|]+/).map(s => s.trim()).filter(Boolean)
+      : null;
+
     const insert: Record<string, unknown> = {
       candidate_ref:    candidateRef,
+      // Identity / contact
       given_name:       m.given_name ?? null,
       family_name:      m.family_name ?? null,
       preferred_name:   m.preferred_name ?? null,
       email:            m.email ?? null,
       phone:            m.phone ?? null,
-      address_line1:    m.address_line1 ?? null,
-      postcode:         m.postcode ?? null,
       date_of_birth:    m.date_of_birth ?? null,
+      gender:           m.gender ?? null,
+      pronouns:         m.pronouns ?? null,
+      ethnicity:        m.ethnicity ?? null,
+      religion:         m.religion ?? null,
+      // Location / housing
+      address_line1:    m.address_line1 ?? null,
+      address_line2:    m.address_line2 ?? null,
+      city:             m.city ?? null,
+      postcode:         m.postcode ?? null,
+      local_authority:  m.local_authority ?? null,
+      housing_type:     m.housing_type ?? null,
+      accommodation_provider: m.accommodation_provider ?? null,
+      // Nationality / immigration
       country_of_origin:m.country_of_origin ?? null,
       arrival_year:     m.arrival_year ?? null,
+      immigration_status:    m.immigration_status ?? null,
+      home_office_reference: m.home_office_reference ?? null,
+      brp_number:            m.brp_number ?? null,
+      right_to_work_status:  m.right_to_work_status ?? null,
+      visa_expires_on:       m.visa_expires_on ?? null,
+      // Language / literacy
       preferred_locale: m.preferred_locale ?? 'en',
+      languages_spoken: languagesSpokenArr && languagesSpokenArr.length > 0 ? languagesSpokenArr : null,
       english_level:    m.english_level ?? null,
       esol_level:       m.esol_level ?? null,
+      // Family / household
+      dependants_count:            m.dependants_count ?? null,
+      children_ages:               m.children_ages ?? null,
+      has_caring_responsibilities: m.has_caring_responsibilities ?? null,
+      // Employment history / qualifications
+      previous_occupation:         m.previous_occupation ?? null,
+      highest_qualification:       m.highest_qualification ?? null,
+      qualification_country:       m.qualification_country ?? null,
+      qualifications_recognised_uk: m.qualifications_recognised_uk ?? null,
+      current_employment_status:   m.current_employment_status ?? null,
+      // Skills
+      driving_licence:             m.driving_licence ?? null,
+      digital_skills_self_reported: m.digital_skills_self_reported ?? null,
+      // Benefits / official refs
       benefit_status:   m.benefit_status ?? null,
       ni_number:        m.ni_number ?? null,
-      career_goal_summary: m.career_goal_summary ?? null,
+      // Health / accessibility
+      disability_status:            m.disability_status ?? null,
+      accessibility_needs:          m.accessibility_needs ?? null,
+      long_term_health_conditions:  m.long_term_health_conditions ?? null,
+      // Referral route
+      referral_source:       m.referral_source ?? null,
+      referrer_organisation: m.referrer_organisation ?? null,
+      referrer_contact:      m.referrer_contact ?? null,
+      // Communication preferences
+      interpreter_needed:        m.interpreter_needed ?? null,
+      interpreter_language:      m.interpreter_language ?? null,
+      preferred_contact_channel: m.preferred_contact_channel ?? null,
+      preferred_contact_time:    m.preferred_contact_time ?? null,
+      // Emergency contact
+      emergency_contact_name:         m.emergency_contact_name ?? null,
+      emergency_contact_relationship: m.emergency_contact_relationship ?? null,
+      emergency_contact_phone:        m.emergency_contact_phone ?? null,
+      // Programme fit
+      career_goal_summary:       m.career_goal_summary ?? null,
+      programme_hopes:           m.programme_hopes ?? null,
+      availability:              m.availability ?? null,
+      barriers_to_engagement:    m.barriers_to_engagement ?? null,
+      prior_engagement_with_ach: m.prior_engagement_with_ach ?? null,
+      // Free-form notes + fallback JSON blob for unmapped columns
       notes:            m.notes ?? null,
       status:           'applicant',
       application_source_data: Object.keys(r.application_source_data).length > 0 ? r.application_source_data : null,

@@ -111,6 +111,33 @@ export async function markResponseFeatureWorthyAction(input: {
   return { ok: true };
 }
 
+/**
+ * Promote a closing-reflection answer into featured_quotes with one
+ * click. Wraps createFeaturedQuoteAction with defaults appropriate for
+ * a closing reflection (source_type='assessment', speaker='candidate').
+ * Consent gate still applies inside the underlying action — if the
+ * candidate has not granted quote consent the promote will fail with
+ * a clear message rather than silently anonymising.
+ */
+export async function createFeaturedQuoteFromReflectionAction(input: {
+  candidate_id: string;
+  cohort_id?: string | null;
+  source_ref: string;
+  quote_text: string;
+  context?: string | null;
+}): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  return createFeaturedQuoteAction({
+    candidate_id: input.candidate_id,
+    cohort_id: input.cohort_id ?? null,
+    source_type: 'assessment',
+    source_ref: input.source_ref,
+    speaker_type: 'candidate',
+    quote_text: input.quote_text,
+    context: input.context ?? null,
+    display_name: null,
+  });
+}
+
 export async function setCandidateVoiceAction(input: {
   response_id: string;
   candidate_id: string;
