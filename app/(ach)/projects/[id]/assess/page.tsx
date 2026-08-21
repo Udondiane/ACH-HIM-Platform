@@ -143,6 +143,11 @@ export default async function StartAssessmentPage({ params }: { params: { id: st
               windowDays={windowDays}
               startAction={action}
             />
+            <div className="mt-4 pt-4 border-t-[0.5px] border-ach-border text-[11.5px] text-ach-navy/70">
+              <strong>Not going to be in person?</strong> Open the beneficiary&apos;s profile and use{' '}
+              <span className="font-mono text-[11px] bg-ach-page px-1.5 py-0.5 rounded">Send self-assessment link</span>{' '}
+              on their cohort card to share a WhatsApp/SMS/email link — they answer on their phone, response lands here.
+            </div>
           </CardContent>
         </Card>
       )}
