@@ -1,11 +1,10 @@
 import Link from 'next/link';
-import { LayoutDashboard } from 'lucide-react';
+import { FileText, Info, Quote } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CapabilityRadar } from '@/components/charts/capability-radar';
-import { WordCloud } from '@/components/charts/word-cloud';
 import { computeUplift } from '@/lib/scoring/uplift';
 
 const DOMAIN_LABELS: Record<string, string> = {
@@ -19,6 +18,14 @@ const DOMAIN_LABELS: Record<string, string> = {
 };
 
 const ALL_DOMAINS = ['employment','housing','education','health','belonging','social','rights'];
+
+// Human-readable funding model labels — replaces the raw enum values
+// ("funded", "commercial", "hybrid") that read as jargon to ACH staff.
+const FUNDING_MODEL_LABEL: Record<string, string> = {
+  funded: 'Grant funded',
+  commercial: 'Paid by employer',
+  hybrid: 'Grant + employer',
+};
 
 export default async function AggregateDashboardPage() {
   const supabase = createClient();
@@ -127,7 +134,43 @@ export default async function AggregateDashboardPage() {
       <PageHeader
         miniLabel="Reports"
         title="Aggregate dashboard"
+        description="A single view across every project, cohort, and beneficiary. Use this to spot which projects are driving the biggest capability change, then jump into that project's outcomes report."
+        actions={
+          <Link href="/featured-quotes">
+            <span className="inline-flex items-center gap-1.5 text-[12px] text-ach-navy hover:text-ach-navy/70 underline underline-offset-2">
+              <Quote className="h-3.5 w-3.5" />
+              Featured quotes library
+            </span>
+          </Link>
+        }
       />
+
+      {/* Jargon buster — one card that explains the three shorthand
+          columns down in the per-project table before staff hit them.
+          Static and small; disappears on print. */}
+      <div className="rounded-[10px] border-[0.5px] border-ach-border bg-ach-page/50 p-4 mb-5 print:hidden">
+        <div className="flex items-start gap-2.5">
+          <Info className="h-4 w-4 mt-0.5 text-ach-navy/60 shrink-0" />
+          <div className="text-[12.5px] text-ach-navy/80 space-y-1.5 flex-1">
+            <p><strong>How to read the table below:</strong></p>
+            <p>
+              <strong>Capability change (finishers)</strong> — for beneficiaries who
+              made it to the exit assessment, how much their average HIM score moved
+              between baseline and exit. Higher is better.
+            </p>
+            <p>
+              <strong>Capability change (everyone who started)</strong> — the same
+              number, but including people who withdrew (counted as zero change).
+              This is the honest headline for funders — it counts dropouts against
+              you.
+            </p>
+            <p>
+              <strong>How it&apos;s paid for</strong> — grant funded, paid by an
+              employer, or a mix of both.
+            </p>
+          </div>
+        </div>
+      </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
         <Kpi label="Projects" value={String(totalProjects)} sub={`${allProjects.filter((p: any) => p.status === 'active').length} active`} />
@@ -161,10 +204,11 @@ export default async function AggregateDashboardPage() {
                 <tr className="border-b-[0.5px] border-ach-border">
                   <Th>Project</Th>
                   <Th className="text-right">Cohorts</Th>
-                  <Th className="text-right">Starters</Th>
-                  <Th className="text-right">Avg uplift (completers)</Th>
-                  <Th className="text-right">Avg uplift (ITT)</Th>
-                  <Th>Funding model</Th>
+                  <Th className="text-right">Enrolled</Th>
+                  <Th className="text-right">Capability change<br /><span className="text-[10px] text-ach-navy/50 tracking-normal normal-case">Finishers only</span></Th>
+                  <Th className="text-right">Capability change<br /><span className="text-[10px] text-ach-navy/50 tracking-normal normal-case">Everyone who started</span></Th>
+                  <Th>How it&apos;s paid for</Th>
+                  <Th className="text-right">Report</Th>
                 </tr>
               </thead>
               <tbody>
@@ -182,7 +226,18 @@ export default async function AggregateDashboardPage() {
                     <td className={`py-2 text-right tabular-nums font-medium ${r.meanUpliftItt != null && r.meanUpliftItt > 0 ? 'text-[#5E7A3C]' : 'text-ach-navy/55'}`}>
                       {r.meanUpliftItt != null ? (r.meanUpliftItt >= 0 ? '+' : '') + r.meanUpliftItt.toFixed(2) : '—'}
                     </td>
-                    <td className="py-2 text-ach-navy/75 capitalize text-[12px]">{r.project.funding_model ?? '—'}</td>
+                    <td className="py-2 text-ach-navy/75 text-[12px]">
+                      {r.project.funding_model ? (FUNDING_MODEL_LABEL[r.project.funding_model] ?? r.project.funding_model) : '—'}
+                    </td>
+                    <td className="py-2 text-right">
+                      <Link
+                        href={`/projects/${r.project.id}/outcomes-report`}
+                        className="inline-flex items-center gap-1 text-[11.5px] text-ach-navy underline underline-offset-2 hover:text-ach-navy/70"
+                      >
+                        <FileText className="h-3 w-3" />
+                        Open
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
