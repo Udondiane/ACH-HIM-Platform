@@ -12,6 +12,7 @@ import { CandidateIdentity } from '@/components/ui/candidate-identity';
 import { ShortlistForPartner } from '@/components/candidates/shortlist-for-partner';
 import { AudioConsentToggle } from '@/components/candidates/audio-consent-toggle';
 import { ChangeHistoryPanel } from '@/components/candidates/change-history-panel';
+import { SendSelfAssessmentButton } from '@/components/self-assessment/send-self-assessment-button';
 import { logCandidateAccess } from '@/lib/audit/access-log';
 
 export default async function CandidateDetailPage({ params }: { params: { id: string } }) {
@@ -25,7 +26,7 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
     supabase.from('candidate_consent').select('*').eq('candidate_id', params.id).order('given_at', { ascending: false }).limit(5),
     supabase.from('development_fund_balances').select('*').eq('candidate_id', params.id).maybeSingle(),
     supabase.from('placements').select('id, role_title, salary_band, start_date, status, partners(name)').eq('candidate_id', params.id).order('start_date', { ascending: false }).limit(5),
-    supabase.from('cohort_candidates').select('id, enrolled_at, cohorts(id, name, cohort_ref, status, cohort_partners(partner_id, partners(id, name, types)))').eq('candidate_id', params.id),
+    supabase.from('cohort_candidates').select('id, enrolled_at, cohorts(id, name, cohort_ref, status, project_id, projects(id, name), cohort_partners(partner_id, partners(id, name, types)))').eq('candidate_id', params.id),
     supabase.from('partners').select('id, name, types'),
     supabase.from('partner_shortlist').select('partner_id, withdrawn_at, notes').eq('candidate_id', params.id),
     supabase.from('training_enrolments').select('id, status, enrolled_date, completed_date, training_programmes(id, name, code, category)').eq('candidate_id', params.id).order('enrolled_date', { ascending: false }),
@@ -197,15 +198,30 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
         <Card className="mt-4">
           <CardHeader>
             <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/60">Cohorts</div>
+            <div className="text-[11.5px] text-ach-navy/55 mt-0.5">
+              Each project this beneficiary is enrolled on. Send a mobile self-assessment link if they&apos;re not going to be in person at a follow-up timepoint.
+            </div>
           </CardHeader>
           <CardContent>
-            <ul className="text-[13px] space-y-2">
+            <ul className="text-[13px] space-y-3">
               {(cohortCandidates.data as any[]).map(cc => (
-                <li key={cc.id} className="flex items-center justify-between">
-                  <Link href={`/cohorts/${cc.cohorts?.id}`} className="text-ach-navy font-medium hover:underline">
-                    {cc.cohorts?.name ?? cc.cohorts?.cohort_ref}
-                  </Link>
-                  <Badge>{cc.cohorts?.status}</Badge>
+                <li key={cc.id} className="flex flex-wrap items-center justify-between gap-2 pb-2 last:pb-0 border-b-[0.5px] border-ach-border last:border-0">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Link href={`/cohorts/${cc.cohorts?.id}`} className="text-ach-navy font-medium hover:underline">
+                      {cc.cohorts?.name ?? cc.cohorts?.cohort_ref}
+                    </Link>
+                    <Badge>{cc.cohorts?.status}</Badge>
+                  </div>
+                  {cc.cohorts?.projects?.id && (
+                    <SendSelfAssessmentButton
+                      candidateId={c.id}
+                      candidateName={[c.given_name, c.family_name].filter(Boolean).join(' ') || c.candidate_ref}
+                      projectId={cc.cohorts.projects.id}
+                      projectName={cc.cohorts.projects.name}
+                      defaultPhone={c.phone ?? null}
+                      defaultEmail={c.email ?? null}
+                    />
+                  )}
                 </li>
               ))}
             </ul>
