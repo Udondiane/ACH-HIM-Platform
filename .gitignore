@@ -48,3 +48,9 @@ docs/*_Run_Sheet.md
 docs/*Facilitator*.md
 docs/*Pricing*.md
 docs/*Commercial*.md
+
+# Category B — ACH-facing docs kept only as Word deliverables
+docs/ICT-TRAINING-NOTES.md
+docs/ICT-OPERATIONS-CALENDAR.md
+docs/ICT-*.md
+docs/*Handover*.md
