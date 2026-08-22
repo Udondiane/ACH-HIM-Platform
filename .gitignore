@@ -37,3 +37,14 @@ __pycache__/
 
 # vercel
 .vercel
+
+# Never commit commercial/personal planning docs into this repo.
+# Kept locally in scratchpad only.
+docs/ACH_Post_KTP_Proposal.md
+docs/ICT-SESSION-RUN-SHEET.md
+docs/ICT-SKILLS-REQUIRED.md
+docs/*_Proposal.md
+docs/*_Run_Sheet.md
+docs/*Facilitator*.md
+docs/*Pricing*.md
+docs/*Commercial*.md
