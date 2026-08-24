@@ -1,0 +1,137 @@
+name: Nightly Supabase backup
+
+# Off-Supabase, off-Vercel automated backup of the critical impact-
+# measurement tables. Runs every night at 02:30 UTC (03:30 BST). Any
+# destructive migration executed after the last snapshot has an
+# external file to reconstruct from — the exact safety net that was
+# missing when migration 059 destroyed 157 assessment_responses on
+# 2026-07-29.
+#
+# What it dumps:
+#   - assessments
+#   - assessment_responses
+#   - assessment_factor_responses
+#   - assessment_attachments
+#   - candidates
+#   - candidate_consent
+#   - candidate_interviews
+#   - beneficiary_outcomes
+#   - featured_quotes
+#   - cohorts
+#   - cohort_candidates
+#   - placements
+#   - placement_offers
+#   - placement_retention_checks
+#
+# What it does NOT dump:
+#   - Reference data (factors, indicators, domains) — recoverable
+#     from migrations
+#   - Audit tables (candidate_change_log etc.) — self-recovering
+#   - Storage bucket audio files — separate backup job needed
+#
+# Retention: 30 days as GitHub Release assets. This uses zero external
+# cost (Free-tier friendly) and gives ~5x the recovery window Supabase
+# Pro PITR would.
+
+on:
+  schedule:
+    - cron: '30 2 * * *'   # 02:30 UTC daily
+  workflow_dispatch:         # manual trigger from Actions tab
+
+concurrency:
+  group: nightly-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to create the GitHub Release
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Verify required secrets
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error::SUPABASE_DB_URL secret is not set. Add it in repo Settings -> Secrets and variables -> Actions."
+            echo "::error::Format: postgresql://postgres:PASSWORD@db.PROJECT_REF.supabase.co:5432/postgres"
+            exit 1
+          fi
+
+      - name: Dump critical impact-measurement tables
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          STAMP=$(date -u +'%Y%m%d-%H%M')
+          OUT="him-backup-${STAMP}.sql.gz"
+          echo "Dumping to $OUT"
+
+          # Data-only dump of the 14 critical tables. Schema is already
+          # in git; we only need the rows.
+          pg_dump "$SUPABASE_DB_URL" \
+            --data-only \
+            --no-owner \
+            --no-privileges \
+            --column-inserts \
+            -t public.assessments \
+            -t public.assessment_responses \
+            -t public.assessment_factor_responses \
+            -t public.assessment_attachments \
+            -t public.candidates \
+            -t public.candidate_consent \
+            -t public.candidate_interviews \
+            -t public.beneficiary_outcomes \
+            -t public.featured_quotes \
+            -t public.cohorts \
+            -t public.cohort_candidates \
+            -t public.placements \
+            -t public.placement_offers \
+            -t public.placement_retention_checks \
+            | gzip -9 > "$OUT"
+
+          ls -la "$OUT"
+          echo "OUT=$OUT" >> "$GITHUB_ENV"
+          echo "STAMP=$STAMP" >> "$GITHUB_ENV"
+
+      - name: Publish as GitHub Release asset (30-day retention)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: backup-${{ env.STAMP }}
+          name: "Nightly backup ${{ env.STAMP }} UTC"
+          body: |
+            Automated nightly data-only backup of the HIM impact-measurement
+            tables. Restore procedure documented in docs/RUNBOOK.md.
+
+            Do not tag/delete manually — the cleanup step below removes
+            releases older than 30 days automatically.
+          files: ${{ env.OUT }}
+          draft: false
+          prerelease: true
+
+      - name: Prune backups older than 30 days
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # List all backup-* releases, keep 30 days, delete the rest.
+          CUTOFF=$(date -u -d '30 days ago' +'%Y%m%d')
+          gh release list --limit 200 --json tagName,createdAt | \
+            jq -r --arg cutoff "$CUTOFF" '
+              .[] |
+              select(.tagName | startswith("backup-")) |
+              select(.tagName | ltrimstr("backup-") | .[:8] < $cutoff) |
+              .tagName' | \
+          while read -r tag; do
+            [ -z "$tag" ] && continue
+            echo "Deleting old backup release: $tag"
+            gh release delete "$tag" --yes --cleanup-tag
+          done

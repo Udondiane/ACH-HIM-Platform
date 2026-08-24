@@ -1,0 +1,117 @@
+name: Migration safety check
+
+# Every PR that touches supabase/migrations/ runs this gate.
+# Reject migrations containing bare destructive SQL (DELETE without
+# WHERE, DROP TABLE, TRUNCATE, ALTER TABLE ... DROP COLUMN) unless
+# the file explicitly marks itself as approved-destructive.
+#
+# The exact miss that let migration 059 destroy 157 rows of live
+# beneficiary data on 2026-07-29:
+#
+#   delete from public.assessment_responses;   -- no where clause
+#
+# This gate blocks that shape at PR time.
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**.sql'
+  push:
+    branches: [main, ktp-him-app-production]
+    paths:
+      - 'supabase/migrations/**.sql'
+
+concurrency:
+  group: migration-safety-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # need history to diff against base
+
+      - name: Determine which migration files to scan
+        id: files
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch origin "${{ github.base_ref }}" --depth=1
+            FILES=$(git diff --name-only --diff-filter=A "origin/${{ github.base_ref }}"...HEAD -- 'supabase/migrations/*.sql' || true)
+          else
+            # Push: scan files changed in this push
+            FILES=$(git diff --name-only --diff-filter=A "${{ github.event.before }}"..HEAD -- 'supabase/migrations/*.sql' 2>/dev/null || echo "")
+            if [ -z "$FILES" ]; then
+              # First push to a branch — scan any newly added migration
+              FILES=$(git diff --name-only --diff-filter=A HEAD~1..HEAD -- 'supabase/migrations/*.sql' 2>/dev/null || true)
+            fi
+          fi
+          echo "Files to scan:"
+          echo "$FILES"
+          echo "files<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$FILES" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Fail on unguarded destructive SQL
+        run: |
+          set -euo pipefail
+          FILES="${{ steps.files.outputs.files }}"
+          if [ -z "$FILES" ]; then
+            echo "No new migration files in this diff. Skipping."
+            exit 0
+          fi
+
+          FAIL=0
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            [ ! -f "$file" ] && continue
+            echo "Scanning $file"
+
+            # Read the file, strip line-comments so a --comment isn't
+            # counted as SQL, then check for destructive patterns.
+            CONTENT=$(grep -v '^\s*--' "$file" || true)
+
+            # Escape hatch: an approved destructive migration must
+            # carry this exact string in a comment somewhere in the file.
+            if grep -q -- '-- @approved-destructive' "$file"; then
+              echo "  ✅ Marked @approved-destructive — allowed"
+              continue
+            fi
+
+            # 1. Unqualified DELETE (no WHERE clause)
+            if echo "$CONTENT" | grep -iEq 'delete[[:space:]]+from[[:space:]]+[a-z_.]+[[:space:]]*;'; then
+              echo "  ❌ Found `DELETE FROM ... ;` without a WHERE clause. This is the shape that destroyed migration 059's data."
+              echo "     If this is genuinely intentional, add a comment `-- @approved-destructive` at the top of the migration + a backup-first step, and re-run CI."
+              FAIL=1
+            fi
+
+            # 2. TRUNCATE
+            if echo "$CONTENT" | grep -iEq 'truncate[[:space:]]+(table[[:space:]]+)?[a-z_.]+'; then
+              echo "  ❌ Found TRUNCATE. Same policy as DELETE without WHERE."
+              FAIL=1
+            fi
+
+            # 3. DROP TABLE without IF EXISTS + guard comment
+            if echo "$CONTENT" | grep -iEq 'drop[[:space:]]+table[[:space:]]+[a-z_.]'; then
+              # DROP TABLE IF EXISTS ... is allowed if the migration
+              # is on its way to also creating a replacement — but
+              # still requires the guard comment.
+              echo "  ❌ Found DROP TABLE. Requires @approved-destructive marker."
+              FAIL=1
+            fi
+
+            # 4. ALTER TABLE ... DROP COLUMN (drops data in the column)
+            if echo "$CONTENT" | grep -iEq 'alter[[:space:]]+table[[:space:]]+[a-z_.]+[[:space:]]+drop[[:space:]]+column'; then
+              echo "  ❌ Found ALTER TABLE ... DROP COLUMN. Requires @approved-destructive marker + explicit data-migration step."
+              FAIL=1
+            fi
+
+            [ "$FAIL" -eq 0 ] && echo "  ✅ Clean"
+          done <<< "$FILES"
+
+          if [ "$FAIL" -ne 0 ]; then
+            echo "::error::One or more migrations contain unguarded destructive SQL. See job output above."
+            exit 1
+          fi

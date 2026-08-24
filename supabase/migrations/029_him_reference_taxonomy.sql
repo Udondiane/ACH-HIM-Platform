@@ -34,7 +34,28 @@ alter table public.factors
 
 -- Wipe existing framework data ------------------------------------
 -- assessment_responses has FK on indicators(id) with ON DELETE RESTRICT,
--- so clear it first. Pre-pilot phase: no production responses yet.
+-- so clear it first.
+--
+-- ⚠️  @approved-destructive — retained for schema reproducibility.
+-- Guard added after the 2026-07-29 incident: refuse to wipe if live
+-- assessment content exists.
+do $$
+declare
+  n integer;
+  ack text;
+begin
+  select count(*) into n from public.assessment_responses;
+  begin
+    ack := current_setting('him.migration_029_ack', true);
+  exception when others then
+    ack := null;
+  end;
+  if n > 0 and coalesce(ack, '') != 'i-have-backed-up' then
+    raise exception
+      'REFUSING to reseed framework — % rows of assessment_responses exist. Take a backup first, then: select set_config(''him.migration_029_ack'', ''i-have-backed-up'', false);', n;
+  end if;
+end $$;
+
 delete from public.assessment_responses;
 delete from public.indicators;
 delete from public.factor_domains;

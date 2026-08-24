@@ -1,10 +1,55 @@
 -- 059 · Reseed framework to match Refugee_Capabilities_Full.xlsx (72 metrics, 7 domains)
 --
 -- Strips existing factors + indicators (and any assessment_responses that reference
--- them — pre-pilot data only) and reseeds the framework verbatim from the uploaded
--- capabilities workbook. Score guides on individual factors are dropped since factor
--- IDs change; they can be re-seeded in a follow-up migration once the demo shows the
--- new IDs are stable.
+-- them) and reseeds the framework verbatim from the uploaded capabilities workbook.
+-- Score guides on individual factors are dropped since factor IDs change; they can
+-- be re-seeded in a follow-up migration once the demo shows the new IDs are stable.
+--
+-- ⚠️  DESTRUCTIVE — POST-INCIDENT SAFETY GUARD  ⚠️
+--
+-- This migration destroyed 157 rows of live baseline data when applied
+-- against the IKEA pilot on 2026-07-29. Original comment claimed
+-- "pre-pilot data only" — that was an assumption, not a check.
+--
+-- The migration is retained AS-IS in git history so schema evolution
+-- is reproducible from scratch. On a fresh empty Supabase this is safe.
+-- On any Supabase with existing content, the guard below refuses to
+-- run unless the operator has explicitly acknowledged the wipe.
+--
+-- To run this migration on a database with existing content:
+--   1. Trigger the nightly-backup workflow first, download the release
+--   2. Run this SQL block to acknowledge:
+--        select set_config('him.migration_059_ack', 'i-have-backed-up', false);
+--   3. Paste this migration
+--
+-- Without step 2, the guard raises and rolls back.
+-- @approved-destructive — retained for schema reproducibility; guarded
+
+do $$
+declare
+  n integer;
+  ack text;
+begin
+  select count(*) into n from public.assessment_responses;
+  begin
+    ack := current_setting('him.migration_059_ack', true);
+  exception when others then
+    ack := null;
+  end;
+
+  if n > 0 and coalesce(ack, '') != 'i-have-backed-up' then
+    raise exception E'\n'
+      '════════════════════════════════════════════════════════════════\n'
+      'REFUSING to reseed framework — % rows of assessment_responses exist.\n'
+      'Migration 059 destroyed 157 rows of live IKEA baseline data on 2026-07-29\n'
+      'because this check was not in place. Do NOT proceed without a backup.\n'
+      '\n'
+      'To acknowledge you have taken a backup and want to proceed anyway:\n'
+      '  select set_config(''him.migration_059_ack'', ''i-have-backed-up'', false);\n'
+      'then re-run this migration.\n'
+      '════════════════════════════════════════════════════════════════', n;
+  end if;
+end $$;
 
 -- ── Wipe existing framework data ──
 delete from public.assessment_responses;

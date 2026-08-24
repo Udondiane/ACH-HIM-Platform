@@ -6,6 +6,21 @@
 -- type check constraint with 'choice' and 'date', and adds an
 -- 'options' column so multi-choice answers can carry their choices
 -- inline.
+--
+-- ⚠️  DESTRUCTIVE — POST-INCIDENT SAFETY GUARD  ⚠️
+--
+-- Wipes public.partner_question_items entirely. If a project has
+-- collected partner responses that FK-reference the items, those
+-- rows will cascade or fail depending on the constraint. On any
+-- Supabase with real partner-question data, the guard below refuses
+-- to run unless the operator has explicitly acknowledged the wipe.
+--
+-- To run this migration on a database with existing content:
+--   1. Trigger the nightly-backup workflow first, download the release
+--   2. Run this SQL block to acknowledge:
+--        select set_config('him.migration_058_ack', 'i-have-backed-up', false);
+--   3. Paste this migration
+-- @approved-destructive — retained for schema reproducibility; guarded
 
 -- ── Schema extensions ──
 alter table public.partner_question_items
@@ -22,6 +37,31 @@ alter table public.partner_question_items
   check (response_type in ('narrative', 'yes_no', 'likert_1_5', 'text_short', 'choice', 'date'));
 
 -- ── Wipe old items and non-workforce sets ──
+do $$
+declare
+  n integer;
+  ack text;
+begin
+  select count(*) into n from public.partner_question_items;
+  begin
+    ack := current_setting('him.migration_058_ack', true);
+  exception when others then
+    ack := null;
+  end;
+
+  if n > 0 and coalesce(ack, '') != 'i-have-backed-up' then
+    raise exception E'\n'
+      '════════════════════════════════════════════════════════════════\n'
+      'REFUSING to reseed partner question items — % rows exist.\n'
+      'Do NOT proceed without a backup.\n'
+      '\n'
+      'To acknowledge you have taken a backup and want to proceed anyway:\n'
+      '  select set_config(''him.migration_058_ack'', ''i-have-backed-up'', false);\n'
+      'then re-run this migration.\n'
+      '════════════════════════════════════════════════════════════════', n;
+  end if;
+end $$;
+
 delete from public.partner_question_items;
 delete from public.partner_question_sets where key in ('wellbeing', 'housing');
 
