@@ -31,29 +31,81 @@ function fdToPlain(fd: FormData): Record<string, unknown> {
   return obj;
 }
 
-/** Sync the project_activities rows to match the user's tick list. */
+/**
+ * Sync the project_activities rows to match the user's tick list.
+ *
+ * Historical implementation was DELETE-all-then-INSERT with no error
+ * capture — if the DELETE succeeded but the INSERT failed, the project
+ * silently lost every activity. Now uses a diff (compute the set of
+ * to-add and to-remove) so a failure in one operation doesn't wipe
+ * the other's rows.
+ */
 async function syncProjectActivities(
   supabase: ReturnType<typeof createClient>,
   projectId: string,
   activities: string[],
 ): Promise<void> {
-  // Replace-all semantics: clear then insert. Safer than computing the diff.
-  await supabase.from('project_activities').delete().eq('project_id', projectId);
-  if (activities.length === 0) return;
-  const rows = activities.map(activity => ({ project_id: projectId, activity }));
-  await supabase.from('project_activities').insert(rows as never);
+  const wanted = new Set(activities);
+  const { data: existing, error: readErr } = await supabase
+    .from('project_activities')
+    .select('activity')
+    .eq('project_id', projectId);
+  if (readErr) throw new Error(`project_activities read failed: ${readErr.message}`);
+  const have = new Set(((existing as { activity: string }[] | null) ?? []).map(r => r.activity));
+
+  const toAdd = [...wanted].filter(a => !have.has(a));
+  const toRemove = [...have].filter(a => !wanted.has(a));
+
+  if (toAdd.length > 0) {
+    const { error: addErr } = await supabase
+      .from('project_activities')
+      .insert(toAdd.map(activity => ({ project_id: projectId, activity })) as never);
+    if (addErr) throw new Error(`project_activities insert failed: ${addErr.message}`);
+  }
+  if (toRemove.length > 0) {
+    const { error: rmErr } = await supabase
+      .from('project_activities')
+      .delete()
+      .eq('project_id', projectId)
+      .in('activity', toRemove);
+    if (rmErr) throw new Error(`project_activities delete failed: ${rmErr.message}`);
+  }
 }
 
-/** Sync the project_training_programmes link rows to match the user's tick list. */
+/**
+ * Sync the project_training_programmes link rows to match the user's
+ * tick list. Diff-based for the same reason as syncProjectActivities.
+ */
 async function syncProjectTrainingProgrammes(
   supabase: ReturnType<typeof createClient>,
   projectId: string,
   programmeIds: string[],
 ): Promise<void> {
-  await supabase.from('project_training_programmes').delete().eq('project_id', projectId);
-  if (programmeIds.length === 0) return;
-  const rows = programmeIds.map(programme_id => ({ project_id: projectId, programme_id }));
-  await supabase.from('project_training_programmes').insert(rows as never);
+  const wanted = new Set(programmeIds);
+  const { data: existing, error: readErr } = await supabase
+    .from('project_training_programmes')
+    .select('programme_id')
+    .eq('project_id', projectId);
+  if (readErr) throw new Error(`project_training_programmes read failed: ${readErr.message}`);
+  const have = new Set(((existing as { programme_id: string }[] | null) ?? []).map(r => r.programme_id));
+
+  const toAdd = [...wanted].filter(p => !have.has(p));
+  const toRemove = [...have].filter(p => !wanted.has(p));
+
+  if (toAdd.length > 0) {
+    const { error: addErr } = await supabase
+      .from('project_training_programmes')
+      .insert(toAdd.map(programme_id => ({ project_id: projectId, programme_id })) as never);
+    if (addErr) throw new Error(`project_training_programmes insert failed: ${addErr.message}`);
+  }
+  if (toRemove.length > 0) {
+    const { error: rmErr } = await supabase
+      .from('project_training_programmes')
+      .delete()
+      .eq('project_id', projectId)
+      .in('programme_id', toRemove);
+    if (rmErr) throw new Error(`project_training_programmes delete failed: ${rmErr.message}`);
+  }
 }
 
 /**
@@ -410,12 +462,60 @@ export async function updateProjectAction(
   return { ok: true, id };
 }
 
-export async function deleteProjectAction(id: string) {
+/**
+ * Soft-delete a project.
+ *
+ * Historical behaviour: hard DELETE, which cascaded through cohorts,
+ * cohort_candidates, cohort_partners, and orphaned every assessment
+ * (assessments.project_id = ON DELETE SET NULL). One misclick from a
+ * programme lead could destroy an entire live project's structural
+ * data with no recovery.
+ *
+ * New behaviour: refuse to hard-delete a project that has any live
+ * data attached. Set status='archived' instead. If the caller
+ * genuinely wants a hard delete of an empty project (e.g. a mis-
+ * created "gg" test project), pass hardDelete:true AND the project
+ * must have zero assessments, zero placements, zero cohorts with
+ * candidates. Anything else archives.
+ */
+export async function deleteProjectAction(
+  id: string,
+  opts?: { hardDelete?: boolean },
+): Promise<{ ok: true; softDeleted: boolean } | { ok: false; error: string }> {
   const supabase = createClient();
-  await supabase.from('projects').delete().eq('id', id);
+
+  // Count attached content so we can refuse a hard delete when the
+  // project has anything valuable hanging off it.
+  const [{ count: assessCount }, { count: placeCount }, { count: cohortCandCount }] = await Promise.all([
+    supabase.from('assessments').select('id', { count: 'exact', head: true }).eq('project_id', id),
+    supabase.from('placements').select('id', { count: 'exact', head: true })
+      .in('cohort_id',
+        (await supabase.from('cohorts').select('id').eq('project_id', id))
+          .data?.map((r: any) => r.id) ?? []),
+    supabase.from('cohort_candidates').select('id', { count: 'exact', head: true })
+      .in('cohort_id',
+        (await supabase.from('cohorts').select('id').eq('project_id', id))
+          .data?.map((r: any) => r.id) ?? []),
+  ]);
+  const hasContent = (assessCount ?? 0) > 0 || (placeCount ?? 0) > 0 || (cohortCandCount ?? 0) > 0;
+
+  if (opts?.hardDelete === true && !hasContent) {
+    const { error } = await supabase.from('projects').delete().eq('id', id);
+    if (error) return { ok: false, error: error.message };
+    revalidatePath('/projects');
+    revalidatePath('/dashboard');
+    redirect('/projects');
+  }
+
+  // Default: soft-delete via status update.
+  const { error } = await supabase
+    .from('projects')
+    .update({ status: 'archived' } as never)
+    .eq('id', id);
+  if (error) return { ok: false, error: error.message };
   revalidatePath('/projects');
   revalidatePath('/dashboard');
-  redirect('/projects');
+  return { ok: true, softDeleted: true };
 }
 
 export async function setProjectCapabilitiesAction(

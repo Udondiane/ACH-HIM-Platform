@@ -71,10 +71,18 @@ export async function GET() {
     ]);
   }
 
-  const csv = rows.map(r => r.map(cell => {
-    const s = String(cell ?? '');
+  // Formula-injection guard. Excel/LibreOffice/Numbers all interpret
+  // a leading `=`, `+`, `-`, `@`, TAB or CR in a cell as a formula
+  // when the file is opened. A beneficiary name or partner-recorded
+  // note starting with one of those characters would execute. Prefix
+  // with a single quote — Excel treats that as "literal text" and
+  // strips the quote for display.
+  const escapeCell = (raw: unknown): string => {
+    let s = String(raw ?? '');
+    if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-  }).join(',')).join('\n');
+  };
+  const csv = rows.map(r => r.map(escapeCell).join(',')).join('\n');
 
   const filename = `training-delivery-${new Date().toISOString().slice(0, 10)}.csv`;
   return new NextResponse(csv, {

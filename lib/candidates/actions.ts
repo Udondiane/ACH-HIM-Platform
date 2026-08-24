@@ -239,14 +239,18 @@ export async function updateCandidateAction(
 export async function withdrawCandidateAction(
   id: string,
   opts?: { exitReason?: string | null; exitNotes?: string | null; exitDate?: string | null },
-) {
+): Promise<{ ok: true } | { ok: false; error: string }> {
   const supabase = createClient();
-  await supabase.from('candidates').update({
+  const { error } = await supabase.from('candidates').update({
     status: 'withdrawn',
     exit_reason: opts?.exitReason ?? null,
     exit_notes: opts?.exitNotes ?? null,
     exit_date: opts?.exitDate ?? new Date().toISOString().slice(0, 10),
   } as never).eq('id', id);
+  // Historically this action swallowed the DB error and redirected
+  // anyway — staff would see "withdrawn" in the UI while the row was
+  // unchanged. Surface the error so the caller can decide.
+  if (error) return { ok: false, error: error.message };
   revalidatePath('/candidates');
   redirect('/candidates');
 }
@@ -294,10 +298,10 @@ export async function recordConsentAction(
     may_be_recontacted_for_followup?: boolean;
   },
   notes?: string,
-) {
+): Promise<{ ok: true } | { ok: false; error: string }> {
   const supabase = createClient();
   const { data: user } = await supabase.auth.getUser();
-  await supabase.from('candidate_consent').insert({
+  const { error } = await supabase.from('candidate_consent').insert({
     candidate_id: candidateId,
     may_be_named: !!flags.may_be_named,
     may_be_quoted: !!flags.may_be_quoted,
@@ -308,5 +312,11 @@ export async function recordConsentAction(
     recorded_by: user.user?.id ?? null,
     notes: notes ?? null,
   } as never);
+  // Consent is GDPR-critical. A silent write failure means the "record
+  // consent" flow appears successful while no row actually lands —
+  // downstream code then defaults to "no consent" and the assessor
+  // has no idea. Propagate the error so the form can retry / warn.
+  if (error) return { ok: false, error: error.message };
   revalidatePath(`/candidates/${candidateId}`);
+  return { ok: true };
 }

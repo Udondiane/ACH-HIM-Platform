@@ -51,34 +51,53 @@ export async function recordFollowUpResponseAction(input: {
   const supabase = createClient();
   const { data: user } = await supabase.auth.getUser();
 
-  // Load the dispatch
+  // Load the dispatch. We also need its cohort's project so the
+  // upserted assessment inherits the correct project_id — historically
+  // this was left NULL, which (a) bypassed the unique constraint on
+  // (candidate, project, timepoint), and (b) made the assessment
+  // invisible to project-scoped outcome reports.
   const { data: dispatch, error: dispatchErr } = await supabase
     .from('follow_up_dispatches')
-    .select('id, candidate_id, cohort_id, placement_id, timepoint')
+    .select('id, candidate_id, cohort_id, placement_id, timepoint, cohorts(project_id)')
     .eq('id', input.dispatch_id)
     .maybeSingle();
   if (dispatchErr || !dispatch) {
     return { ok: false, error: dispatchErr?.message ?? 'Dispatch not found.' };
   }
   const d = dispatch as any;
+  const projectId: string | null = d.cohorts?.project_id ?? null;
 
-  // 1. Upsert an assessment at the correct timepoint
-  const { data: existingAssessment } = await supabase
+  // 1. Upsert an assessment at the correct timepoint. Filter by
+  //    project_id too — a candidate on two projects at the same
+  //    timepoint would previously return `maybeSingle() → error` and
+  //    fall through with assessmentId=null.
+  const existingQuery = supabase
     .from('assessments')
     .select('id, project_id')
     .eq('candidate_id', d.candidate_id)
-    .eq('timepoint', d.timepoint)
-    .maybeSingle();
+    .eq('timepoint', d.timepoint);
+  const { data: existingAssessment } = projectId
+    ? await existingQuery.eq('project_id', projectId).maybeSingle()
+    : await existingQuery.is('project_id', null).maybeSingle();
 
   let assessmentId: string | null = (existingAssessment as any)?.id ?? null;
+
+  // Refuse to auto-mark this assessment `completed` if the follow-up
+  // response is empty of substantive content. Historically any dispatch
+  // reply — including an empty one — flipped status='completed' with
+  // zero responses, corrupting funnel reports downstream.
+  const substantiveResponse = input.response_text.trim().length >= 3;
+  const targetStatus: 'in_progress' | 'completed' = substantiveResponse ? 'completed' : 'in_progress';
+
   if (!assessmentId) {
     const { data: created, error: aErr } = await supabase
       .from('assessments')
       .insert({
         candidate_id: d.candidate_id,
+        project_id: projectId,
         cohort_id: d.cohort_id,
         timepoint: d.timepoint,
-        status: 'completed',
+        status: targetStatus,
         assessor_id: user.user?.id ?? null,
         notes: `Captured via follow-up dispatch (${input.channel}).`,
       } as never)
@@ -89,7 +108,7 @@ export async function recordFollowUpResponseAction(input: {
   } else {
     await supabase
       .from('assessments')
-      .update({ status: 'completed', assessor_id: user.user?.id ?? null } as never)
+      .update({ status: targetStatus, assessor_id: user.user?.id ?? null } as never)
       .eq('id', assessmentId);
   }
 
