@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { createClient } from '@/lib/supabase/server';
 import { checkRateLimit, ipFromHeaders, rateLimitedResponse } from '@/lib/security/rate-limit';
+import { requireApiUser } from '@/lib/supabase/api-auth';
 
 export const runtime = 'nodejs';
 
@@ -37,6 +38,12 @@ interface PerIndicatorSuggestion {
  *     this is effectively free for the pilot
  */
 export async function POST(req: NextRequest) {
+  // Auth gate — this route sends transcript text (potentially special-
+  // category personal data) to Azure OpenAI. Never accept anonymous
+  // callers.
+  const auth = await requireApiUser(['ach_staff']);
+  if (!auth.ok) return auth.response;
+
   const rl = checkRateLimit({
     ip: ipFromHeaders(req.headers),
     key: 'ai:analyze-transcript',

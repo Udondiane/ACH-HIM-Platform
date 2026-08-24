@@ -58,10 +58,15 @@ const FIELD_LABELS: Record<Timepoint, {
 
 export function IndicatorScorer({
   assessmentId, indicator, initialValue, initialNarrative,
-  initialObservableChanges, initialPractices, locked: _locked, timepoint,
+  initialObservableChanges, initialPractices, locked, timepoint,
 }: Props) {
-  // Demo mode: ignore the locked prop entirely so every input stays writable.
-  const locked = false;
+  // Honour the locked prop. Historically a "demo mode" override forced
+  // locked=false, which meant completed assessments and locked projects
+  // were still editable through this component — defeating the audit
+  // trail entirely. Removed after §17 code review (2026-08-24).
+  // Server-side saveAssessmentResponseAction ALSO refuses writes when
+  // the parent assessment is completed / project is_locked — this is
+  // the client-side half of that guard.
   const labels = FIELD_LABELS[timepoint ?? 'baseline'] ?? FIELD_LABELS.baseline;
   const [value, setValue] = useState<number | null>(initialValue);
   const [narrative, setNarrative] = useState<string>(initialNarrative ?? '');
@@ -69,12 +74,21 @@ export function IndicatorScorer({
   const [practices, setPractices] = useState<string>(initialPractices ?? '');
   const [pending, startTransition] = useTransition();
   const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const persist = (v: number | null, n: string | null, o: string | null, p: string | null) => {
     if (locked) return;
     startTransition(async () => {
-      await saveAssessmentResponseAction(assessmentId, indicator.id, v, n, o, p);
-      setSavedAt(new Date());
+      const res = await saveAssessmentResponseAction(assessmentId, indicator.id, v, n, o, p);
+      if (res && res.ok === false) {
+        // Surface the real failure — historically this was swallowed and
+        // the UI said "Saved" while the row was rejected server-side.
+        setSaveError(res.error);
+        setSavedAt(null);
+      } else {
+        setSaveError(null);
+        setSavedAt(new Date());
+      }
     });
   };
 
@@ -153,9 +167,14 @@ export function IndicatorScorer({
         />
       )}
 
-      {savedAt && !locked && (
+      {savedAt && !locked && !saveError && (
         <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/40 mt-1.5">
           {pending ? 'Saving…' : `Saved ${savedAt.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}`}
+        </div>
+      )}
+      {saveError && (
+        <div className="text-[11px] text-[#8B3A4F] mt-1.5" role="alert">
+          Not saved · {saveError}
         </div>
       )}
 

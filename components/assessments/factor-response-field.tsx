@@ -16,6 +16,7 @@ interface InitialResponse {
 
 interface Props {
   assessmentId: string;
+  candidateId: string;
   factorId: string;
   factorName: string;
   initial?: InitialResponse | null;
@@ -25,10 +26,10 @@ interface Props {
 }
 
 export function FactorResponseField({
-  assessmentId, factorId, factorName, initial, candidateLanguage, consentToRecord, locked: _locked,
+  assessmentId, candidateId, factorId, factorName, initial, candidateLanguage, consentToRecord, locked = false,
 }: Props) {
-  // Demo mode: ignore the locked prop entirely so the textarea always accepts typing.
-  const locked = false;
+  // Honour the locked prop — the historical "demo mode" override that
+  // forced locked=false is removed. See indicator-scorer.tsx for context.
   const [text, setText] = useState(initial?.response_text ?? '');
   const [capturedVia, setCapturedVia] = useState<CapturedVia>(initial?.captured_via ?? 'typed');
   const [language, setLanguage] = useState(initial?.spoken_language ?? candidateLanguage ?? null);
@@ -108,6 +109,7 @@ export function FactorResponseField({
       // 2. Send audio to Whisper for transcription
       const transcribeForm = new FormData();
       transcribeForm.append('audio', blob);
+      transcribeForm.append('candidateId', candidateId);
       if (candidateLanguage) transcribeForm.append('language', candidateLanguage);
       const tRes = await fetch('/api/ai/transcribe', { method: 'POST', body: transcribeForm });
       const tBody = await tRes.json().catch(() => ({ ok: false, error: 'Bad response' }));

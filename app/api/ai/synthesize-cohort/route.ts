@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { createClient } from '@/lib/supabase/server';
 import { checkRateLimit, ipFromHeaders, rateLimitedResponse } from '@/lib/security/rate-limit';
+import { requireApiUser } from '@/lib/supabase/api-auth';
 
 export const runtime = 'nodejs';
 
@@ -12,6 +13,12 @@ export const runtime = 'nodejs';
    Capability Investor Report can attach it. */
 
 export async function POST(req: NextRequest) {
+  // Auth gate — previously any unauthenticated caller could invoke
+  // this route and burn Azure OpenAI credits + write attacker-supplied
+  // narrative text into cohort_narrative_synthesis.
+  const auth = await requireApiUser(['ach_staff']);
+  if (!auth.ok) return auth.response;
+
   const rl = checkRateLimit({
     ip: ipFromHeaders(req.headers),
     key: 'ai:synthesize-cohort',

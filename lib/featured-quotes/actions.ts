@@ -37,14 +37,21 @@ export async function createFeaturedQuoteAction(input: {
     .maybeSingle();
   const consent = (latestConsent ?? {}) as { may_be_named?: boolean; may_be_quoted?: boolean };
 
-  if (!consent.may_be_quoted && !consent.may_be_named) {
+  // Quoting requires explicit `may_be_quoted` consent. Historically this
+  // was an OR gate (either `quoted` OR `named` was enough), which let
+  // through candidates who consented to being named but explicitly
+  // refused quoting. Consent must be affirmative on the exact
+  // permission — quoting.
+  if (!consent.may_be_quoted) {
     return {
       ok: false,
       error: 'This candidate has not granted quoting consent. Record consent before featuring a quote.',
     };
   }
 
-  // If by-name consent is not granted, force anonymised and drop display_name.
+  // `may_be_named` is a separate axis — it controls whether to attribute
+  // the quote by name or anonymise it. Both cases still require quoting
+  // consent (checked above).
   const use_anonymised = !consent.may_be_named;
   const display_name = consent.may_be_named ? (input.display_name?.trim() || null) : null;
 

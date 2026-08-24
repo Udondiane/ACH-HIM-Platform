@@ -255,10 +255,17 @@ export default async function AssessmentRunnerPage({
     responses: scoringResponses,
   }) : null;
 
-  // Bind the complete action
-  async function handleComplete() {
+  // Bind the complete action.
+  // Returns a state object so the form's client-side handler can surface
+  // the specific reason completion was refused — historically the action
+  // silently succeeded even when the assessment had zero responses.
+  async function handleComplete(): Promise<{ ok?: boolean; error?: string }> {
     'use server';
-    await completeAssessmentAction(params.assessmentId, params.id);
+    const res = await completeAssessmentAction(params.assessmentId, params.id);
+    if (res && (res as any).ok === false) {
+      return { error: (res as any).error };
+    }
+    return { ok: true };
   }
 
   // Translated assessment strings (Tier B locales render translations
@@ -418,6 +425,7 @@ export default async function AssessmentRunnerPage({
                         </div>
                         <FactorResponseField
                           assessmentId={params.assessmentId}
+                          candidateId={candidateId}
                           factorId={fac.id}
                           factorName={tFactor(fac.id, fac.name)}
                           initial={factorResponsesMap.get(fac.id) ?? null}

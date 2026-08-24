@@ -151,9 +151,29 @@ export async function saveAssessmentResponseAction(
   narrative: string | null,
   observableChanges: string | null = null,
   practices: string | null = null,
-) {
+): Promise<{ ok: true } | { ok: false; error: string }> {
   const supabase = createClient();
-  await supabase
+
+  // Server-side lock check. Historically only the client checked
+  // `locked` (which itself was hardcoded to false). Enforce here so
+  // completed assessments and locked projects are truly immutable —
+  // no matter which client path calls this action.
+  const { data: gate, error: gateErr } = await supabase
+    .from('assessments')
+    .select('status, project:projects(is_locked)')
+    .eq('id', assessmentId)
+    .maybeSingle();
+  if (gateErr) return { ok: false, error: gateErr.message };
+  if (!gate) return { ok: false, error: 'Assessment not found' };
+  const gateAny = gate as any;
+  if (gateAny.status === 'completed' || gateAny.status === 'reviewed') {
+    return { ok: false, error: 'Assessment is completed and cannot be edited. Ask an admin to reopen it.' };
+  }
+  if (gateAny.project?.is_locked) {
+    return { ok: false, error: 'Project is locked. Ask an admin to unlock before editing scores.' };
+  }
+
+  const { error } = await supabase
     .from('assessment_responses')
     .upsert({
       assessment_id: assessmentId,
@@ -163,6 +183,8 @@ export async function saveAssessmentResponseAction(
       observable_changes: observableChanges,
       practices,
     } as never, { onConflict: 'assessment_id,indicator_id' });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
 }
 
 /**
@@ -229,29 +251,86 @@ export async function saveFactorResponseAction(
   return { ok: true };
 }
 
-export async function completeAssessmentAction(assessmentId: string, projectId: string) {
+export async function completeAssessmentAction(
+  assessmentId: string,
+  projectId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
   const supabase = createClient();
-  await supabase.from('assessments').update({ status: 'completed' } as never).eq('id', assessmentId);
+
+  // Refuse to complete an assessment with zero response content.
+  // Migration 059's aftermath surfaced ~20 assessments marked
+  // `completed` with no responses — a status/reality mismatch that
+  // corrupts every funnel report and mis-triggers the "candidate is
+  // now in-programme" cascade. The guard below stops that pattern.
+  const [{ count: indicatorCount, error: ie }, { count: factorCount, error: fe }] = await Promise.all([
+    supabase
+      .from('assessment_responses')
+      .select('id', { count: 'exact', head: true })
+      .eq('assessment_id', assessmentId),
+    supabase
+      .from('assessment_factor_responses')
+      .select('id', { count: 'exact', head: true })
+      .eq('assessment_id', assessmentId),
+  ]);
+  if (ie) return { ok: false, error: ie.message };
+  if (fe) return { ok: false, error: fe.message };
+  if ((indicatorCount ?? 0) === 0 && (factorCount ?? 0) === 0) {
+    return {
+      ok: false,
+      error: 'Cannot complete an assessment with no responses. Score at least one factor first.',
+    };
+  }
+
+  const { error } = await supabase
+    .from('assessments')
+    .update({ status: 'completed' } as never)
+    .eq('id', assessmentId);
+  if (error) return { ok: false, error: error.message };
+
   /* Project lock on first-assessment-completed disabled for the training
      session so the assessor can edit freely. */
   revalidatePath(`/projects/${projectId}/assess/${assessmentId}`);
   revalidatePath(`/projects/${projectId}`);
+  return { ok: true };
 }
 
 export async function applyAiSuggestionsAction(
   assessmentId: string,
   suggestions: { indicatorId: string; numericValue: number | null; observableChanges: string; practices: string }[],
-) {
+): Promise<{ ok: true; applied: number } | { ok: false; error: string }> {
   const supabase = createClient();
+
+  // Lock check — same guard as saveAssessmentResponseAction.
+  const { data: gate, error: gateErr } = await supabase
+    .from('assessments')
+    .select('status, project:projects(is_locked)')
+    .eq('id', assessmentId)
+    .maybeSingle();
+  if (gateErr) return { ok: false, error: gateErr.message };
+  if (!gate) return { ok: false, error: 'Assessment not found' };
+  const gateAny = gate as any;
+  if (gateAny.status === 'completed' || gateAny.status === 'reviewed') {
+    return { ok: false, error: 'Assessment is completed and cannot be edited.' };
+  }
+  if (gateAny.project?.is_locked) {
+    return { ok: false, error: 'Project is locked.' };
+  }
+
+  let applied = 0;
   for (const s of suggestions) {
-    await supabase.from('assessment_responses').upsert({
+    const { error } = await supabase.from('assessment_responses').upsert({
       assessment_id: assessmentId,
       indicator_id: s.indicatorId,
       numeric_value: s.numericValue,
       observable_changes: s.observableChanges || null,
       practices: s.practices || null,
     } as never, { onConflict: 'assessment_id,indicator_id' });
+    if (error) {
+      return { ok: false, error: `Applied ${applied} of ${suggestions.length} before failing on ${s.indicatorId}: ${error.message}` };
+    }
+    applied++;
   }
+  return { ok: true, applied };
 }
 
 export async function unlockProjectAction(projectId: string) {

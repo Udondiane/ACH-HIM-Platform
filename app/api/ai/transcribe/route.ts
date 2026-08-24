@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { checkRateLimit, ipFromHeaders, rateLimitedResponse } from '@/lib/security/rate-limit';
+import { requireApiUser } from '@/lib/supabase/api-auth';
+import { createClient } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
 
@@ -25,6 +27,12 @@ export const runtime = 'nodejs';
  * Returns: { ok: true, text: string, language: string | null } on success.
  */
 export async function POST(req: NextRequest) {
+  // Auth gate. Transcription sends audio (a biometric-adjacent
+  // special-category data source) to Azure Whisper. Never accept
+  // anonymous callers.
+  const auth = await requireApiUser(['ach_staff']);
+  if (!auth.ok) return auth.response;
+
   // Rate limit — 15 calls per minute per IP.  Transcription is the most
   // expensive AI call by far; strict cap here.
   const rl = checkRateLimit({
@@ -59,6 +67,7 @@ export async function POST(req: NextRequest) {
 
   const audio = form.get('audio');
   const languageRaw = (form.get('language') as string | null) ?? null;
+  const candidateId = (form.get('candidateId') as string | null) ?? null;
 
   if (!(audio instanceof Blob)) {
     return NextResponse.json({ ok: false, error: 'audio file missing' }, { status: 400 });
@@ -68,6 +77,39 @@ export async function POST(req: NextRequest) {
   }
   if (audio.size > 25 * 1024 * 1024) {
     return NextResponse.json({ ok: false, error: 'audio file exceeds 25 MB' }, { status: 413 });
+  }
+
+  // Consent gate. Whisper is a data processor for the audio + resulting
+  // transcript. The beneficiary must have consented to AI analysis of
+  // transcripts before we send anything upstream. If a candidateId is
+  // supplied (staff flow attaching audio to a specific assessment), we
+  // check `candidate_consent.may_ai_analyse_transcript`. If no
+  // candidateId is supplied (e.g. self-assessment demo flow), we refuse
+  // rather than default-allow — historically this was enforced only in
+  // the score-factor route, leaving transcribe as an open path.
+  if (!candidateId) {
+    return NextResponse.json(
+      { ok: false, error: 'Missing candidateId — transcription requires a candidate context for consent verification.' },
+      { status: 400 },
+    );
+  }
+  const supabaseForConsent = createClient();
+  const { data: consentRow, error: consentErr } = await supabaseForConsent
+    .from('candidate_consent')
+    .select('may_ai_analyse_transcript')
+    .eq('candidate_id', candidateId)
+    .order('given_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (consentErr) {
+    return NextResponse.json({ ok: false, error: `Consent lookup failed: ${consentErr.message}` }, { status: 500 });
+  }
+  const mayAnalyse = (consentRow as { may_ai_analyse_transcript?: boolean } | null)?.may_ai_analyse_transcript === true;
+  if (!mayAnalyse) {
+    return NextResponse.json(
+      { ok: false, error: 'This candidate has not consented to AI transcript analysis. Record consent before recording voice.' },
+      { status: 403 },
+    );
   }
 
   // Build the form-data the Azure endpoint expects. Whisper accepts the same
