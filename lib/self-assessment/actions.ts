@@ -9,8 +9,9 @@ import { assertCan, canRunAssessments } from '@/lib/auth/capabilities';
 /**
  * Generate a single-use self-assessment token for a beneficiary at a
  * given timepoint. Returns the redemption URL — staff share this via
- * WhatsApp, SMS, or email. Beneficiary opens on their phone, answers
- * the closing reflection question (typed or voice), submits.
+ * WhatsApp, SMS, or email. Beneficiary opens on their phone, completes
+ * the assessment (factor scores + closing reflection at 3/6/12mo, or
+ * reflection only at baseline), submits.
  *
  * Token defaults to 14-day expiry so stale forwards stop working.
  */
@@ -67,22 +68,31 @@ export async function createSelfAssessmentTokenAction(input: {
 
 /**
  * Redeem a self-assessment token. Public — no auth required. Called
- * from the public submit route (app/self-assess/[token]/actions.ts).
- * Validates token, upserts the closing reflection onto the assessment
- * for that (candidate, project, timepoint), marks the token used.
+ * from the beneficiary form. Validates token, upserts the reflection
+ * (and — at 3/6/12mo — the factor scores) onto the assessment for
+ * that (candidate, project, timepoint), marks the token used.
  *
- * Uses the server-side createClient which respects RLS via the
- * service role for tables the token path needs to write.
+ * Uses the service client because the beneficiary is not authenticated;
+ * the token IS the credential.
  */
+export interface FactorScoreInput {
+  indicatorId: string;
+  numericValue: number;      // 1-5
+}
+
 export async function submitSelfAssessmentAction(input: {
   token: string;
   responseText: string;
   capturedVia: 'typed' | 'voice' | 'voice_edited';
   spokenLanguage?: string | null;
   audioAttachmentId?: string | null;
+  factorResponses?: FactorScoreInput[];   // populated at 3/6/12mo
+  consented: boolean;                     // explicit re-affirmation at submit
 }): Promise<{ ok: true } | { ok: false; error: string }> {
-  // Service client bypasses RLS — this endpoint is public (token IS
-  // the credential), so we can't rely on an authenticated session.
+  if (!input.consented) {
+    return { ok: false, error: 'Please tick the consent box before submitting your answers.' };
+  }
+
   const supabase = createServiceClient();
 
   // Validate token — must exist, not used, not expired.
@@ -99,6 +109,15 @@ export async function submitSelfAssessmentAction(input: {
   const text = input.responseText.trim();
   if (text.length < 3) return { ok: false, error: 'Please write at least a short answer before submitting.' };
 
+  // Validate factor scores if supplied — must be 1-5 integers.
+  const factorScores = input.factorResponses ?? [];
+  for (const r of factorScores) {
+    if (!r.indicatorId) return { ok: false, error: 'One of your answers is missing a question reference. Please try again.' };
+    if (!Number.isFinite(r.numericValue) || r.numericValue < 1 || r.numericValue > 5) {
+      return { ok: false, error: 'One of your answers is out of range. Please score each question between 1 and 5.' };
+    }
+  }
+
   // Find or create the assessment row for this (candidate, project, timepoint).
   const { data: existing } = await supabase
     .from('assessments')
@@ -112,9 +131,6 @@ export async function submitSelfAssessmentAction(input: {
   if (existing) {
     assessmentId = (existing as { id: string }).id;
   } else {
-    // Look up the beneficiary's cohort under this project so the new
-    // assessment row is properly tied. If they're on multiple, pick
-    // the oldest one.
     const { data: cohortRows } = await supabase
       .from('cohorts').select('id').eq('project_id', t.project_id).order('created_at', { ascending: true });
     const projectCohortIds = ((cohortRows as { id: string }[] | null) ?? []).map(c => c.id);
@@ -133,9 +149,20 @@ export async function submitSelfAssessmentAction(input: {
       timepoint: t.timepoint,
       assessed_on: new Date().toISOString().slice(0, 10),
       status: 'in_progress',
+      assessment_source: 'candidate_self',
     } as never).select('id').single();
     if (createErr) return { ok: false, error: createErr.message };
     assessmentId = (created as { id: string }).id;
+  }
+
+  // Mark the assessment as self-scored when a beneficiary is providing
+  // scores. Reflection-only submissions leave the source untouched so
+  // an assessment that mixes staff + self scoring keeps its staff
+  // provenance at the row level.
+  if (factorScores.length > 0) {
+    await supabase.from('assessments').update({
+      assessment_source: 'candidate_self',
+    } as never).eq('id', assessmentId);
   }
 
   // Save the closing reflection onto the assessment.
@@ -146,6 +173,21 @@ export async function submitSelfAssessmentAction(input: {
     closing_reflection_audio_id: input.audioAttachmentId ?? null,
   } as never).eq('id', assessmentId);
   if (updateErr) return { ok: false, error: updateErr.message };
+
+  // Upsert factor scores. Each response is tagged is_self_scored=true
+  // so aggregate reporting can distinguish provenance.
+  if (factorScores.length > 0) {
+    const rows = factorScores.map(r => ({
+      assessment_id: assessmentId,
+      indicator_id: r.indicatorId,
+      numeric_value: r.numericValue,
+      is_self_scored: true,
+    }));
+    const { error: scoreErr } = await supabase
+      .from('assessment_responses')
+      .upsert(rows as never, { onConflict: 'assessment_id,indicator_id' });
+    if (scoreErr) return { ok: false, error: scoreErr.message };
+  }
 
   // Mark the token used so it can't be redeemed twice.
   await supabase.from('self_assessment_tokens').update({

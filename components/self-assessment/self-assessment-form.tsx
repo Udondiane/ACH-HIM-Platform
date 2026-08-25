@@ -123,6 +123,11 @@ export function SelfAssessmentForm({ token, prompt, activityContext, candidateLa
         responseText: text,
         capturedVia: via,
         spokenLanguage: language,
+        // Reflection-only flow: implicit consent — the beneficiary has
+        // read the privacy note on the page and is voluntarily
+        // submitting their own words. Factor-scoring flow surfaces an
+        // explicit checkbox instead.
+        consented: true,
       });
       if (res.ok) setSubmitted(true);
       else setError(res.error);
