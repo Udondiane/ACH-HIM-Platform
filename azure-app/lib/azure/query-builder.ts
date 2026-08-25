@@ -67,7 +67,23 @@ export class QueryBuilder<Row = any> implements PromiseLike<Result<any>> {
 
   select(cols?: string, opts?: CountOption): this {
     this.mode = 'select';
-    if (cols) this.cols = cols;
+    if (cols) {
+      // Embedded-join syntax like `cohorts(name)` inside select() is
+      // Supabase-specific and this shim does not translate it. Raise
+      // NOW with a clear error rather than surfacing a Postgres
+      // syntax error deep in a page render — the correct fix is to
+      // rewrite each call site to an explicit SQL JOIN or a follow-up
+      // query. The list of call sites is in
+      // docs/AZURE-JOIN-CALL-SITES.md.
+      if (/[a-z_][a-z0-9_]*\s*\(/i.test(cols) && !/^count\s*\(/i.test(cols.trim())) {
+        throw new Error(
+          `[azure query-builder] Embedded-join .select("${cols}") is not supported ` +
+          `on Azure. Rewrite as an explicit SQL join or a follow-up .from() query. ` +
+          `See docs/AZURE-JOIN-CALL-SITES.md for the inventory.`,
+        );
+      }
+      this.cols = cols;
+    }
     if (opts?.count) this.countOpt = opts.count;
     if (opts?.head) this.headOnly = true;
     this.returning = true;
@@ -116,26 +132,41 @@ export class QueryBuilder<Row = any> implements PromiseLike<Result<any>> {
     this.rawExtraClause = this.rawExtraClause ? `${this.rawExtraClause} AND ${clause}` : clause;
     return this;
   }
+  // Deferred until render — .or() values must go through parameter
+  // bindings, not string interpolation, so we can't build the SQL
+  // until we know the shared params[] array in renderWhere().
+  private _orClauses: { col: string; op: Op; value: unknown; isNullLiteral: boolean }[][] = [];
+
   or(rawFilter: string): this {
     const parts = rawFilter.split(',').map(s => s.trim()).filter(Boolean);
-    const translated: string[] = [];
+    const group: { col: string; op: Op; value: unknown; isNullLiteral: boolean }[] = [];
     for (const p of parts) {
       const m = p.match(/^([a-z_][a-z0-9_.]*)\.([a-z]+)\.(.+)$/i);
       if (!m) continue;
       const [, col, op, val] = m;
-      const sqlOp = op === 'eq' ? '=' : op === 'neq' ? '<>' : op === 'is' ? 'IS'
-        : op === 'like' ? 'LIKE' : op === 'ilike' ? 'ILIKE'
-        : op === 'gt' ? '>' : op === 'gte' ? '>=' : op === 'lt' ? '<' : op === 'lte' ? '<=' : null;
+      const sqlOp: Op | null = op === 'eq' ? '='
+        : op === 'neq' ? '<>'
+        : op === 'is' ? 'IS'
+        : op === 'like' ? 'LIKE'
+        : op === 'ilike' ? 'ILIKE'
+        : op === 'gt' ? '>'
+        : op === 'gte' ? '>='
+        : op === 'lt' ? '<'
+        : op === 'lte' ? '<='
+        : null;
       if (!sqlOp) continue;
-      const value = val === 'null' ? 'NULL'
-        : /^\d+(\.\d+)?$/.test(val) ? val
-        : `'${val.replace(/'/g, "''")}'`;
-      translated.push(`${ident(col)} ${sqlOp} ${value}`);
+      // Coerce a bare-word `null` in the DSL to a real null value so
+      // it renders as `col IS NULL` — every other value gets bound as
+      // a parameter (no string interpolation, no injection surface).
+      const isNullLiteral = val === 'null';
+      const coerced: unknown = isNullLiteral
+        ? null
+        : /^-?\d+(\.\d+)?$/.test(val)
+          ? Number(val)
+          : val;
+      group.push({ col, op: sqlOp, value: coerced, isNullLiteral });
     }
-    if (translated.length > 0) {
-      const clause = `(${translated.join(' OR ')})`;
-      this.rawExtraClause = this.rawExtraClause ? `${this.rawExtraClause} AND ${clause}` : clause;
-    }
+    if (group.length > 0) this._orClauses.push(group);
     return this;
   }
 
@@ -161,6 +192,19 @@ export class QueryBuilder<Row = any> implements PromiseLike<Result<any>> {
       } else {
         parts.push(`${ident(f.col)} ${f.op} ${bind(params, f.value)}`);
       }
+    }
+    // Deferred .or() groups — each becomes `(a OR b OR ...)`,
+    // parameter-bound like the rest of the WHERE clause.
+    for (const group of this._orClauses) {
+      const sub: string[] = [];
+      for (const c of group) {
+        if (c.isNullLiteral || c.op === 'IS') {
+          sub.push(`${ident(c.col)} IS ${c.value === null ? 'NULL' : String(c.value).toUpperCase()}`);
+        } else {
+          sub.push(`${ident(c.col)} ${c.op} ${bind(params, c.value)}`);
+        }
+      }
+      if (sub.length > 0) parts.push(`(${sub.join(' OR ')})`);
     }
     if (this.rawExtraClause) parts.push(this.rawExtraClause);
     return parts.length > 0 ? ` WHERE ${parts.join(' AND ')}` : '';

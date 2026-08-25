@@ -29,9 +29,13 @@ export function createAzureClient(): AzureClient {
     storage,
     async rpc<T = unknown>(fn: string, args: Record<string, unknown> = {}): Promise<{ data: T | null; error: { message: string } | null }> {
       try {
+        // Postgres named-argument syntax: fn(arg_name := $N).
+        // Positional bindings would silently misbind when the caller's
+        // Object.keys order does not match the function's declared
+        // parameter order. Named args are order-independent.
         const cols = Object.keys(args);
-        const bindings = cols.map((_, i) => `$${i + 1}`);
-        const sql = `SELECT * FROM ${fn.split('.').map(p => `"${p}"`).join('.')}(${bindings.join(', ')})`;
+        const bindings = cols.map((k, i) => `"${k.replace(/"/g, '""')}" := $${i + 1}`);
+        const sql = `SELECT * FROM ${fn.split('.').map(p => `"${p.replace(/"/g, '""')}"`).join('.')}(${bindings.join(', ')})`;
         const { rows } = await getPool().query(sql, cols.map(k => args[k]));
         return { data: rows as T, error: null };
       } catch (e: any) {

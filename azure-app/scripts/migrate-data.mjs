@@ -19,11 +19,12 @@
  *   - AZURE_DB_URL      e.g. postgresql://achhim@ach-him-pg.postgres.database.azure.com:5432/postgres?sslmode=require
  *
  * Usage:
- *   node scripts/migrate-data.mjs --step=dump
- *   node scripts/migrate-data.mjs --step=schema
- *   node scripts/migrate-data.mjs --step=restore
- *   node scripts/migrate-data.mjs --step=verify
- *   node scripts/migrate-data.mjs --step=all
+ *   node scripts/migrate-data.mjs --step=schema     # apply schema (parent app's migrations)
+ *   node scripts/migrate-data.mjs --step=dump       # pg_dump Supabase (data only)
+ *   node scripts/migrate-data.mjs --step=restore    # pg_restore into Azure (RLS bypassed via session_replication_role=replica)
+ *   node scripts/migrate-data.mjs --step=finalize   # apply azure-finalize.sql (deny-all restrictive policies)
+ *   node scripts/migrate-data.mjs --step=verify     # row-count parity across every public table
+ *   node scripts/migrate-data.mjs --step=all        # schema → dump → restore → finalize → verify
  *
  * The steps are individually resumable — if `restore` fails on one
  * table you can fix it and re-run just `restore` without re-dumping.
@@ -92,6 +93,20 @@ function pgRestoreArgs(url) {
   ];
 }
 
+// On Azure managed Postgres you are not superuser, so pg_restore's
+// --disable-triggers cannot fully bypass FK triggers and RLS. Setting
+// session_replication_role=replica in a wrapper script achieves the
+// same effect: FK trigger checks skipped, RLS effectively bypassed
+// for BYPASSRLS-eligible users. Set this via a PGOPTIONS env var so
+// pg_restore's session picks it up.
+function pgRestoreEnv() {
+  return {
+    ...process.env,
+    // -c "set session_replication_role = 'replica'" applied on connect
+    PGOPTIONS: `${process.env.PGOPTIONS ?? ''} -c session_replication_role=replica`.trim(),
+  };
+}
+
 function stepDump() {
   const src = require('SUPABASE_DB_URL', process.env.SUPABASE_DB_URL);
   if (!which('pg_dump')) {
@@ -131,40 +146,72 @@ function stepRestore() {
     console.error('✗ pg_restore not on PATH.');
     process.exit(1);
   }
-  log('Restoring dump → Azure Postgres');
-  const r = spawnSync('pg_restore', pgRestoreArgs(dst), { stdio: 'inherit' });
+  log('Restoring dump → Azure Postgres (session_replication_role=replica)');
+  const r = spawnSync('pg_restore', pgRestoreArgs(dst), {
+    stdio: 'inherit',
+    env: pgRestoreEnv(),
+  });
   if (r.status !== 0) {
-    console.error('✗ pg_restore returned non-zero. Common causes: FK ordering (--disable-triggers should handle it), schema drift (rerun --step=schema), duplicate rows (target must be empty).');
+    console.error('✗ pg_restore returned non-zero. Common causes: RLS still active (session_replication_role=replica requires BYPASSRLS or superuser role — check your AZURE_DB_URL user), schema drift (rerun --step=schema), duplicate rows (target must be empty), FK ordering.');
     process.exit(r.status ?? 1);
   }
   log('Restore complete.');
+}
+
+function stepFinalize() {
+  // Apply azure-finalize.sql — adds the last-resort deny-all
+  // restrictive policy on every public table. Must run AFTER
+  // stepRestore has loaded data, otherwise pg_restore is blocked.
+  const dst = require('AZURE_DB_URL', process.env.AZURE_DB_URL);
+  const finalizePath = join(__dirname, '..', 'supabase', 'azure-finalize.sql');
+  if (!existsSync(finalizePath)) {
+    console.error(`✗ azure-finalize.sql not found at ${finalizePath}`);
+    process.exit(1);
+  }
+  log('Applying azure-finalize.sql (deny-all restrictive policy on every public table)');
+  const r = spawnSync('psql', [dst, '-v', 'ON_ERROR_STOP=1', '-f', finalizePath], { stdio: 'inherit' });
+  if (r.status !== 0) {
+    console.error('✗ Finalize failed. The DB is in a partially-restored state; do not point the app at it yet.');
+    process.exit(r.status ?? 1);
+  }
+  log('Finalize complete.');
 }
 
 function stepVerify() {
   const src = require('SUPABASE_DB_URL', process.env.SUPABASE_DB_URL);
   const dst = require('AZURE_DB_URL', process.env.AZURE_DB_URL);
 
-  const tables = [
-    'partners', 'candidates', 'cohorts', 'projects', 'assessments',
-    'placements', 'training_programmes', 'training_enrolments',
-    'assessment_attachments', 'partner_invitations', 'partner_users',
-    'beneficiary_outcomes', 'audit_log',
-  ];
-
-  log('Row-count parity check:');
+  // Enumerate every public table on Supabase — no hardcoded list, no
+  // silently-uncounted tables. If a table shows up here that Azure
+  // doesn't have, verify reports it as a mismatch (count -1).
+  const tables = enumerateTables(src);
+  log(`Row-count parity check across ${tables.length} public tables:`);
   let mismatches = 0;
   for (const t of tables) {
     const s = countRows(src, t);
     const d = countRows(dst, t);
     const ok = s === d;
     if (!ok) mismatches++;
-    console.log(`  ${ok ? '✓' : '✗'} ${t.padEnd(28)} supabase=${s.toString().padStart(6)}  azure=${d.toString().padStart(6)}`);
+    console.log(`  ${ok ? '✓' : '✗'} ${t.padEnd(38)} supabase=${s.toString().padStart(7)}  azure=${d.toString().padStart(7)}`);
   }
   if (mismatches > 0) {
     console.error(`\n✗ ${mismatches} table(s) mismatched. Investigate before cutover.`);
     process.exit(1);
   }
-  log('All checked tables match. Proceed to cutover when ready.');
+  log('All tables match. Proceed to cutover when ready.');
+}
+
+function enumerateTables(url) {
+  try {
+    const r = execFileSync('psql', [url, '-tAc',
+      "select tablename from pg_tables where schemaname='public' " +
+      "and tablename not like '\\_%' escape '\\' order by tablename",
+    ], { encoding: 'utf8' });
+    return r.split('\n').map(s => s.trim()).filter(Boolean);
+  } catch (e) {
+    console.error(`✗ Could not enumerate tables on source: ${e.message ?? e}`);
+    process.exit(1);
+  }
 }
 
 function countRows(url, table) {
@@ -176,16 +223,17 @@ function countRows(url, table) {
   }
 }
 
-const STEPS = { dump: stepDump, schema: stepSchema, restore: stepRestore, verify: stepVerify };
+const STEPS = { dump: stepDump, schema: stepSchema, restore: stepRestore, finalize: stepFinalize, verify: stepVerify };
 
 if (step === 'all') {
   stepSchema();
   stepDump();
   stepRestore();
+  stepFinalize();
   stepVerify();
 } else if (STEPS[step]) {
   STEPS[step]();
 } else {
-  console.error(`✗ Unknown --step=${step}. Valid: dump | schema | restore | verify | all`);
+  console.error(`✗ Unknown --step=${step}. Valid: dump | schema | restore | finalize | verify | all`);
   process.exit(1);
 }

@@ -117,35 +117,13 @@ begin
 end $$;
 
 
--- ── 3. Deny-all baseline policy on every table ──────────────
+-- ── 3. Deny-all floor is applied by azure-finalize.sql ──────
 --
--- Without at least one policy, an RLS-enabled table with no policies
--- rejects all reads and writes anyway — which is the fail-safe we
--- want. But some tables may have partial policies that survived the
--- sanitiser (ones that don't reference auth predicates); those would
--- silently grant access. Add an explicit deny-all as the last-resort
--- floor so partial-surviving policies cannot leak.
-
-do $$
-declare
-  r record;
-begin
-  for r in
-    select tablename
-      from pg_tables
-     where schemaname = 'public'
-       and tablename <> '_azure_migration_history'
-  loop
-    execute format(
-      'drop policy if exists azure_deny_all on public.%I',
-      r.tablename
-    );
-    execute format(
-      'create policy azure_deny_all on public.%I as restrictive for all using (false) with check (false)',
-      r.tablename
-    );
-  end loop;
-end $$;
+-- Deliberately NOT here: the restrictive `azure_deny_all` policy.
+-- Running it now would block the bulk data restore in
+-- scripts/migrate-data.mjs (pg_restore inserts would hit the
+-- deny-all). It moves to azure-finalize.sql, applied AFTER the
+-- data restore step. See the header of that file for the sequence.
 
 
 -- ── 4. Assertion — must not run without a real predicate ────

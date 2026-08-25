@@ -60,12 +60,20 @@ if (!existsSync(migrationsDir)) {
   process.exit(2);
 }
 
+const preMigrate  = resolve(root, 'supabase/azure-pre-migrate.sql');
 const postMigrate = resolve(root, 'supabase/azure-post-migrate.sql');
-if (!existsSync(postMigrate)) {
-  console.error(`FATAL: azure-post-migrate.sql is missing at ${postMigrate}.`);
-  console.error('That file is required — it recovers the RLS posture stripped by sanitise().');
-  console.error('Without it the Azure DB would end up with row-level security disabled on every table.');
-  process.exit(2);
+for (const [label, path] of [['azure-pre-migrate.sql', preMigrate], ['azure-post-migrate.sql', postMigrate]]) {
+  if (!existsSync(path)) {
+    console.error(`FATAL: ${label} is missing at ${path}.`);
+    if (label === 'azure-pre-migrate.sql') {
+      console.error('That file is required — it stands up the auth.users compatibility surface');
+      console.error('so parent-app FK columns declared `references auth.users(id)` attach cleanly.');
+    } else {
+      console.error('That file is required — it recovers the RLS posture stripped by sanitise().');
+      console.error('Without it the Azure DB would end up with row-level security disabled on every table.');
+    }
+    process.exit(2);
+  }
 }
 
 const conn = process.env.DATABASE_URL;
@@ -101,6 +109,24 @@ function sanitise(body) {
     .replace(/alter\s+table[^;]*(enable|disable)\s+row\s+level\s+security\s*;/gi, '-- [RLS toggle deferred to azure-post-migrate.sql]')
     .replace(/create\s+or\s+replace\s+function[^$]*\$\$[^$]*auth\.uid\(\)[^$]*\$\$[^;]*;/gis, '-- [skipped function referencing auth.uid()]')
     .replace(/grant[^;]*to\s+(anon|authenticated|service_role)[^;]*;/gi, '-- [skipped Supabase role grant]');
+}
+
+// ── 0. Pre-migrate ────────────────────────────────────────
+// Stands up the `auth` schema + `auth.users` compat table so parent
+// migrations with `references auth.users(id)` FK columns attach.
+console.log('▸ applying azure-pre-migrate.sql (auth.users compatibility)...');
+if (dryRun) {
+  console.log('  (dry-run — would apply)');
+} else {
+  const preSql = await readFile(preMigrate, 'utf8');
+  try {
+    await pool.query(preSql);
+    console.log('  ok');
+  } catch (e) {
+    console.error(`  FAILED: ${e.message}`);
+    await pool.end();
+    process.exit(1);
+  }
 }
 
 // ── 1. Migration loop ─────────────────────────────────────
