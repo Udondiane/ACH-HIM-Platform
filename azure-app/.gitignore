@@ -58,3 +58,4 @@ next-env.d.ts
 !/supabase/
 !/supabase/migrations/
 !/supabase/migrations/060_partner_b2b_invitations.sql
+!/supabase/azure-post-migrate.sql
