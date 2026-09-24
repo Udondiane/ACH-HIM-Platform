@@ -153,37 +153,86 @@ export function deriveCapabilitiesFromAnswers(answers: Partial<Record<CapDomain,
 }
 
 /**
- * Derive the project type and weight ratio from how many capability domains
- * the user marked as Core vs Optional. Keeps the methodology compliant
- * (depth-oriented when the project has a clear single/dual focus, hybrid
- * when it spreads across many areas) while removing the cognitive burden
- * of picking these directly.
+ * Derive the project type and weight ratio.
+ *
+ * TWO-STEP design (finalised Sep 2026) that reconciles the methodology
+ * doc, the code, and Delphi Round 1 (July 2026) findings:
+ *
+ * Step 1 · Project type comes from the 4-question classification
+ *          questionnaire (methodology doc §5.2):
+ *
+ *            classificationTotal 6–8  →  depth
+ *            classificationTotal 3–5  →  hybrid
+ *            classificationTotal 0–2  →  breadth
+ *
+ *          If the questionnaire is not filled, fall back to capability
+ *          counts: coreCount === 0 → breadth, otherwise → depth. Hybrid
+ *          is only reachable via the questionnaire (fixes prior
+ *          hybrid-unreachability defect).
+ *
+ * Step 2 · Weight ratio within the assigned type comes from the
+ *          capability counts, anchored on Delphi Round 1's evidence-
+ *          based 2:1 defaults (softer than the pre-Round-1 3:1):
+ *
+ *            depth   → default d2_1 (α=0.67); escalate to d3_1 (0.75)
+ *                      only when 3 Core + 0 Optional (pure-depth intent)
+ *            breadth → default b2_1 (β=0.67); escalate to b3_1 (0.75)
+ *                      only when 0 Core + 3+ Optional (pure-breadth intent)
+ *            hybrid  → hybridOptionA (equal 0.5/0.5), matching Round 1's
+ *                      72.7% modal consensus. weight_ratio field carries
+ *                      d1_1 as its canonical form (α=β=0.5) for storage.
+ *
+ * Historical note: the previous derivation used capability counts to
+ * assign BOTH type and ratio via a lookup table, treating the
+ * questionnaire as informational-only. That produced d3_1/b3_1 in most
+ * common configurations (one step stronger than the panel supported)
+ * and made hybrid essentially unreachable through normal UI flow.
+ * The two-step model closes both gaps.
  */
-export function deriveTypeAndWeight(coreCount: number, optionalCount: number): {
+export function deriveTypeAndWeight(
+  classificationTotal: number | null,
+  coreCount: number,
+  optionalCount: number,
+): {
   type: typeof PROJECT_TYPES[number];
   weight_ratio: typeof WEIGHT_RATIOS[number];
+  hybrid_option: 'A' | null;
 } {
-  if (coreCount === 0 && optionalCount === 0) {
-    return { type: 'depth', weight_ratio: 'd3_1' };
+  // ── Step 1: derive type ──────────────────────────────
+  let type: typeof PROJECT_TYPES[number];
+  if (classificationTotal !== null) {
+    if (classificationTotal >= 6)      type = 'depth';
+    else if (classificationTotal >= 3) type = 'hybrid';
+    else                                type = 'breadth';
+  } else {
+    // Fallback for projects created before the questionnaire was captured.
+    // Cannot produce hybrid from counts alone — the panel's hybrid framing
+    // requires deliberate acknowledgement of dual intent, which only the
+    // questionnaire carries.
+    type = coreCount === 0 ? 'breadth' : 'depth';
   }
-  if (coreCount === 0) {
-    // No primary focus picked, only supporting. Project is broad by definition.
-    return { type: 'breadth', weight_ratio: optionalCount >= 3 ? 'b3_1' : 'b2_1' };
+
+  // ── Step 2: derive weight ratio within type ─────────
+  if (type === 'hybrid') {
+    // Hybrid always uses Option A (fixed equal weights per Round 1).
+    // weight_ratio stored as d1_1 (α=β=0.5) as the canonical form.
+    return { type, weight_ratio: 'd1_1', hybrid_option: 'A' };
   }
-  if (coreCount === 1) {
-    if (optionalCount === 0)      return { type: 'depth',  weight_ratio: 'd5_1' };
-    if (optionalCount <= 2)       return { type: 'depth',  weight_ratio: 'd3_1' };
-    /* 3+ */                       return { type: 'depth',  weight_ratio: 'd2_1' };
+  if (type === 'depth') {
+    const pureDepth = coreCount === 3 && optionalCount === 0;
+    return {
+      type,
+      weight_ratio: pureDepth ? 'd3_1' : 'd2_1',
+      hybrid_option: null,
+    };
   }
-  if (coreCount === 2) {
-    if (optionalCount === 0)      return { type: 'depth',  weight_ratio: 'd4_1' };
-    if (optionalCount <= 2)       return { type: 'depth',  weight_ratio: 'd3_1' };
-    /* 3 */                        return { type: 'hybrid', weight_ratio: 'd2_1' };
-  }
-  // coreCount === 3
-  if (optionalCount === 0)        return { type: 'depth',  weight_ratio: 'd3_1' };
-  if (optionalCount === 1)        return { type: 'depth',  weight_ratio: 'd2_1' };
-  /* 2 */                          return { type: 'hybrid', weight_ratio: 'd1_1' };
+  // breadth
+  const pureBreadth = coreCount === 0 && optionalCount >= 3;
+  return {
+    type,
+    weight_ratio: pureBreadth ? 'b3_1' : 'b2_1',
+    hybrid_option: null,
+  };
 }
 
 export const FUNDING_QUESTION_LABELS: Record<FundingModel | 'unset', { core: string; optional: string; coreHint: string; optionalHint: string }> = {

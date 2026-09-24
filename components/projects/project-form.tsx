@@ -72,12 +72,29 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
     a.domains.some(d => selectedDomains.has(d as CapDomain)),
   );
 
-  const derived = deriveTypeAndWeight(coreSet.size, optionalSet.size);
+  // Compute classification_total from persisted questionnaire answers (if any).
+  // Maps A=2, C=1, B=0 (methodology doc §5.2). Returns null when the
+  // questionnaire is not fully filled — the derivation then falls back to
+  // counts-based inference (still with Delphi Round 1 2:1 defaults).
+  const q2v = (v: string | undefined): number | null => v === 'A' ? 2 : v === 'C' ? 1 : v === 'B' ? 0 : null;
+  const q1s = q2v(initial?.classification_q1 as string | undefined);
+  const q2s = q2v(initial?.classification_q2 as string | undefined);
+  const q3s = q2v(initial?.classification_q3 as string | undefined);
+  const q4s = q2v(initial?.classification_q4 as string | undefined);
+  const classificationTotal = (q1s !== null && q2s !== null && q3s !== null && q4s !== null)
+    ? q1s + q2s + q3s + q4s
+    : null;
+
+  const derived = deriveTypeAndWeight(classificationTotal, coreSet.size, optionalSet.size);
   const [typeValue, setTypeValue] = useState<string>(initial?.type ?? derived.type);
   const [ratioValue, setRatioValue] = useState<string>(initial?.weight_ratio ?? derived.weight_ratio);
-  // Re-sync type/ratio when capability selection changes — Admin overrides
-  // taken AFTER selection still win because they live in their own Select.
-  const prevDerivedRef = useState<{ type: string; weight_ratio: string }>(derived)[0];
+  const [hybridOptionValue, setHybridOptionValue] = useState<string>(
+    initial?.hybrid_option ?? derived.hybrid_option ?? 'A',
+  );
+  // Re-sync type/ratio/hybrid_option when capability selection changes.
+  // Admin overrides taken AFTER selection still win because they live
+  // in their own Select.
+  const prevDerivedRef = useState<{ type: string; weight_ratio: string; hybrid_option: string | null }>(derived)[0];
   if (prevDerivedRef.type !== derived.type) {
     prevDerivedRef.type = derived.type;
     if (typeValue !== derived.type) setTimeout(() => setTypeValue(derived.type), 0);
@@ -85,6 +102,11 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
   if (prevDerivedRef.weight_ratio !== derived.weight_ratio) {
     prevDerivedRef.weight_ratio = derived.weight_ratio;
     if (ratioValue !== derived.weight_ratio) setTimeout(() => setRatioValue(derived.weight_ratio), 0);
+  }
+  if (prevDerivedRef.hybrid_option !== derived.hybrid_option) {
+    prevDerivedRef.hybrid_option = derived.hybrid_option;
+    const next = derived.hybrid_option ?? 'A';
+    if (hybridOptionValue !== next) setTimeout(() => setHybridOptionValue(next), 0);
   }
 
   function toggleCore(d: CapDomain) {
@@ -411,7 +433,7 @@ export function ProjectForm({ action, initial, cancelHref, submitLabel = 'Save p
 
       <input type="hidden" name="type" value={typeValue} />
       <input type="hidden" name="weight_ratio" value={ratioValue} />
-      <input type="hidden" name="hybrid_option" value={initial?.hybrid_option ?? 'A'} />
+      <input type="hidden" name="hybrid_option" value={hybridOptionValue} />
       <input type="hidden" name="optional_scheme" value={initial?.optional_scheme ?? 'simple_average'} />
       <input type="hidden" name="stability_blend" value={initial?.stability_blend ?? 0} />
       {initial?.classification_q1 && <input type="hidden" name="classification_q1" value={initial.classification_q1} />}
