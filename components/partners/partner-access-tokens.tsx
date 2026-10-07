@@ -84,7 +84,7 @@ export function PartnerAccessTokens({ partnerId, initialTokens, originHref }: Pr
         <input
           value={label}
           onChange={e => setLabel(e.target.value)}
-          placeholder="Label (e.g. Anna — IKEA Bristol store manager)"
+          placeholder="Label (e.g. First Name — Role, Location)"
           className="rounded-[10px] border-[0.5px] border-ach-border bg-white px-3 py-2 text-[12.5px] text-ach-navy placeholder:text-ach-navy/40 focus:outline-none focus:ring-1 focus:ring-ach-navy/40"
         />
         <input

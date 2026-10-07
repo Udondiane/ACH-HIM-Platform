@@ -259,13 +259,9 @@ export default async function AssessmentRunnerPage({
   // Returns a state object so the form's client-side handler can surface
   // the specific reason completion was refused — historically the action
   // silently succeeded even when the assessment had zero responses.
-  async function handleComplete(): Promise<{ ok?: boolean; error?: string }> {
+  async function handleComplete(): Promise<void> {
     'use server';
-    const res = await completeAssessmentAction(params.assessmentId, params.id);
-    if (res && (res as any).ok === false) {
-      return { error: (res as any).error };
-    }
-    return { ok: true };
+    await completeAssessmentAction(params.assessmentId, params.id);
   }
 
   // Translated assessment strings (Tier B locales render translations

@@ -55,7 +55,7 @@ export function InterviewForm({
 
       <div className="grid grid-cols-2 gap-4">
         <Field label="Interviewer name">
-          <Input name="interviewer_name" defaultValue={initial?.interviewer_name ?? ''} placeholder={partnerSide ? 'e.g. Linnea Bergström' : 'e.g. Sarah Patel'} />
+          <Input name="interviewer_name" defaultValue={initial?.interviewer_name ?? ''} placeholder={partnerSide ? 'e.g. Store Manager' : 'e.g. Caseworker name'} />
         </Field>
         <Field label="Interviewer role">
           <Input name="interviewer_role" defaultValue={initial?.interviewer_role ?? ''} placeholder={partnerSide ? 'e.g. Store Manager, HR Lead' : 'e.g. ACH IAG Caseworker'} />

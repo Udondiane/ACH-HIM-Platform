@@ -74,7 +74,10 @@ export default async function EditProjectPage({ params }: { params: { id: string
   // arrow-function wrapper without 'use server' was a regular function from
   // React's POV and crashed the page in server-side render.
   const action = updateProjectAction.bind(null, params.id);
-  const handleDelete = deleteProjectAction.bind(null, params.id);
+  async function handleDelete(): Promise<void> {
+    'use server';
+    await deleteProjectAction(params.id);
+  }
 
   return (
     <div className="max-w-3xl mx-auto">

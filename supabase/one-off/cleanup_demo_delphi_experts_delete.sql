@@ -1,6 +1,11 @@
-/* Aggressive Aston removal - matches by name to catch any UUID variant.
-   Also cleans dependent rows in case Aston had related data added via
-   the UI (partner_contacts, audit_entries, inclusion_assessments,
+/* DEMO SEED CLEANUP — removes placeholder Delphi-panel partner entries
+   seeded with "Aston"-named rows that were used as examples during
+   development, so demos ship without them. This is NOT an action
+   against the Aston partnership; it is tidy-up of demo-only fixtures.
+
+   Matches by name to catch any UUID variant. Also cleans dependent
+   rows in case the placeholder had related data added via the UI
+   (partner_contacts, audit_entries, inclusion_assessments,
    cohort_partners). Safe to re-run. */
 
 /* Clean up any related rows first to avoid FK constraint errors */

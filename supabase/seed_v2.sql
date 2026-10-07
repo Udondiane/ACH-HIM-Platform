@@ -154,7 +154,7 @@ insert into public.delphi_experts (id, panel_id, name, email, role) values
   ('99999999-9999-9999-9999-000000000002', '88888888-8888-8888-8888-000000000001', $bk$Prof Aidan Walsh$bk$,      'a.walsh@kcl.example',           'academic'),
   ('99999999-9999-9999-9999-000000000003', '88888888-8888-8888-8888-000000000001', $bk$Sarah Mitchell$bk$,    'sarah.mitchell@burgessalmon.example',  'practitioner'),
   ('99999999-9999-9999-9999-000000000004', '88888888-8888-8888-8888-000000000001', $bk$James Okafor$bk$,      'j.okafor@pret.example',         'practitioner'),
-  ('99999999-9999-9999-9999-000000000005', '88888888-8888-8888-8888-000000000001', $bk$Linnea Bergström$bk$,  'l.bergstrom@ikea.example',      'practitioner'),
+  ('99999999-9999-9999-9999-000000000005', '88888888-8888-8888-8888-000000000001', $bk$Partner Contact 1$bk$,  'contact1@ikea.example',      'practitioner'),
   ('99999999-9999-9999-9999-000000000006', '88888888-8888-8888-8888-000000000001', $bk$Rachel Wood$bk$,       'rachel.wood@comicrelief.example','funder'),
   ('99999999-9999-9999-9999-000000000007', '88888888-8888-8888-8888-000000000001', $bk$Amira Hassan$bk$,      'a.hassan@beneficiary.example',  'beneficiary_advocate'),
   ('99999999-9999-9999-9999-000000000008', '88888888-8888-8888-8888-000000000001', $bk$Tom Patel$bk$,         't.patel@ach.example',           'practitioner'),

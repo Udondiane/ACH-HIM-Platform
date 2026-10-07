@@ -1,10 +1,18 @@
-/* Run this script in Supabase SQL Editor to:
-   1. Delete Aston Business School and its contact
-   2. Move Burges Salmon to training_partner
-   3. Replace Aston-affiliated Delphi experts with UK academic placeholders
-   4. Rewrite evidence pack methodology section to drop Aston CREME
+/* DEMO SEED CLEANUP — one-off tidy-up of placeholder partner and
+   Delphi-expert rows used during development, so demos ship without
+   partner-specific example data. This is NOT an action against any
+   real partnership; it is tidy-up of demo-only fixtures.
 
-   Safe to run multiple times. Each statement is idempotent. */
+   Run in Supabase SQL Editor. Each statement is idempotent and safe
+   to re-run.
+
+   What it does:
+   1. Removes placeholder Aston Business School demo partner + contact
+   2. Reassigns Burges Salmon demo entry from 'capability_investor' to
+      'training_partner' (correct taxonomy)
+   3. Replaces Aston-affiliated placeholder Delphi expert rows with
+      generic UK academic placeholders
+   4. Rewrites evidence pack methodology section to use generic text */
 
 delete from public.partner_contacts
  where partner_id = $bk$11111111-1111-1111-1111-000000000006$bk$::uuid;
