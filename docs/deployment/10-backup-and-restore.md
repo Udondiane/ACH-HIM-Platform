@@ -1,9 +1,9 @@
 # Backup, restore, and destructive-migration safeguards
 
-Written after the 2026-07-29 data-loss incident (migration 059
-destroyed 157 rows of live baseline data). This document describes
-the three layers that now stand between the platform and a repeat
-event.
+Describes the three layers that stand between the platform and
+accidental data loss during destructive migrations: nightly automated
+backups, documented restore procedure, and a CI gate that blocks bare
+destructive SQL from reaching production.
 
 ---
 
@@ -86,9 +86,8 @@ following patterns, the CI check fails and the PR cannot be merged:
 - `DROP TABLE ...`
 - `ALTER TABLE ... DROP COLUMN ...`
 
-This is the exact pattern that let migration 059 destroy 157 rows on
-2026-07-29 — the CI gate now catches it at PR time before the SQL
-ever touches production.
+The CI gate catches these patterns at PR time before the SQL ever
+touches production.
 
 ### Approved-destructive escape hatch
 

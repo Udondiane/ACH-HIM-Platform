@@ -5,11 +5,12 @@
 -- Score guides on individual factors are dropped since factor IDs change; they can
 -- be re-seeded in a follow-up migration once the demo shows the new IDs are stable.
 --
--- ⚠️  DESTRUCTIVE — POST-INCIDENT SAFETY GUARD  ⚠️
+-- ⚠️  DESTRUCTIVE — SAFETY GUARD REQUIRED  ⚠️
 --
--- This migration destroyed 157 rows of live baseline data when applied
--- against the IKEA pilot on 2026-07-29. Original comment claimed
--- "pre-pilot data only" — that was an assumption, not a check.
+-- This migration performs a full reseed of the HIM capability framework,
+-- which requires deleting all existing assessment_responses first. The
+-- guard below refuses to run on a non-empty database unless the operator
+-- has explicitly acknowledged that a backup has been taken.
 --
 -- The migration is retained AS-IS in git history so schema evolution
 -- is reproducible from scratch. On a fresh empty Supabase this is safe.
@@ -41,8 +42,7 @@ begin
     raise exception E'\n'
       '════════════════════════════════════════════════════════════════\n'
       'REFUSING to reseed framework — % rows of assessment_responses exist.\n'
-      'Migration 059 destroyed 157 rows of live IKEA baseline data on 2026-07-29\n'
-      'because this check was not in place. Do NOT proceed without a backup.\n'
+      'This migration deletes all assessment_responses. Do NOT proceed without a backup.\n'
       '\n'
       'To acknowledge you have taken a backup and want to proceed anyway:\n'
       '  select set_config(''him.migration_059_ack'', ''i-have-backed-up'', false);\n'

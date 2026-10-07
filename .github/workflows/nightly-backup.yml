@@ -3,9 +3,7 @@ name: Nightly Supabase backup
 # Off-Supabase, off-Vercel automated backup of the critical impact-
 # measurement tables. Runs every night at 02:30 UTC (03:30 BST). Any
 # destructive migration executed after the last snapshot has an
-# external file to reconstruct from — the exact safety net that was
-# missing when migration 059 destroyed 157 assessment_responses on
-# 2026-07-29.
+# external file to reconstruct from.
 #
 # What it dumps:
 #   - assessments

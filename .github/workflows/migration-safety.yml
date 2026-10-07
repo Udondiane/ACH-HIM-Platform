@@ -5,12 +5,11 @@ name: Migration safety check
 # WHERE, DROP TABLE, TRUNCATE, ALTER TABLE ... DROP COLUMN) unless
 # the file explicitly marks itself as approved-destructive.
 #
-# The exact miss that let migration 059 destroy 157 rows of live
-# beneficiary data on 2026-07-29:
+# Example of the kind of statement this gate rejects at PR time:
 #
 #   delete from public.assessment_responses;   -- no where clause
 #
-# This gate blocks that shape at PR time.
+# This gate blocks that shape before it reaches production.
 
 on:
   pull_request:
@@ -82,7 +81,7 @@ jobs:
 
             # 1. Unqualified DELETE (no WHERE clause)
             if echo "$CONTENT" | grep -iEq 'delete[[:space:]]+from[[:space:]]+[a-z_.]+[[:space:]]*;'; then
-              echo "  ❌ Found `DELETE FROM ... ;` without a WHERE clause. This is the shape that destroyed migration 059's data."
+              echo "  ❌ Found `DELETE FROM ... ;` without a WHERE clause. This destructive pattern is blocked by the migration-safety gate."
               echo "     If this is genuinely intentional, add a comment `-- @approved-destructive` at the top of the migration + a backup-first step, and re-run CI."
               FAIL=1
             fi
