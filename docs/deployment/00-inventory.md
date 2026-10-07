@@ -22,7 +22,7 @@
 | Icons | lucide-react | 0.453 | |
 | Localisation | next-intl | 3.21 | Bilingual candidate surface |
 | PDF generation | react-pdf, docx | 9.1, 9.0 | Funder reports + Word documents |
-| Excel handling | SheetJS (xlsx) | 0.20.3 | Candidate bulk import |
+| Excel handling | SheetJS (xlsx) | 0.18.5 | Candidate bulk import |
 
 ### Data + auth
 

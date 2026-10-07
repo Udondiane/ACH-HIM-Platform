@@ -93,7 +93,7 @@ Every dependency listed in `package.json` has been verified to exist on npm's pu
 
 ### Notable dependencies worth flagging
 
-- **`xlsx`** — pinned to SheetJS' own CDN URL (`https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz`) rather than npm, because npm's `xlsx` package was end-of-lifed by the maintainer with security advisories. Pinning to the vendor CDN is the maintainer's recommended path.
+- **`xlsx`** — pinned to the last pre-vendor-CDN npm release (`0.18.5`) because newer SheetJS releases are only distributed from the vendor CDN (`cdn.sheetjs.com`) which is blocked in some corporate proxies. 0.18.5 is the final version available on the npm registry, is sufficient for the candidate-import `XLSX.read` + `XLSX.utils.sheet_to_json` surface the app uses, and installs cleanly behind any proxy that allows the npm registry.
 - **`openai`** v6 — used for Azure OpenAI SDK compatibility. Rotate keys quarterly.
 - **`@supabase/*`** — kept on the current LTS-adjacent minor version; upgrade path tested with a fresh Postgres project before adoption.
 

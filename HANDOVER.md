@@ -38,7 +38,6 @@ Adds the layer needed to measure work-based outcomes:
 
 - **Employment partner directory + IKEA-style workforce questions**
 - **Placement tracking** with 30/60/90-day retention
-- **Bridge to Employment financial reality report** (true cost per candidate, employer contribution, funding gap)
 - **Milestones** (offer, start, 90-day, 12-month, progression)
 
 ### Why the split matters
@@ -408,7 +407,6 @@ Works for any programme measuring outcomes over time.
 - Partner questions (IKEA-style workforce set)
 - Placement records + partner timepoints
 - Milestones (offer / start / 90-day / 12-month / progression)
-- Bridge to Employment demo pages + financial model
 - Employment outcomes catalogue
 
 ### Implication
