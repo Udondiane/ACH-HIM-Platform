@@ -160,15 +160,33 @@ export default async function SelfAssessPage({ params }: { params: { token: stri
 
   const factorsForForm: SelfAssessmentFactor[] = [];
   const seen = new Set<string>();
+
+  // Decide which narrower filters we can actually trust. Both the per-
+  // capability `selected_factors` list and the activity-derived factor set
+  // can be stale (e.g. selected before a framework reseed), in which case
+  // the intersection with the live framework is empty and would wrongly
+  // exclude every factor. Test each filter against the live framework
+  // first; if it would produce zero matches, we treat it as "not applied".
+  const liveFactorIds = new Set(((factorsRes.data as any[]) ?? []).map((f: any) => f.id as string));
+
+  const selectedFactorIntersectsFramework = Array.from(selectedFactorsByDomain.values())
+    .filter((s): s is Set<string> => s !== null)
+    .some(s => Array.from(s).some(id => liveFactorIds.has(id)));
+  const applySelectedFactorsFilter = selectedFactorIntersectsFramework;
+
+  const applyActivityFilter =
+    activatedFactorIds !== null && Array.from(activatedFactorIds).some(id => liveFactorIds.has(id));
+
   for (const fd of factorDomains) {
     // Hard filter: only include factors whose domain the project explicitly
     // selected via project_capabilities. If the domain isn't selected at all,
     // the beneficiary should never see its factors.
     if (!selectedFactorsByDomain.has(fd.domain_id)) continue;
-    const selectedSet = selectedFactorsByDomain.get(fd.domain_id);
-    // If specific factors were picked for this domain, honour that narrower scope.
-    if (selectedSet && !selectedSet.has(fd.factor_id)) continue;
-    if (activatedFactorIds && !activatedFactorIds.has(fd.factor_id)) continue;
+    if (applySelectedFactorsFilter) {
+      const selectedSet = selectedFactorsByDomain.get(fd.domain_id);
+      if (selectedSet && !selectedSet.has(fd.factor_id)) continue;
+    }
+    if (applyActivityFilter && activatedFactorIds && !activatedFactorIds.has(fd.factor_id)) continue;
     if (seen.has(fd.factor_id)) continue;   // one row per factor even if it maps to multiple domains
     seen.add(fd.factor_id);
 
