@@ -161,7 +161,12 @@ export default async function SelfAssessPage({ params }: { params: { token: stri
   const factorsForForm: SelfAssessmentFactor[] = [];
   const seen = new Set<string>();
   for (const fd of factorDomains) {
+    // Hard filter: only include factors whose domain the project explicitly
+    // selected via project_capabilities. If the domain isn't selected at all,
+    // the beneficiary should never see its factors.
+    if (!selectedFactorsByDomain.has(fd.domain_id)) continue;
     const selectedSet = selectedFactorsByDomain.get(fd.domain_id);
+    // If specific factors were picked for this domain, honour that narrower scope.
     if (selectedSet && !selectedSet.has(fd.factor_id)) continue;
     if (activatedFactorIds && !activatedFactorIds.has(fd.factor_id)) continue;
     if (seen.has(fd.factor_id)) continue;   // one row per factor even if it maps to multiple domains
