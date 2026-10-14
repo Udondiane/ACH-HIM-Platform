@@ -59,5 +59,6 @@ export function coverageWeightedOptional(
     nonZero >= nTotal ? 1.0 :
     0.7 + 0.3 * (nonZero - 1) / (nTotal - 1);
 
-  return Math.min(1, (simpleMean / 5) * factor);
+  const normalised = Math.max(0, (simpleMean - 1) / 4);
+  return Math.min(1, normalised * factor);
 }
