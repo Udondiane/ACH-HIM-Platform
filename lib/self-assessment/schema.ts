@@ -17,7 +17,7 @@ export const createTokenSchema = z.object({
 
 export const factorResponseSchema = z.object({
   factor_id:    z.string(),
-  score:        z.number().min(0).max(5).nullable(),
+  score:        z.number().min(1).max(5).nullable(),
   narrative:    z.string().trim().max(2000).optional().or(z.literal('')),
 });
 

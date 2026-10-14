@@ -109,7 +109,7 @@ export function IndicatorScorer({
         <div className="flex items-start justify-between gap-4 mb-2">
           <div className="text-[13px] text-ach-navy font-medium">{indicator.name}</div>
           <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/50 shrink-0">
-            {isNarrative ? 'Narrative' : isYesNo ? 'Yes / No' : '0 – 5'}
+            {isNarrative ? 'Narrative' : isYesNo ? 'Yes / No' : '1 – 5'}
           </div>
         </div>
       )}
@@ -122,11 +122,11 @@ export function IndicatorScorer({
           <div className="flex items-center gap-1.5">
             {isYesNo ? (
               <>
-                <ScoreBtn active={value === 0} disabled={locked} onClick={() => onScore(0)}>No</ScoreBtn>
+                <ScoreBtn active={value === 1} disabled={locked} onClick={() => onScore(1)}>No</ScoreBtn>
                 <ScoreBtn active={value === 5} disabled={locked} onClick={() => onScore(5)}>Yes</ScoreBtn>
               </>
             ) : (
-              [0,1,2,3,4,5].map(n => (
+              [1,2,3,4,5].map(n => (
                 <ScoreBtn key={n} active={value === n} disabled={locked} onClick={() => onScore(n)}>{n}</ScoreBtn>
               ))
             )}

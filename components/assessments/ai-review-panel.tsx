@@ -198,7 +198,7 @@ export function AiReviewPanel({
               <div>
                 <div className="text-[10.5px] uppercase tracking-[1.2px] text-ach-navy/55 mb-1">New score</div>
                 <div className="flex items-center gap-1.5">
-                  {[0,1,2,3,4,5].map(n => (
+                  {[1,2,3,4,5].map(n => (
                     <button
                       key={n}
                       type="button"

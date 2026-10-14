@@ -93,10 +93,10 @@ export function SelfAssessmentForm({ token, factors }: { token: string; factors:
 
             <div className="mt-4">
               <div className="text-[11px] uppercase tracking-[1.2px] text-ach-navy/55 mb-2">
-                Your rating (0 = not at all, 5 = very strong)
+                Your rating (1 = lowest, 5 = very strong)
               </div>
               <div className="flex items-center gap-1.5">
-                {[0, 1, 2, 3, 4, 5].map(n => (
+                {[1, 2, 3, 4, 5].map(n => (
                   <button
                     key={n}
                     type="button"
