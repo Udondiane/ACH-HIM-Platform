@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { createServiceClient } from '@/lib/supabase/server';
 import { SelfAssessmentForm } from '@/components/self-assessment/self-assessment-form';
@@ -9,7 +10,26 @@ import { closingReflectionPrompt, type ReflectionTimepoint } from '@/lib/assessm
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-export const metadata = { title: 'ACH — Your check-in' };
+
+export const metadata: Metadata = {
+  title: 'HIM Platform — Self-Assessment',
+  description: 'A short check-in from your ACH caseworker. Takes about 10 minutes.',
+  openGraph: {
+    title: 'HIM Platform — Self-Assessment',
+    description: 'A short check-in from your ACH caseworker. Takes about 10 minutes.',
+    type: 'website',
+    siteName: 'HIM Platform',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'HIM Platform — Self-Assessment',
+    description: 'A short check-in from your ACH caseworker. Takes about 10 minutes.',
+  },
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 const TIMEPOINT_LABEL: Record<string, string> = {
   baseline: 'Starting',
