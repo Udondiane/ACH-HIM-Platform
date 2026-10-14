@@ -11,6 +11,7 @@ import { ConsentForm } from '@/components/candidates/consent-form';
 import { CandidateIdentity } from '@/components/ui/candidate-identity';
 import { ShortlistForPartner } from '@/components/candidates/shortlist-for-partner';
 import { AudioConsentToggle } from '@/components/candidates/audio-consent-toggle';
+import { SendSelfAssessmentLink } from '@/components/candidates/send-self-assessment-link';
 
 export default async function CandidateDetailPage({ params }: { params: { id: string } }) {
   const supabase = createClient();
@@ -39,6 +40,22 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
     .map(p => ({ id: p.id, name: p.name }));
   const shortlistRows = (shortlists.data as any[]) ?? [];
 
+  // Projects this candidate is on (via cohort → project), for the self-assessment-link modal.
+  const cohortIds = ((cohortCandidates.data as any[]) ?? [])
+    .map(cc => cc.cohorts?.id).filter(Boolean);
+  const projectsRes = cohortIds.length > 0
+    ? await supabase.from('cohorts').select('project_id, projects(id, name, project_ref)').in('id', cohortIds)
+    : { data: [] as any[] };
+  const candidateProjects: { id: string; name: string | null; project_ref: string | null }[] = [];
+  const seenProjectIds = new Set<string>();
+  for (const row of ((projectsRes.data as any[]) ?? [])) {
+    const p = row.projects;
+    if (p && !seenProjectIds.has(p.id)) {
+      seenProjectIds.add(p.id);
+      candidateProjects.push({ id: p.id, name: p.name, project_ref: p.project_ref });
+    }
+  }
+
   return (
     <div className="max-w-6xl mx-auto">
       <PageHeader
@@ -57,6 +74,12 @@ export default async function CandidateDetailPage({ params }: { params: { id: st
             <Link href={`/candidates/${c.id}/assess`}>
               <Button><ClipboardCheck className="h-3.5 w-3.5" />Start assessment</Button>
             </Link>
+            <SendSelfAssessmentLink
+              candidateId={c.id}
+              candidatePhone={c.phone ?? null}
+              candidateEmail={c.email ?? null}
+              projects={candidateProjects}
+            />
             <Link href={`/candidates/${c.id}/support`}>
               <Button variant="secondary"><LifeBuoy className="h-3.5 w-3.5" />Support</Button>
             </Link>
