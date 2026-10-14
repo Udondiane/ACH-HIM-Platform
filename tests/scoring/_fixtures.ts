@@ -3,13 +3,13 @@
  *
  * The HIM hand-calc reference (HIM = 0.80):
  *   depth project, α=0.75, β=0.25
- *   Core domains: Employment, Education          → mean / 5 = 0.85
- *   Optional domains: Belonging, Social, Health  → mean / 5 = 0.65
+ *   Core domains: Employment, Education          → (mean − 1) / 4 = 0.85
+ *   Optional domains: Belonging, Social, Health  → (mean − 1) / 4 = 0.65
  *
  *   HIM = 0.75 × 0.85 + 0.25 × 0.65 = 0.6375 + 0.1625 = 0.80
  *
- * To get coreScore=0.85 from a /5 mean, the domain means must average 4.25/5.
- * We construct responses whose normalised indicator values produce that.
+ * To get coreScore=0.85 from (mean−1)/4, the domain means must average 4.4.
+ * To get optionalScore=0.65, the domain means must average 3.6.
  */
 
 import type {
@@ -41,11 +41,9 @@ export function r(
 }
 
 /**
- * Build a set of responses whose Core domain means produce coreMean=4.25 / 5 = 0.85,
- * and Optional domain means produce optionalMean=3.25 / 5 = 0.65.
- *
- * Implementation: every Core indicator scores 4.25; every Optional 3.25.
- * Mean of means → exactly 4.25 (Core) and 3.25 (Optional).
+ * Build a set of responses whose Core domain means produce coreMean=4.4
+ * → (4.4 − 1)/4 = 0.85, and Optional domain means produce optionalMean=3.6
+ * → (3.6 − 1)/4 = 0.65.
  *
  * To satisfy the two-step rollup (factor → factor-type → domain), we keep
  * a single factor and single factor-type per domain in this fixture, so the
@@ -54,15 +52,15 @@ export function r(
 export function handCalcResponses(): IndicatorResponse[] {
   const out: IndicatorResponse[] = [];
   // Core: Employment + Education
-  out.push(r('emp.r1', 'work_readiness', ['employment'], 4.25));
-  out.push(r('emp.r2', 'work_readiness', ['employment'], 4.25));
-  out.push(r('edu.r1', 'learning_disposition', ['education'], 4.25));
-  out.push(r('edu.r2', 'learning_disposition', ['education'], 4.25));
+  out.push(r('emp.r1', 'work_readiness', ['employment'], 4.4));
+  out.push(r('emp.r2', 'work_readiness', ['employment'], 4.4));
+  out.push(r('edu.r1', 'learning_disposition', ['education'], 4.4));
+  out.push(r('edu.r2', 'learning_disposition', ['education'], 4.4));
   // Optional: Belonging + Social + Health
-  out.push(r('bel.r1', 'sense_of_belonging', ['belonging'], 3.25));
-  out.push(r('bel.r2', 'sense_of_belonging', ['belonging'], 3.25));
-  out.push(r('soc.r1', 'civic_engagement', ['social'], 3.25));
-  out.push(r('hea.r1', 'mental_wellbeing', ['health'], 3.25));
+  out.push(r('bel.r1', 'sense_of_belonging', ['belonging'], 3.6));
+  out.push(r('bel.r2', 'sense_of_belonging', ['belonging'], 3.6));
+  out.push(r('soc.r1', 'civic_engagement', ['social'], 3.6));
+  out.push(r('hea.r1', 'mental_wellbeing', ['health'], 3.6));
   return out;
 }
 

@@ -1,19 +1,25 @@
 /**
  * HIM (Holistic Impact Metric) — main calculation.
  *
- * Per spec §8:
- *   Core Score    = mean of Core domain means / 5
- *   Optional Score = mean of Optional domain means / 5  (v1: simple_average)
- *                  = coverage-weighted variant         (v2)
+ * Per methodology §5.1:
+ *   Core Score    = (mean of Core domain means − 1) / 4
+ *   Optional Score = (mean of Optional domain means − 1) / 4  (v1: simple_average)
+ *                  = coverage-weighted variant                 (v2)
  *   HIM           = α × Core + β × Optional
+ *
+ * The (mean − 1) / 4 normalisation reflects a 1-to-5 Likert scale,
+ * where 1 is the lowest observable rating and maps to 0.00, and 5
+ * maps to 1.00. Any domain mean below 1 is clamped to 0.
  *
  * With stability blending (v2):
  *   HIM_blended = (1 − stabilityBlend) × HIM + stabilityBlend × stabilityScore
  *
  * Hand-calc reference (load-bearing test):
- *   depth project · α=0.75 · β=0.25
- *   coreScore = 0.85 · optionalScore = 0.65
- *   HIM = 0.75 × 0.85 + 0.25 × 0.65 = 0.6375 + 0.1625 = 0.80
+ *   depth project · α=0.67 · β=0.33
+ *   coreMean = 4.4 · optionalMean = 3.6
+ *   coreScore = (4.4 − 1)/4 = 0.85
+ *   optionalScore = (3.6 − 1)/4 = 0.65
+ *   HIM = 0.67 × 0.85 + 0.33 × 0.65 = 0.5695 + 0.2145 = 0.784
  */
 
 import type {
@@ -55,19 +61,19 @@ export function calculateHim(inputs: HimInputs): HimResult {
   const coreMeans   = coreAggs.map(a => a.domainMean);
   const optionalMeans = optionalAggs.map(a => a.domainMean);
 
-  // Core: simple mean / 5 (spec §8.2).
+  // Core: (mean − 1) / 4 (methodology §5.1), clamped to [0,1].
   const coreScore = coreAggs.length === 0
     ? 0
-    : (coreMeans.reduce((s, m) => s + m, 0) / coreMeans.length) / 5;
+    : clamp01(((coreMeans.reduce((s, m) => s + m, 0) / coreMeans.length) - 1) / 4);
 
-  // Optional: v1 simple, v2 coverage-weighted.
+  // Optional: v1 simple, v2 coverage-weighted. Same normalisation as Core.
   let optionalScore: number;
   if (optionalAggs.length === 0) {
     optionalScore = 0;
   } else if (optionalScheme === 'coverage_weighted') {
     optionalScore = coverageWeightedOptional(optionalAggs);
   } else {
-    optionalScore = (optionalMeans.reduce((s, m) => s + m, 0) / optionalMeans.length) / 5;
+    optionalScore = clamp01(((optionalMeans.reduce((s, m) => s + m, 0) / optionalMeans.length) - 1) / 4);
   }
 
   // 3) Resolve weights (α/β).

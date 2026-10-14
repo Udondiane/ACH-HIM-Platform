@@ -52,11 +52,11 @@ describe('Coverage-weighted Optional Score — V2', () => {
     expect(wide).toBeGreaterThan(narrow);
   });
 
-  it('full 7-domain coverage approaches simple mean / 5', () => {
+  it('full 7-domain coverage approaches (mean − 1)/4', () => {
     const all7 = ['employment','housing','education','health','belonging','social','rights']
       .map(d => agg(d, 3.5));
     const v = coverageWeightedOptional(all7);
-    expect(v).toBeCloseTo(3.5/5, 5);
+    expect(v).toBeCloseTo((3.5 - 1) / 4, 5);
   });
 
   it('no domains touched returns 0', () => {
