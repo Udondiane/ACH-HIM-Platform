@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { createServiceClient } from '@/lib/supabase/server';
 import { markTokenOpenedAction } from '@/lib/self-assessment/actions';
@@ -5,6 +6,26 @@ import { SelfAssessmentForm } from '@/components/self-assessment/self-assessment
 import { SELF_ASSESSMENT_TIMEPOINT_LABELS } from '@/lib/self-assessment/schema';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: 'HIM Platform — Self-Assessment',
+  description: 'A short check-in from your ACH caseworker. Takes about 10 minutes.',
+  openGraph: {
+    title: 'HIM Platform — Self-Assessment',
+    description: 'A short check-in from your ACH caseworker. Takes about 10 minutes.',
+    type: 'website',
+    siteName: 'HIM Platform',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'HIM Platform — Self-Assessment',
+    description: 'A short check-in from your ACH caseworker. Takes about 10 minutes.',
+  },
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default async function SelfAssessmentPage({ params }: { params: { token: string } }) {
   const supabase = createServiceClient();
